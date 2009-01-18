@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.06
+// @version        0.07
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -123,8 +123,10 @@ if (USE_SETTINGS) {
 
   for (i in saved_settings) {
     var v = saved_settings[i];
-    x = GM_getValue(prefix(v)); 
-    if (x!=undefined) eval(v+"="+x);
+    x = GM_getValue(prefix(v));    
+    if (x!=undefined) {
+      eval(v+"="+x);
+    }
   }
 } /* USE_SETTINGS */
 
@@ -411,54 +413,6 @@ if (USE_ENHANCED_RESOURCE_INFO) {
         
         head.innerHTML += "\n<tr>"+a+"</tr>\n";
 
-        // Compute when enough resources are available
-        // TODO
-        if (document.body.innerHTML.match("Te weinig grondstoffen")) {
-            var res = document.evaluate( "//span[@class='c']", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-            for ( var j=0 ; j < res.snapshotLength; j++ )
-            {
-                x = res.snapshotItem(j)
-                if (x.textContent.indexOf("weinig")>=0) {
-                    
-                    need = need2 = x.parentNode;
-                    if (need2.nodeName=="td") {
-                        need = need.childNodes[0];
-                        alert (need.innerHTML);
-                    }
-                    need = need.textContent;
-                    if (need2.nodeName=="DIV") {
-                        need = need.split(":");
-                        need = need[1];
-                    } else {
-                        need = need.split(". ");
-                        need = need[need.length-1];
-                    }
-                    need = need.split(" | ");
-                    left = 0;
-                    for ( var i=0 ; i < 4; i++ )
-                    {
-                        z = need[i] - cur[i] - cnt[i];
-                        z /= prod[i];
-                        z *= 60 * 60 * 1000;
-                        if (left < z) 
-                            left = z;
-                    }        
-                    if (left>0) {
-                        d = new Date();
-                        d.setTime(d.getTime() + left);
-                        h = d.getHours()+"";
-                        m = d.getMinutes()+"";
-                        s = d.getSeconds()+"";
-                        if (m.length==1) m = "0" + m;
-                        if (s.length==1) s = "0" + s;
-                        // TODO
-                        x.innerHTML+=" - Genoeg grondstoffen om " + h + ":" + m + ":" + s;
-                    } else {
-                        x.innerHTML+=" - Gebruik stoffen van je marktplaats";            
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -887,7 +841,7 @@ if (USE_TIMELINE) {
         }
     }
 
-    TIMELINE_SIZES_HEIGHT  = (TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE)*TIMELINE_SIZES_HEIGHT; // pixels
+    TIMELINE_SIZES_FULL_HEIGHT  = (TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE)*TIMELINE_SIZES_HEIGHT; // pixels
 
     // Create timeline canvas
     tl = document.createElement("canvas");
@@ -898,13 +852,13 @@ if (USE_TIMELINE) {
     tl.style.top      = "0px";
     tl.style.right    = "0px";
     tl.style.width    = TIMELINE_SIZES_WIDTH  + "px";
-    tl.style.height   = TIMELINE_SIZES_HEIGHT + "px";
+    tl.style.height   = TIMELINE_SIZES_FULL_HEIGHT + "px";
     tl.style.zIndex   = "20";
     tl.style.backgroundColor="rgba(255,255,204,0.5)";
     tl.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
     tl.id = "tl";
     tl.width  = TIMELINE_SIZES_WIDTH;
-    tl.height = TIMELINE_SIZES_HEIGHT;
+    tl.height = TIMELINE_SIZES_FULL_HEIGHT;
     document.body.appendChild(tl);
     
     function toggle_tl(e) {
@@ -1128,6 +1082,3 @@ if (USE_EXTRA_VILLAGE) {
         }
     }
 } /* USE_EXTRA_VILLAGE */
-
-
-
