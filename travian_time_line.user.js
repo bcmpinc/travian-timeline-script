@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.05
+// @version        0.06
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -16,13 +16,14 @@
 
 // This is a script tht provides a few tools to improve the information provided by Travian.
 // It does modify the html of the page.
-// It does not click links automatically or send http requests.
+// It's completely passive: it does not click links automatically or send http requests.
 // If you have the taskqueue script, you can click on the timeline to enter the schedule time.
 
 //////////////////////////////////////////
 //  SCRIPT CONFIG  ( DEFAULT SETTINGS ) //
-//    will be overwritten by any        //
-//          in-game settings            //
+// You can modify them whatever you like//
+//   however, they will be overwritten  //
+//        by any in-game settings       //
 //////////////////////////////////////////
 
 USERNAME = "someone";               // your username
@@ -45,7 +46,7 @@ FIX_TIMELINE = false;       // Keep timeline on the same position when scrolling
 
 TIMELINE_SIZES_HISTORY =  90; // minutes +/- 15 min, for aligning
 TIMELINE_SIZES_FUTURE  =  90; // minutes
-TIMELINE_SIZES_MINUTE  =   5; // pixel height of one minute.
+TIMELINE_SIZES_HEIGHT  =   5; // pixel height of one minute.
 TIMELINE_SIZES_WIDTH   = 430; // width of the timeline
 
 SIDEBAR_HR = true;      // Use <hr> to seperate sidebar sections instead of <br>
@@ -104,22 +105,65 @@ function prefix(s) {
   return gm_prefix+s;
 }
 
+
 if (USE_SETTINGS) {
   x = GM_getValue(prefix("USERNAME")); 
   if (x) USERNAME = x;
 
   x = GM_getValue(prefix("RACE")); 
-  if (x!=undefined) RACE = x-0;
+  if (x) RACE = x;
 
-  x = GM_getValue(prefix("SPECIAL_LOCATIONS"));
-  if (x) SPECIAL_LOCATIONS = eval(x);
+  var saved_settings=["SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
+                      "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
+                      "USE_EXTRA_VILLAGE",
+                      
+                      "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
+                      "TIMELINE_SIZES_WIDTH"
+                      ];
 
-  x = GM_getValue(prefix("VILLAGES"));
-  if (x) VILLAGES = eval(x);
+  for (i in saved_settings) {
+    var v = saved_settings[i];
+    x = GM_getValue(prefix(v)); 
+    if (x!=undefined) eval(v+"="+x);
+  }
 } /* USE_SETTINGS */
 
 //////////////////////////////////////////
 //  SCRIPT CODE                         //
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+//  JAVASCRIPT ENHANCEMENTS             //
+//////////////////////////////////////////
+
+// Get relative position of a dom element
+// Modified to work in the used situation.
+function getPos(obj) {
+  var curleft = curtop = 0;
+  var w = obj.offsetWidth;
+  var h = obj.offsetHeight;
+  var l = obj.offsetLeft;
+  var t = obj.offsetTop;
+  return [l,t,w,h];
+}
+
+// Create a repeat-string-N-times method for all String objects
+String.prototype.repeat = function(n) {
+   var s = "";
+   while (--n >= 0) {
+     s += this;
+   }
+   return s;
+}
+
+String.prototype.pad = function(n) {
+   n = n-this.length;
+   if (n<=0) return this;
+   return this+" ".repeat(n);
+}
+
+//////////////////////////////////////////
+//  OPTIONS SCREEN                      //
 //////////////////////////////////////////
 
 if (USE_SETTINGS) {
@@ -132,7 +176,7 @@ if (USE_SETTINGS) {
   document.body.appendChild(div);
   
   function settings() {
-    var div = document.createElement("div");    
+    var div = document.createElement("div");
     div.style.position = "fixed";
     div.style.zIndex = "250";
     div.style.left = "0px";
@@ -151,17 +195,17 @@ if (USE_SETTINGS) {
     
     var uses = "";
     function using(n, v) {
-      uses+='[<span style="color: '+(v?'green':'red')+'">'+n+"</span>]";
+      uses+='[<span style="cursor: pointer; color: '+(eval(v)?'green':'red')+'" id="TL_'+v+'">'+n+"</span>]";
     }
-    using("timeline", USE_TIMELINE);
-    using("ally lines", USE_ALLY_LINES);
-    using("custom sidebar", USE_CUSTOM_SIDEBAR);
-    using("market colors", USE_MARKET_COLORS);
+    using("timeline", "USE_TIMELINE");
+    using("ally lines", "USE_ALLY_LINES");
+    using("custom sidebar", "USE_CUSTOM_SIDEBAR");
+    using("market colors", "USE_MARKET_COLORS");
     uses+='==\n==';
-    using("enhanced resource info", USE_ENHANCED_RESOURCE_INFO);
-    using("extra village", USE_EXTRA_VILLAGE);
+    using("enhanced resource info", "USE_ENHANCED_RESOURCE_INFO");
+    using("extra village", "USE_EXTRA_VILLAGE");
     
-    var race='<select id="tl_race">';
+    var race='<select id="tl_RACE">';
     for (var i=0; i<3; i++) {
       race+='<option value="'+i+'"';
       if (i==RACE) race+='selected="" ';
@@ -169,20 +213,49 @@ if (USE_SETTINGS) {
     }
     race+='</select>';
     
+    var sizeoptions='';
+    function tlo(n, v) {
+      nn="TIMELINE_SIZES_"+n;
+      sizeoptions += "    "+n.pad(8)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
+    }
+    tlo("WIDTH","px");
+    tlo("HEIGHT","px/min");
+    tlo("HISTORY","min");
+    tlo("FUTURE","min");
+    
     box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div><hr/>'+
-                    'USERNAME = <input id="tl_username" value="'+USERNAME+'"/>\n'+
+                    'USERNAME = <input id="TL_USERNAME" value="'+USERNAME+'"/>\n'+
                     'RACE     = '+race+'\n'+
+                    'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
                     'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
                     'VILLAGES='+uneval(VILLAGES)+'\n'+
                     '';
     
-    x = document.getElementById("tl_race").addEventListener("change",function(e) {
-      GM_setValue(prefix("RACE"),RACE = e.target.value);
-    },false);
-    x = document.getElementById("tl_username").addEventListener("change",function(e) {
-      GM_setValue(prefix("USERNAME"),USERNAME = e.target.value);
-    },false);
+    var list = box.childNodes[0].childNodes;
+    for (i in list) {    
+      var el = list[i];
+      function toggle(e) {
+        var el = e.target;
+        var id = el.id.substr(3);
+        var b = !eval(id);
+        eval(id+"="+x);
+        GM_setValue(prefix(id),b);
+        el.style.color = b?'green':'red';        
+      }
+      el.addEventListener("click",toggle,false);
+    }
     
+    var list = box.childNodes;
+    for (i in list) {
+      var el = list[i];
+      function opt_change(e) {
+        var el = e.target;
+        var id = el.id.substr(3);
+        GM_setValue(prefix(id),eval(id+"='"+e.target.value+"'"));
+      }
+      el.addEventListener("change",opt_change,false);
+    }
+        
     function remove_settings_dialog() {
       remove(div);
     }    
@@ -196,6 +269,10 @@ if (USE_SETTINGS) {
 
 none = "0,0,0,0";
 
+//////////////////////////////////////////
+//  COLLECT SOME INFO                   //
+//////////////////////////////////////////
+
 // Keep track of current city id
 x = location.href.match("newdid=(\\d+)");
 if (x!=null) {
@@ -206,6 +283,7 @@ if (x!=null) {
 }
 
 // Store info about resources put on the market if availbale
+// TODO
 if (document.body.innerHTML.match("duur van transport")) {
     var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
     
@@ -231,7 +309,7 @@ if (location.href.indexOf("dorf1")>0) {
     for ( var i=0 ; i < res.snapshotLength; i++ )
     {
         c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
-        t = res.snapshotItem(i).childNodes[1].firstChild.src.match("\\d") - 1;
+        t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
         prod[t] += c;
     }
     productie = eval(GM_getValue(prefix("PRODUCTIE"), "{}"));
@@ -299,6 +377,10 @@ if (location.href.indexOf("spieler")>0) {
     }
 }
 
+//////////////////////////////////////////
+//  ENHANCED RESOURCE INFO              //
+//////////////////////////////////////////
+
 // Enhance resource info
 if (USE_ENHANCED_RESOURCE_INFO) {
     head = document.getElementById("lres0");
@@ -330,6 +412,7 @@ if (USE_ENHANCED_RESOURCE_INFO) {
         head.innerHTML += "\n<tr>"+a+"</tr>\n";
 
         // Compute when enough resources are available
+        // TODO
         if (document.body.innerHTML.match("Te weinig grondstoffen")) {
             var res = document.evaluate( "//span[@class='c']", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
             for ( var j=0 ; j < res.snapshotLength; j++ )
@@ -368,6 +451,7 @@ if (USE_ENHANCED_RESOURCE_INFO) {
                         s = d.getSeconds()+"";
                         if (m.length==1) m = "0" + m;
                         if (s.length==1) s = "0" + s;
+                        // TODO
                         x.innerHTML+=" - Genoeg grondstoffen om " + h + ":" + m + ":" + s;
                     } else {
                         x.innerHTML+=" - Gebruik stoffen van je marktplaats";            
@@ -378,9 +462,13 @@ if (USE_ENHANCED_RESOURCE_INFO) {
     }
 }
 
-// Color the stuff on the market
+//////////////////////////////////////////
+//  MARKET COLORS                       //
+//////////////////////////////////////////
+
 if (USE_MARKET_COLORS) {
     function colorify() { 
+        // TODO
         if (document.body.innerHTML.match("Aanbiedingen op de Marktplaats")) {
             var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
             
@@ -410,16 +498,9 @@ if (USE_MARKET_COLORS) {
     colorify();
 }
 
-// Get relative position of a dom element
-// Modified to work in the used situation.
-function getPos(obj) {
-  var curleft = curtop = 0;
-  var w = obj.offsetWidth;
-  var h = obj.offsetHeight;
-  var l = obj.offsetLeft;
-  var t = obj.offsetTop;
-  return [l,t,w,h];
-}
+//////////////////////////////////////////
+//  ALLY LINES                          //
+//////////////////////////////////////////
 
 // Show lines to allies and yourself
 if (USE_ALLY_LINES) {
@@ -438,8 +519,8 @@ if (USE_ALLY_LINES) {
         
         rdiv=document.createElement("div");
         rdiv.style.position = "absolute";
-        rdiv.style.left = "150px";
-        rdiv.style.top  = "520px";
+        rdiv.style.left = "315px";
+        rdiv.style.top  = "500px";
         rdiv.style.border = "solid 1px #000";
         rdiv.style.background = "#ffc";
         rdiv.style.zIndex = 16;
@@ -688,7 +769,8 @@ if (USE_TIMELINE) {
     }
     
     // Reizende legers
-    if (document.body.innerHTML.match("In de Verzamelplaats")) {
+    x = document.getElementById("lmid2");
+    if (x && x.innerHTML.match("warsim.php")) {
     
         var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
         
@@ -773,36 +855,39 @@ if (USE_TIMELINE) {
         if (bouw == undefined)
             bouw = document.getElementById("lbau2");
         if (bouw != undefined) {
-            x = bouw.childNodes[1].childNodes[0].childNodes[0];
-            time = x.childNodes[3].textContent.match("(\\d\\d?):(\\d\\d)");
-            where = x.childNodes[1].textContent;
-            
-            q = new Date();
-            t = q.getTime();
-            q.setHours(time[1]);
-            q.setMinutes(time[2]);
-            q.setSeconds(0);
-            q.setMilliseconds(1);
-            if (q.getTime()<t-60000)
-                q.setDate(q.getDate()+1);
-            t = q.getTime();
-                        
-            res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-            x = res.singleNodeValue.textContent;
-            var h = 0;
-            for(var i = 0; i < x.length; i ++) {
-                h*=13;
-                h+=i;
-                h%=127
+            y = bouw.childNodes[1].childNodes[0];
+            for (nn in y.childNodes) {
+                x = y.childNodes[nn];
+                time = x.childNodes[3].textContent.match("(\\d\\d?):(\\d\\d)");
+                where = x.childNodes[1].textContent;
+                
+                q = new Date();
+                t = q.getTime();
+                q.setHours(time[1]);
+                q.setMinutes(time[2]);
+                q.setSeconds(0);
+                q.setMilliseconds(1);
+                if (q.getTime()<t-60000)
+                    q.setDate(q.getDate()+1);
+                t = q.getTime();
+                            
+                res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
+                x = res.singleNodeValue.textContent;
+                var h = 0;
+                for(var i = 0; i < x.length; i ++) {
+                    h*=13;
+                    h+=i;
+                    h%=127
+                }
+                t+=h*2;
+                
+                e = getevent(t,where);
+                e[17] = x;
             }
-            t+=h*2;
-            
-            e = getevent(t,where);
-            e[17] = x;
         }
     }
 
-    TIMELINE_SIZES_HEIGHT  = (TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE)*TIMELINE_SIZES_MINUTE; // pixels
+    TIMELINE_SIZES_HEIGHT  = (TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE)*TIMELINE_SIZES_HEIGHT; // pixels
 
     // Create timeline canvas
     tl = document.createElement("canvas");
@@ -873,12 +958,12 @@ if (USE_TIMELINE) {
     GM_setValue(prefix("TIMELINE"),uneval(events));
     
     // Draw bar
-    g.translate(TIMELINE_SIZES_WIDTH - 9.5, TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_MINUTE + .5);
+    g.translate(TIMELINE_SIZES_WIDTH - 9.5, TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT + .5);
     
     g.strokeStyle = "rgb(0,0,0)";
     g.beginPath();
-    g.moveTo(0,-TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_MINUTE);
-    g.lineTo(0, TIMELINE_SIZES_FUTURE  * TIMELINE_SIZES_MINUTE);
+    g.moveTo(0,-TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT);
+    g.lineTo(0, TIMELINE_SIZES_FUTURE  * TIMELINE_SIZES_HEIGHT);
     g.stroke();
     for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=1) {
         g.beginPath();
@@ -887,8 +972,8 @@ if (USE_TIMELINE) {
         if (i%5 == 0) l-=2;
         if (i%15 == 0) l-=2;
         if ((i + d.getMinutes())%60 == 0) ll+=8;        
-        g.moveTo(l, i*TIMELINE_SIZES_MINUTE);
-        g.lineTo(ll,  i*TIMELINE_SIZES_MINUTE);    
+        g.moveTo(l, i*TIMELINE_SIZES_HEIGHT);
+        g.lineTo(ll,  i*TIMELINE_SIZES_HEIGHT);    
         g.stroke();
     }
 
@@ -901,7 +986,7 @@ if (USE_TIMELINE) {
         x = h+":"+m;
 
         g.save();
-        g.translate(-g.mozMeasureText(x) - 10, 4 + i * TIMELINE_SIZES_MINUTE);
+        g.translate(-g.mozMeasureText(x) - 10, 4 + i * TIMELINE_SIZES_HEIGHT);
         g.mozDrawText(x);    
         g.restore();    
     }
@@ -916,7 +1001,7 @@ if (USE_TIMELINE) {
     g.beginPath();
     n = new Date();
     diff = (n.getTime() - d.getTime()) / 1000 / 60;
-    y = diff * TIMELINE_SIZES_MINUTE;
+    y = diff * TIMELINE_SIZES_HEIGHT;
     g.moveTo(-8, y);
     g.lineTo( 4, y);    
     g.lineTo( 6, y-2);    
@@ -954,7 +1039,7 @@ if (USE_TIMELINE) {
     for (e in events) {
         p = events[e];
         diff = (e - d.getTime()) / 1000 / 60;
-        y = diff * TIMELINE_SIZES_MINUTE;
+        y = diff * TIMELINE_SIZES_HEIGHT;
         y = Math.round(y);
         g.strokeStyle = "rgb(0,0,0)";
         g.beginPath();
@@ -1013,7 +1098,7 @@ if (USE_TIMELINE) {
         if (at) {
             // d = 'top of the timeline time'        
             var n = new Date();
-            n.setTime(d.getTime() + (e.pageY/TIMELINE_SIZES_MINUTE-TIMELINE_SIZES_HISTORY) *60*1000);
+            n.setTime(d.getTime() + (e.pageY/TIMELINE_SIZES_HEIGHT-TIMELINE_SIZES_HISTORY) *60*1000);
             s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
             at.value=s;
         }
@@ -1043,7 +1128,6 @@ if (USE_EXTRA_VILLAGE) {
         }
     }
 } /* USE_EXTRA_VILLAGE */
-
 
 
 
