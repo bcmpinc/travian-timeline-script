@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.12
+// @version        0.13
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -30,6 +30,7 @@
 //    villages in the scripts source code.)
 
 try {
+script_start_time = new Date().getTime();
 
 //////////////////////////////////////////
 //  SCRIPT CONFIG  ( DEFAULT SETTINGS ) //
@@ -264,7 +265,7 @@ if (USE_SETTINGS) {
                     'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
                     'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
                     'VILLAGES='+uneval(VILLAGES)+'\n'+
-                    '';
+                    '<hr/>'+'script duration: '+script_duration+'ms.';
     
     var list = box.childNodes[0].childNodes;
     for (i in list) {    
@@ -640,21 +641,21 @@ if (USE_ALLY_LINES) {
         res = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
         x = res.singleNodeValue;
         if (x) {
-            l = x.textContent.match("^(.*) \\((-?\\d+)\\|(-?\\d+)\\)$");
+            l = x.textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
             insl = false;
             for (v in SPECIAL_LOCATIONS) {
-                if (SPECIAL_LOCATIONS[v][0]==l[2] &&
-                    SPECIAL_LOCATIONS[v][1]==l[3]) {
+                if (SPECIAL_LOCATIONS[v][0]==l[1] &&
+                    SPECIAL_LOCATIONS[v][1]==l[2]) {
                     insl=true;
                     break;
                 }
             }
             addspecial = document.createElement("a");
             addspecial.innerHTML = "s";
-            addspecial.title = "[timeline] Toggle ("+l[2]+"|"+l[3]+") as special location.";
+            addspecial.title = "[timeline] Toggle ("+l[1]+"|"+l[2]+") as special location.";
             addspecial.href="#";
             addspecial.style.color = insl?"#0f0":"#f00";
-            addspecial.className=l[2]+","+l[3]+","+(insl?1:0);
+            addspecial.className=l[1]+","+l[2]+","+(insl?1:0);
             function addsl(e){
                 var el = e.target;
                 var l = el.className.split(",");
@@ -1225,6 +1226,7 @@ if (USE_EXTRA_VILLAGE) {
     }
 } /* USE_EXTRA_VILLAGE */
 
+script_duration = new Date().getTime() - script_start_time;
 } catch (e) {
     if (USE_DEBUG_MODE) 
         alert("Timeline caught an error: \n"+
