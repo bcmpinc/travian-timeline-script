@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.13
+// @version        0.14
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -53,6 +53,7 @@ USE_SETTINGS = true;                // Enable settings menu and use settinge sto
 USE_SERVER_TIME = false;            // Use the server time instead of the local clock. Requires a 24 hours clock.
 USE_DEBUG_MODE = false;             // Makes the script throw an alert when something bad happened.
 SHOW_TIMELINE_REPORT_INFO = true;   // Show the size of the army, the losses and the amount of resources stolen.
+COLLAPSE_TIMELINE = false;          // Make the timeline very small by default
 
 REMOVE_PLUS_BUTTON = true;  // Removes the Plus button
 REMOVE_PLUS_COLOR = true;   // De-colors the Plus link (needs USE_CUSTOM_SIDEBAR)
@@ -64,7 +65,10 @@ FIX_TIMELINE = false;       // Keep timeline on the same position when scrolling
 TIMELINE_SIZES_HISTORY =  90; // minutes +/- 15 min, for aligning
 TIMELINE_SIZES_FUTURE  =  90; // minutes
 TIMELINE_SIZES_HEIGHT  =   5; // pixel height of one minute.
-TIMELINE_SIZES_WIDTH   = 430; // width of the timeline
+TIMELINE_SIZES_WIDTH   = 430; // width of the timeline (in pixels)
+TIMELINE_COLLAPSED_WIDTH = 60;// width of the timeline when collapsed (in pixels)
+TIMELINE_COLLAPSE_SPEED = 1500;// collapse fade speed in pixels per second.
+TIMELINE_COLLAPSE_RATE = 50;  // updates of the collapse fade per second.
 
 TIME_DIFFERENCE = 0; // server time - local time
 
@@ -136,7 +140,7 @@ if (USE_SETTINGS) {
   var saved_settings=["SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
                       "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
                       "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
-                      "SHOW_TIMELINE_REPORT_INFO",
+                      "SHOW_TIMELINE_REPORT_INFO", "COLLAPSE_TIMELINE",
                       
                       "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
                       "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE"
@@ -235,6 +239,7 @@ if (USE_SETTINGS) {
     using("extra village", "USE_EXTRA_VILLAGE");
     using("debug mode", "USE_DEBUG_MODE");
     uses+='==\n==';
+    using("collapse timeline", "COLLAPSE_TIMELINE");
     using("timeline extended info", "SHOW_TIMELINE_REPORT_INFO");
     uses+='==\n==';
     using("use server time", "USE_SERVER_TIME");
@@ -968,32 +973,79 @@ if (USE_TIMELINE && tp1) {
 
     TIMELINE_SIZES_FULL_HEIGHT  = (TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE)*TIMELINE_SIZES_HEIGHT; // pixels
 
-    // Create timeline canvas
+    // Create timeline canvas + container
     tl = document.createElement("canvas");
+    tlc = document.createElement("div");
     if (FIX_TIMELINE)
-        tl.style.position = "fixed";
+        tlc.style.position = "fixed";
     else
-        tl.style.position = "absolute";
-    tl.style.top      = "0px";
-    tl.style.right    = "0px";
-    tl.style.width    = TIMELINE_SIZES_WIDTH  + "px";
-    tl.style.height   = TIMELINE_SIZES_FULL_HEIGHT + "px";
-    tl.style.zIndex   = "20";
-    tl.style.backgroundColor="rgba(255,255,204,0.5)";
-    tl.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
+        tlc.style.position = "absolute";
+    tlc.style.top      = "0px";
+    tlc.style.right    = "0px";
+    tlc.style.width    = (COLLAPSE_TIMELINE?TIMELINE_COLLAPSED_WIDTH:TIMELINE_SIZES_WIDTH) + "px";
+    tlc.style.height   = TIMELINE_SIZES_FULL_HEIGHT + "px";
+    tlc.style.zIndex   = "20";
+    tlc.style.backgroundColor="rgba(255,255,204,0.5)";
+    tlc.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
+    tlc.style.overflow = "hidden";
     tl.id = "tl";
     tl.width  = TIMELINE_SIZES_WIDTH;
     tl.height = TIMELINE_SIZES_FULL_HEIGHT;
-    document.body.appendChild(tl);
+    tl.style.position = "relative";
+    tl.style.left = (COLLAPSE_TIMELINE?TIMELINE_COLLAPSED_WIDTH-TIMELINE_SIZES_WIDTH:0)+"px";
+    tlc.appendChild(tl);
+    document.body.appendChild(tlc);
+    
+    if (COLLAPSE_TIMELINE) {
+        tl_col_cur = TIMELINE_COLLAPSED_WIDTH;
+        tl_col_tar = TIMELINE_COLLAPSED_WIDTH;
+        tl_col_run = false;
+        tl_col_prev = 0;
+        function tlc_fade() {
+            tl_col_next = new Date().getTime();
+            diff = (tl_col_next - tl_col_prev) / 1000.0;
+            tl_col_prev = tl_col_next;
+            tl_col_run = true;
+            if (tl_col_cur==tl_col_tar) {
+                tl_col_run = false;
+                return;
+            }
+            if (tl_col_cur<tl_col_tar) {
+                tl_col_cur+=TIMELINE_COLLAPSE_SPEED*diff;
+                if (tl_col_cur>tl_col_tar)
+                    tl_col_cur=tl_col_tar;
+            }
+            if (tl_col_cur>tl_col_tar) {
+                tl_col_cur-=TIMELINE_COLLAPSE_SPEED*diff;
+                if (tl_col_cur<tl_col_tar)
+                    tl_col_cur=tl_col_tar;
+            }
+            tlc.style.width = tl_col_cur + "px";
+            tlc.firstChild.style.left = (tl_col_cur-TIMELINE_SIZES_WIDTH)+"px";
+            setTimeout(tlc_fade, 1000/TIMELINE_COLLAPSE_RATE);
+        }
+        function tlc_expand(e) {
+            tl_col_tar = TIMELINE_SIZES_WIDTH;
+            tl_col_prev = new Date().getTime();
+            if (!tl_col_run) tlc_fade();
+        }
+        function tlc_collapse(e) {
+            tl_col_tar = TIMELINE_COLLAPSED_WIDTH;
+            tl_col_prev = new Date().getTime();
+            if (!tl_col_run) tlc_fade();
+        }
+        tlc.addEventListener('mouseover',tlc_expand,false);
+        tlc.addEventListener('mouseout',tlc_collapse,false);
+    }
     
     function toggle_tl(e) {
-        e=document.getElementById('tl');
+        e=document.getElementById('tlc');
         e.style.visibility=e.style.visibility!='hidden'?'hidden':'visible';
         GM_setValue(prefix("TL_VISIBLE"), e.style.visibility);
     }
     
     button = document.createElement("div");
-    button.style.position = tl.style.position;
+    button.style.position = tlc.style.position;
     button.style.backgroundColor = "rgba(0,0,128,0.5)";
     button.style.right = "0px";
     button.style.top = "-2px";
@@ -1031,7 +1083,7 @@ if (USE_TIMELINE && tp1) {
     n = new Date();
     n.setTime(d.getTime());
     
-    d.setMilliseconds(0);
+    d.setMilliseconds(0);addEventListener('click',toggle_tl,true);
     d.setSeconds(0);
     if (d.getMinutes()<15) {
         d.setMinutes(0);
