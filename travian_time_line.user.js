@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.11
+// @version        0.12
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -48,6 +48,10 @@ USE_MARKET_COLORS = true;           // Color the market offers to quickly determ
 USE_ENHANCED_RESOURCE_INFO = true;  // Add resource/minute and resources on market to the resource bar.
 USE_EXTRA_VILLAGE = true;           // Add additional vilages to the vilage list.
 USE_SETTINGS = true;                // Enable settings menu and use settinge stored by GM_setValue.
+
+USE_SERVER_TIME = false;            // Use the server time instead of the local clock. Requires a 24 hours clock.
+USE_DEBUG_MODE = false;             // Makes the script throw an alert when something bad happened.
+SHOW_TIMELINE_REPORT_INFO = true;   // Show the size of the army, the losses and the amount of resources stolen.
 
 REMOVE_PLUS_BUTTON = true;  // Removes the Plus button
 REMOVE_PLUS_COLOR = true;   // De-colors the Plus link (needs USE_CUSTOM_SIDEBAR)
@@ -115,6 +119,7 @@ VILLAGES = [];
 
 var url = location.href.match("//(\\w+)\\.travian.(\\w+)/");
 var gm_prefix = url[1]+'.'+url[2]+'.';
+var travian_world_analyzer_server_code = url[2]+(url[1]=='speed'?'x':url[1].substr(1));
 function prefix(s) {
   return gm_prefix+s;
 }
@@ -129,7 +134,8 @@ if (USE_SETTINGS) {
 
   var saved_settings=["SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
                       "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
-                      "USE_EXTRA_VILLAGE",
+                      "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
+                      "SHOW_TIMELINE_REPORT_INFO",
                       
                       "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
                       "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE"
@@ -139,6 +145,7 @@ if (USE_SETTINGS) {
     var v = saved_settings[i];
     x = GM_getValue(prefix(v));    
     if (x!=undefined) {
+      if (x=="") x=0;
       eval(v+"="+x);
     }
   }
@@ -153,7 +160,7 @@ if (USE_SETTINGS) {
 //////////////////////////////////////////
 
 // Get relative position of a dom element
-// Modified to work in the used situation.
+// Modified to work in the used situation.USE_SERVER_TIME
 function getPos(obj) {
   var curleft = curtop = 0;
   var w = obj.offsetWidth;
@@ -225,6 +232,12 @@ if (USE_SETTINGS) {
     uses+='==\n==';
     using("enhanced resource info", "USE_ENHANCED_RESOURCE_INFO");
     using("extra village", "USE_EXTRA_VILLAGE");
+    using("debug mode", "USE_DEBUG_MODE");
+    uses+='==\n==';
+    using("timeline extended info", "SHOW_TIMELINE_REPORT_INFO");
+    uses+='==\n==';
+    using("use server time", "USE_SERVER_TIME");
+    uses+="(use a 24 hours clock)";
     
     var race='<select id="tl_RACE">';
     for (var i=0; i<3; i++) {
@@ -392,25 +405,27 @@ if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
 
 // Get alliance member data
 if (location.href.indexOf("spieler")>0) {
-    who = document.body.innerHTML.match("<td class=\"rbg\" colspan=\"3\">Speler ([^<]+)</td>");
-    who = who[1];
-    if (ally[who] != undefined || who == USERNAME) {
-        var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-        cities = {};
-        for ( var i=0 ; i < res.snapshotLength; i++ )
-        {
-            x    = res.snapshotItem(i);
-            name = x.textContent;
-            y    = x.parentNode.parentNode.childNodes[4].textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
-            y[0] = name;none = "0,0,0,0";
+    who = document.body.innerHTML.match("<td class=\"rbg\" colspan=\"3\">[A-Z][a-z]+ ([^<]+)</td>");
+    if (who) {
+        who = who[1];
+        if (ally[who] != undefined || who == USERNAME) {
+            var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+            cities = {};
+            for ( var i=0 ; i < res.snapshotLength; i++ )
+            {
+                x    = res.snapshotItem(i);
+                name = x.textContent;
+                y    = x.parentNode.parentNode.childNodes[4].textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
+                y[0] = name;none = "0,0,0,0";
 
-            y[1] -= 0;
-            y[2] -= 0;
-            cities[name] = y;
+                y[1] -= 0;
+                y[2] -= 0;
+                cities[name] = y;
+            }
+            if (ally[who]==undefined) ally[who]=[0,0,{}];
+            ally[who][2] = cities;
+            GM_setValue(prefix("ALLIANCE"), uneval(ally));
         }
-        if (ally[who]==undefined) ally[who]=[0,0,{}];
-        ally[who][2] = cities;
-        GM_setValue(prefix("ALLIANCE"), uneval(ally));
     }
 }
 
@@ -585,12 +600,13 @@ if (USE_ALLY_LINES) {
             }                
             g.restore();
             
+            wasc = travian_world_analyzer_server_code;
             rdiv.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
-                "<a href=\"http://travian.ws/analyser.pl?s=nlx&q="+posx+","+posy+",5\" > 5</a>, "+
-                "<a href=\"http://travian.ws/analyser.pl?s=nlx&q="+posx+","+posy+",10\">10</a>, "+
-                "<a href=\"http://travian.ws/analyser.pl?s=nlx&q="+posx+","+posy+",15\">15</a>, "+
-                "<a href=\"http://travian.ws/analyser.pl?s=nlx&q="+posx+","+posy+",20\">20</a>, "+
-                "<a href=\"http://travian.ws/analyser.pl?s=nlx&q="+posx+","+posy+",25\">25</a>";
+                "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",5\" > 5</a>, "+
+                "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",10\">10</a>, "+
+                "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",15\">15</a>, "+
+                "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",20\">20</a>, "+
+                "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",25\">25</a>";
         }
         
         update();
@@ -618,6 +634,50 @@ if (USE_ALLY_LINES) {
         document.addEventListener('keydown',upd,true);
         document.addEventListener('keyup',upd,true);
     }
+    
+    // add a "this location is special!" button to the map's village view.
+    if (location.href.indexOf("karte.php?d=")>0) {
+        res = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
+        x = res.singleNodeValue;
+        if (x) {
+            l = x.textContent.match("^(.*) \\((-?\\d+)\\|(-?\\d+)\\)$");
+            insl = false;
+            for (v in SPECIAL_LOCATIONS) {
+                if (SPECIAL_LOCATIONS[v][0]==l[2] &&
+                    SPECIAL_LOCATIONS[v][1]==l[3]) {
+                    insl=true;
+                    break;
+                }
+            }
+            addspecial = document.createElement("a");
+            addspecial.innerHTML = "s";
+            addspecial.title = "[timeline] Toggle ("+l[2]+"|"+l[3]+") as special location.";
+            addspecial.href="#";
+            addspecial.style.color = insl?"#0f0":"#f00";
+            addspecial.className=l[2]+","+l[3]+","+(insl?1:0);
+            function addsl(e){
+                var el = e.target;
+                var l = el.className.split(",");
+                if (l[2]>0) {
+                    last = SPECIAL_LOCATIONS.pop();
+                    for (v in SPECIAL_LOCATIONS) {
+                        if (SPECIAL_LOCATIONS[v][0]==l[2] &&
+                            SPECIAL_LOCATIONS[v][1]==l[3]) {
+                            SPECIAL_LOCATIONS[v]=last;
+                            break;
+                        }
+                    }
+                } else {
+                    SPECIAL_LOCATIONS.push([l[0]-0,l[1]-0]);
+                }
+                GM_setValue(prefix("SPECIAL_LOCATIONS"), uneval(SPECIAL_LOCATIONS));
+                el.style.color = l[2]<1?"#0f0":"#f00";
+                el.className=l[0]+","+l[1]+","+(1-l[2]);
+            }
+            addspecial.addEventListener('click',addsl,true);
+            x.appendChild(addspecial); 
+        }
+    }
 }
 
 //////////////////////////////////////////
@@ -640,7 +700,7 @@ if (USE_CUSTOM_SIDEBAR) {
     navi = document.getElementById("navi_table");
     if (navi) {
         if (REMOVE_HOME_LINK)
-            navi.parentNode.childNodes[1].href="";
+            navi.parentNode.childNodes[1].href="?";
             
         navi=navi.childNodes[1].childNodes[0].childNodes[1];
         
@@ -721,7 +781,8 @@ if (USE_CUSTOM_SIDEBAR) {
 //  TIMELINE                            //
 //////////////////////////////////////////
 
-if (USE_TIMELINE) {
+tp1 = document.getElementById("tp1");
+if (USE_TIMELINE && tp1) {
     /*  A timeline-data-packet torn apart:
         Example: {'1225753710000':[0, 0, 0, 0, 189, 0, 0, 0, 0, 0, 0, 0, "Keert terug van 2. Nador", 0, 0, 0, 0]}
         
@@ -872,8 +933,10 @@ if (USE_TIMELINE) {
             for (nn in y.childNodes) {
                 x = y.childNodes[nn];
                 time = x.childNodes[3].textContent; 
-                time = time.match("(\\d\\d?):(\\d\\d)");
+                time = time.match("(\\d\\d?):(\\d\\d) ?([a-z]*)");
                 where = x.childNodes[1].textContent;
+                if (time[3]=="pm") 
+                    time[1]-=-12;
                 
                 q = new Date();
                 q.setTime(q.getTime()+TIME_DIFFERENCE*3600000);  // Adjust local time to server time.
@@ -892,7 +955,7 @@ if (USE_TIMELINE) {
                 for(var i = 0; i < x.length; i ++) {
                     h*=13;
                     h+=i;
-                    h%=127
+                    h%=127;
                 }
                 t+=h*2;
                 
@@ -936,7 +999,7 @@ if (USE_TIMELINE) {
     button.style.width  = "60px";
     button.style.height = "21px";
     button.style.zIndex = "20";
-    button.style.textAlign = "center";
+    button.style.textAlUSE_SETTINGSign = "center";
     button.style.color = "#fff";
     button.style.fontWeight = "bold";
     button.style.MozBorderRadiusBottomleft = "6px";    
@@ -947,21 +1010,22 @@ if (USE_TIMELINE) {
     
     // Get context
     var g = tl.getContext("2d");
-    
+
     // get server time
-    
-    server_time = document.getElementById("tp1").textContent.split(":");
-    
+    server_time = tp1.textContent.split(":");
+        
     // determine 'now'
     d = new Date();
     d.setTime(d.getTime()+TIME_DIFFERENCE*3600000); // Adjust local time to server time.
-    t = d.getTime();
-    d.setHours(server_time[0]);
-    d.setMinutes(server_time[1]);
-    d.setSeconds(server_time[2]);
-    d.setMilliseconds(0);
-    if (d.getTime()<t-60000)
-        d.setDate(d.getDate()+1);
+    if (USE_SERVER_TIME) {
+        t = d.getTime();
+        d.setHours(server_time[0]);
+        d.setMinutes(server_time[1]);
+        d.setSeconds(server_time[2]);
+        d.setMilliseconds(0);
+        if (d.getTime()<t-60000)
+            d.setDate(d.getDate()+1);
+    }
 
     n = new Date();
     n.setTime(d.getTime());
@@ -1093,25 +1157,27 @@ if (USE_TIMELINE) {
             g.restore();
         }
 
-        g.fillStyle = "rgb(64,192,64)";
-        g.save();
-        g.translate(-40, y+4);
-        for (i = 16; i>0; i--) {
-            if (i==12)
-                g.fillStyle = "rgb(0,0,255)";
-            else if (p[i]) {
-                g.translate(-unit[i].width - 8, 0);
-                g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
-                if (p[i].constructor == Array) {
-                    g.fillStyle = "rgb(192,0,0)";
-                    g.translate(-g.mozMeasureText(-p[i][1]) - 2, 0);
-                    g.mozDrawText(-p[i][1]);
+        if (SHOW_TIMELINE_REPORT_INFO) {
+            g.fillStyle = "rgb(64,192,64)";
+            g.save();
+            g.translate(-40, y+4);
+            for (i = 16; i>0; i--) {
+                if (i==12)
                     g.fillStyle = "rgb(0,0,255)";
-                    g.translate(-g.mozMeasureText(p[i][0]), 0);
-                    g.mozDrawText(p[i][0]);
-                } else {
-                    g.translate(-g.mozMeasureText(p[i]) - 2, 0);
-                    g.mozDrawText(p[i]);
+                else if (p[i]) {
+                    g.translate(-unit[i].width - 8, 0);
+                    g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
+                    if (p[i].constructor == Array) {
+                        g.fillStyle = "rgb(192,0,0)";
+                        g.translate(-g.mozMeasureText(-p[i][1]) - 2, 0);
+                        g.mozDrawText(-p[i][1]);
+                        g.fillStyle = "rgb(0,0,255)";
+                        g.translate(-g.mozMeasureText(p[i][0]), 0);
+                        g.mozDrawText(p[i][0]);
+                    } else {
+                        g.translate(-g.mozMeasureText(p[i]) - 2, 0);
+                        g.mozDrawText(p[i]);
+                    }
                 }
             }
         }
@@ -1159,5 +1225,12 @@ if (USE_EXTRA_VILLAGE) {
     }
 } /* USE_EXTRA_VILLAGE */
 
-} catch (e) {alert("Timeline caught an error: "+e);}
+} catch (e) {
+    if (USE_DEBUG_MODE) 
+        alert("Timeline caught an error: \n"+
+              e.name+" at line "+e.lineNumber+"\n"+
+              "Message:"+e.message+"\n"+
+              "Stack trace:\n"+e.stack);
+    throw e;
+}
 
