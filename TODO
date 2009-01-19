@@ -1,0 +1,17 @@
+== TODO ==
+
+Timeline Events,Look&Feel:
+- Change the warp feature to use arcsinh. (And draw a nicer scalebar)
+- Capture mousewheel scrolling and use it to extend the timeline
+- Figure out a way to filter the events by village
+- Add colour to determine the event type
+- Capture research events
+
+Other Features:
+- Add method for configuration of 'extra villages'
+- Add names to special locations.
+
+New Features:
+- Modify all the links for more robust navigation
+
+
