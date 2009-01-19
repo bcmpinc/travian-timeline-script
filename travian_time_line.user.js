@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.17
+// @version        0.18
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -98,15 +98,15 @@ SIDEBAR_LINKS = [ 1,["FAQ", "http://help.travian.nl/"],
                     ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
                     -1,
                     2,
-                    ["Alliantie Forum", "/allianz.php?s=2"],
+                    ["Alliance Forum", "/allianz.php?s=2"],
                     //["Alliantie Forum", "http://www.external-travian-forum.com/"],
-                    ["Alliantie Overzicht", "allianz.php"],
+                    ["Alliance Overview", "allianz.php"],
                     -1,
-                    ["Barakken", "/build.php?gid=19"],
-                    ["Stal", "/build.php?gid=20"],
-                    ["Werkplaats", "/build.php?gid=21"],
-                    ["Marktplaats", "/build.php?gid=17"],
-                    ["Verzamelplaats", "/build.php?gid=16"],
+                    ["Barracks", "/build.php?gid=19"],
+                    ["Stable", "/build.php?gid=20"],
+                    ["Workshop", "/build.php?gid=21"],
+                    ["Marketplace", "/build.php?gid=17"],
+                    ["Rally Point", "/build.php?gid=16"],
                     -1,
                     6,
                     7 
@@ -564,6 +564,11 @@ if (USE_ALLY_LINES) {
         posy = ry.singleNodeValue.value - 0;
 
         function update() {
+            x = GM_getValue(prefix("SPECIAL_LOCATIONS"));    
+            if (x!==undefined && x!=="") {
+              SPECIAL_LOCATIONS = eval(x);
+            }
+
             var g = canvas.getContext("2d");
             g.clearRect(0,0,pos[2],pos[3]);
             g.save()
@@ -697,6 +702,7 @@ if (USE_ALLY_LINES) {
             }
             addspecial.addEventListener('click',addsl,true);
             x.appendChild(addspecial); 
+            x.parentNode.style.zIndex=5;
         }
     }
 }
@@ -829,14 +835,20 @@ if (USE_TIMELINE && tp1) {
              
     */
 
-    // Data collection:
-    try {
-        events = eval(GM_getValue(prefix("TIMELINE"),"{}"));
-        if (events==undefined) events = {};
-    } catch (e) {
-        alert(e);
-        events = { };
-    }    
+    ///////////////////////////////////
+    // Start Timeline Data collector //
+    ///////////////////////////////////
+    
+    function tl_update_data() {
+        try {
+            events = eval(GM_getValue(prefix("TIMELINE"),"{}"));
+            if (events==undefined) events = {};
+        } catch (e) {
+            alert(e);
+            events = { };
+        }
+    }
+    tl_update_data();
     
     function getevent(t, msg) {
         e = events[t];
@@ -856,9 +868,11 @@ if (USE_TIMELINE && tp1) {
         for ( var i=0 ; i < res.snapshotLength; i++ )
         {
             x = res.snapshotItem(i);
-            // TODO
             what = x.childNodes[3].childNodes[0].innerHTML;
-            if (what == "Aankomst") {
+            // if (what == "Aankomst") {
+            // Instead of checking if this is the correct line, just act as if it's correct
+            // If it isn't this will certainly fail.
+            try {
                 time = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)");
                 where = x.childNodes[0].childNodes[2].textContent;
                 q = new Date();
@@ -878,6 +892,8 @@ if (USE_TIMELINE && tp1) {
                   if (y!=undefined)
                       e[j] = y.textContent - 0;
                 }
+            } catch (e) {
+                // So probably it wasn't the correct line.
             }
         }
     }
@@ -986,6 +1002,11 @@ if (USE_TIMELINE && tp1) {
         }
     }
 
+    /////////////////////////////////
+    // End Timeline Data collector //
+    /////////////////////////////////
+
+
     TIMELINE_SIZES_FULL_HEIGHT  = (TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE)*TIMELINE_SIZES_HEIGHT; // pixels
 
     // Create timeline canvas + container
@@ -1068,7 +1089,7 @@ if (USE_TIMELINE && tp1) {
     button.style.width  = "60px";
     button.style.height = "21px";
     button.style.zIndex = "20";
-    button.style.textAlUSE_SETTINGSign = "center";
+    button.style.textAlign = "center";
     button.style.color = "#fff";
     button.style.fontWeight = "bold";
     button.style.MozBorderRadiusBottomleft = "6px";    
@@ -1148,6 +1169,7 @@ if (USE_TIMELINE && tp1) {
     // Wrapped timeline drawing code in a function such that it can be called once every minute.
     function update_timeline() {
         determine_now();
+        tl_update_data();
         
         // Get context
         var g = tl.getContext("2d");
@@ -1241,6 +1263,7 @@ if (USE_TIMELINE && tp1) {
         for (e in events) {
             p = events[e];
             diff = (e - d.getTime()) / 1000 / 60;
+            if (diff<-TIMELINE_SIZES_HISTORY || diff>TIMELINE_SIZES_FUTURE) continue;
             y = tl_warp(diff);
             y = Math.round(y);
             g.strokeStyle = "rgb(0,0,0)";
@@ -1273,8 +1296,18 @@ if (USE_TIMELINE && tp1) {
                     if (i==12)
                         g.fillStyle = "rgb(0,0,255)";
                     else if (p[i]) {
-                        g.translate(-unit[i].width - 8, 0);
-                        g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
+                        try {
+                            g.translate(-unit[i].width - 8, 0);
+                            g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
+                        } catch (e) {
+                            // This might fail if the image is not yet or can't be loaded.
+                            // Ignoring this exception prevents the script from terminating to early.
+                            var fs = g.fillStyle;
+                            g.fillStyle = "rgb(128,128,128)";
+                            g.translate(-24,0);
+                            g.mozDrawText("??");
+                            g.fillStyle = fs;
+                        }
                         if (p[i].constructor == Array) {
                             g.fillStyle = "rgb(192,0,0)";
                             g.translate(-g.mozMeasureText(-p[i][1]) - 2, 0);
