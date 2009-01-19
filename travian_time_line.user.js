@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.19
+// @version        0.20
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -38,6 +38,26 @@ script_start_time = new Date().getTime();
 //   however, they will be overwritten  //
 //        by any in-game settings       //
 //////////////////////////////////////////
+
+// Debug functions...
+var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
+//* d_none is for the final release - don't forget to set it before uploading
+var d_level=d_none;/*/
+var d_level=d_all;//*/
+
+/*************************************************
+ * Provides basic debugging
+ *************************************************/
+function debug(lvl, msg){
+    if (lvl <= d_level) GM_log("\n"+msg);
+}
+
+/*************************************************
+ * Shortcut to debug at the highest level
+ *************************************************/
+function dbg(msg){
+    debug(d_highest, msg);
+}
 
 USERNAME = "someone";               // your username
 RACE = 1;                           // Your race (0=Romans, 1=Teutons, 2=Gauls)
@@ -78,30 +98,6 @@ TIMELINE_SCALE_WARP = false;      // Use cubic transformation on the timeline to
 TIME_DIFFERENCE = 0; // server time - local time
 
 SIDEBAR_HR = true;      // Use <hr> to seperate sidebar sections instead of <br>
-
-// This needs to be wrapped in a function and called by the entire DOM structure loading.
-// Right now, it occasionally will run before the site loads properly and the screen
-// gets mashed.
-
-// Debug functions...
-var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-/* d_none is for the final release - don't forget to set it before uploading
-var d_level=d_highest;/*/
-var d_level=d_none;//*/
-
-/*************************************************
- * Provides basic debugging
- *************************************************/
-function debug(lvl, msg){
-    if (lvl <= d_level) GM_log("\n"+msg);
-}
-
-/*************************************************
- * Shortcut to debug at the highest level
- *************************************************/
-function dbg(msg){
-    debug(d_highest, msg);
-}
 
 // Numbers for original sidebar links
 //-1: -- break --
@@ -155,37 +151,38 @@ var url = location.href.match("//(\\w+)\\.travian.(\\w+)/");
 var gm_prefix = url[1]+'.'+url[2]+'.';
 var travian_world_analyzer_server_code = url[2]+(url[1]=='speed'?'x':url[1].substr(1));
 function prefix(s) {
-  return gm_prefix+s;
+    return gm_prefix+s;
 }
 
+window.addEventListener('load', main, false); // Run everything after the DOM loads!
 
-if (USE_SETTINGS) {
-  
-  //TIMELINE_COLOR
+//if (USE_SETTINGS) {
+function basicSettings(){  
+    //TIMELINE_COLOR
 
-  var saved_settings=["USERNAME", "RACE",
+    var saved_settings=["USERNAME", "RACE",
                       
-                      "SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
-                      "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
-                      "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
-                      "SHOW_TIMELINE_REPORT_INFO", "COLLAPSE_TIMELINE",
+                        "SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
+                        "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
+                        "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
+                        "SHOW_TIMELINE_REPORT_INFO", "COLLAPSE_TIMELINE",
                       
-                      "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
-                      "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE", "TIMELINE_COLLAPSED_WIDTH",
-                      "TIMELINE_COLOR", "KEEP_TIMELINE_UPDATED", "TIMELINE_SCALE_WARP"
-                      ];
+                        "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
+                        "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE", "TIMELINE_COLLAPSED_WIDTH",
+                        "TIMELINE_COLOR", "KEEP_TIMELINE_UPDATED", "TIMELINE_SCALE_WARP"
+                        ];
 
-  for (i in saved_settings) {
-    var v = saved_settings[i];
-    x = GM_getValue(prefix(v));    
-    if (x!==undefined && x!=="") {
-      try {
-          eval(v+"="+x);
-      } catch (e) {
-          eval(v+"=x");      
-      }
+    for (i in saved_settings) {
+        var v = saved_settings[i];
+        x = GM_getValue(prefix(v));    
+        if (x!==undefined && x!=="") {
+            try {
+                eval(v+"="+x);
+            } catch (e) {
+                eval(v+"=x");      
+            }
+        }
     }
-  }
 } /* USE_SETTINGS */
 
 //////////////////////////////////////////
@@ -230,120 +227,121 @@ String.prototype.pad = function(n) {
 //  OPTIONS SCREEN                      //
 //////////////////////////////////////////
 
-if (USE_SETTINGS) {
-  var div = document.createElement("div");
-  div.style.position = "absolute";
-  div.style.zIndex = "2";
-  div.style.left = "5px";
-  div.style.top = "38px";
-  div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
-  document.body.appendChild(div);
-  
-  // The settings/options window is only generated when needed.
-  function settings() {
+//if (USE_SETTINGS) {
+function optionsScreen(){
     var div = document.createElement("div");
-    div.style.position = "fixed";
-    div.style.zIndex = "250";
-    div.style.left = "0px";
-    div.style.top = "0px";
-    div.style.right = "0px";
-    div.style.bottom = "0px";
-    div.style.background = "rgba(192,192,192,0.8)";
-    div.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
-                    '<div style="position: absolute; left: 50%; top: 50%;">'+
-                    '<pre style="position: absolute; left: -300px; top: -200px; width: 600px; height: 400px;'+
-                    ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
-                    '</pre></div>';
+    div.style.position = "absolute";
+    div.style.zIndex = "2";
+    div.style.left = "5px";
+    div.style.top = "38px";
+    div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
     document.body.appendChild(div);
-    
-    var box = div.childNodes[1].firstChild;
-    
-    var uses = "";
-    function using(n, v) {
-      uses+='[<span style="cursor: pointer; color: '+(eval(v)?'green':'red')+'" id="TL_'+v+'">'+n+"</span>]";
-    }
-    using("timeline", "USE_TIMELINE");
-    using("ally lines", "USE_ALLY_LINES");
-    using("custom sidebar", "USE_CUSTOM_SIDEBAR");
-    using("market colors", "USE_MARKET_COLORS");
-    uses+='==\n==';
-    using("enhanced resource info", "USE_ENHANCED_RESOURCE_INFO");
-    using("extra village", "USE_EXTRA_VILLAGE");
-    using("debug mode", "USE_DEBUG_MODE");
-    uses+='==\n==';
-    using("collapse timeline", "COLLAPSE_TIMELINE");
-    using("timeline extended info", "SHOW_TIMELINE_REPORT_INFO");
-    uses+='==\n==';
-    using("use server time", "USE_SERVER_TIME");
-    uses+="(use a 24 hours clock)";
-    uses+='==\n==';
-    using("keep timeline updated", "KEEP_TIMELINE_UPDATED");
-    using("warp timeline scale", "TIMELINE_SCALE_WARP");
-    
-    var race='<select id="tl_RACE">';
-    for (var i=0; i<3; i++) {
-      race+='<option value="'+i+'"';
-      if (i==RACE) race+='selected="" ';
-      race+='>'+['Romans', 'Teutons', 'Gauls'][i]+'</option>';
-    }
-    race+='</select>';
-    
-    var sizeoptions='';
-    function tlo(n, v, nn) {
-      if (!nn)
-        nn="TIMELINE_SIZES_"+n;
-      sizeoptions += "    "+n.pad(16)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
-    }
-    tlo("WIDTH","px");
-    tlo("COLLAPSED","px","TIMELINE_COLLAPSED_WIDTH");
-    tlo("HEIGHT","px/min");
-    tlo("HISTORY","min");
-    tlo("FUTURE","min");
-    
-    box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div>'+
-                    '<i>Leave input fields empty to use the default value.</i><hr/>'+
-                    'USERNAME = <input id="TL_USERNAME" value="'+USERNAME+'"/>\n'+
-                    'RACE     = '+race+'\n'+
-                    'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
-                    'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
-                    'TIMELINE_COLOR  = <input id="TL_TIMELINE_COLOR" value="'+TIMELINE_COLOR+'"/> (as in css)\n'+
-                    'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
-                    'VILLAGES='+uneval(VILLAGES)+'\n'+
-                    '<hr/>'+'script duration: '+script_duration+'ms.\n';
-    
-    var list = box.childNodes[0].childNodes;
-    for (i in list) {    
-      var el = list[i];
-      function toggle(e) {
-        var el = e.target;
-        var id = el.id.substr(3);
-        var b = !eval(id);
-        eval(id+"="+b);
-        GM_setValue(prefix(id),b);
-        el.style.color = b?'green':'red';        
-      }
-      el.addEventListener("click",toggle,false);
-    }
-    
-    var list = box.childNodes;
-    for (i in list) {
-      var el = list[i];
-      function opt_change(e) {
-        var el = e.target;
-        var id = el.id.substr(3);
-        GM_setValue(prefix(id),eval(id+"='"+e.target.value+"'"));
-      }
-      el.addEventListener("change",opt_change,false);
-    }
-        
-    function remove_settings_dialog() {
-      remove(div);
-    }    
-    div.firstChild.addEventListener("click",remove_settings_dialog,false);
-  }
   
-  var link = div.firstChild;
-  link.addEventListener("click",settings,false);
+    // The settings/options window is only generated when needed.
+    function settings() {
+        var div = document.createElement("div");
+        div.style.position = "fixed";
+        div.style.zIndex = "250";
+        div.style.left = "0px";
+        div.style.top = "0px";
+        div.style.right = "0px";
+        div.style.bottom = "0px";
+        div.style.background = "rgba(192,192,192,0.8)";
+        div.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
+            '<div style="position: absolute; left: 50%; top: 50%;">'+
+            '<pre style="position: absolute; left: -300px; top: -200px; width: 600px; height: 400px;'+
+            ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
+            '</pre></div>';
+        document.body.appendChild(div);
+    
+        var box = div.childNodes[1].firstChild;
+    
+        var uses = "";
+        function using(n, v) {
+            uses+='[<span style="cursor: pointer; color: '+(eval(v)?'green':'red')+'" id="TL_'+v+'">'+n+"</span>]";
+        }
+        using("timeline", "USE_TIMELINE");
+        using("ally lines", "USE_ALLY_LINES");
+        using("custom sidebar", "USE_CUSTOM_SIDEBAR");
+        using("market colors", "USE_MARKET_COLORS");
+        uses+='==\n==';
+        using("enhanced resource info", "USE_ENHANCED_RESOURCE_INFO");
+        using("extra village", "USE_EXTRA_VILLAGE");
+        using("debug mode", "USE_DEBUG_MODE");
+        uses+='==\n==';
+        using("collapse timeline", "COLLAPSE_TIMELINE");
+        using("timeline extended info", "SHOW_TIMELINE_REPORT_INFO");
+        uses+='==\n==';
+        using("use server time", "USE_SERVER_TIME");
+        uses+="(use a 24 hours clock)";
+        uses+='==\n==';
+        using("keep timeline updated", "KEEP_TIMELINE_UPDATED");
+        using("warp timeline scale", "TIMELINE_SCALE_WARP");
+    
+        var race='<select id="tl_RACE">';
+        for (var i=0; i<3; i++) {
+            race+='<option value="'+i+'"';
+            if (i==RACE) race+='selected="" ';
+            race+='>'+['Romans', 'Teutons', 'Gauls'][i]+'</option>';
+        }
+        race+='</select>';
+    
+        var sizeoptions='';
+        function tlo(n, v, nn) {
+            if (!nn)
+                nn="TIMELINE_SIZES_"+n;
+            sizeoptions += "    "+n.pad(16)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
+        }
+        tlo("WIDTH","px");
+        tlo("COLLAPSED","px","TIMELINE_COLLAPSED_WIDTH");
+        tlo("HEIGHT","px/min");
+        tlo("HISTORY","min");
+        tlo("FUTURE","min");
+    
+        box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div>'+
+            '<i>Leave input fields empty to use the default value.</i><hr/>'+
+            'USERNAME = <input id="TL_USERNAME" value="'+USERNAME+'"/>\n'+
+            'RACE     = '+race+'\n'+
+            'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
+            'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
+            'TIMELINE_COLOR  = <input id="TL_TIMELINE_COLOR" value="'+TIMELINE_COLOR+'"/> (as in css)\n'+
+            'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
+            'VILLAGES='+uneval(VILLAGES)+'\n'+
+            '<hr/>'+'script duration: '+script_duration+'ms.\n';
+    
+        var list = box.childNodes[0].childNodes;
+        for (i in list) {    
+            var el = list[i];
+            function toggle(e) {
+                var el = e.target;
+                var id = el.id.substr(3);
+                var b = !eval(id);
+                eval(id+"="+b);
+                GM_setValue(prefix(id),b);
+                el.style.color = b?'green':'red';        
+            }
+            el.addEventListener("click",toggle,false);
+        }
+    
+        var list = box.childNodes;
+        for (i in list) {
+            var el = list[i];
+            function opt_change(e) {
+                var el = e.target;
+                var id = el.id.substr(3);
+                GM_setValue(prefix(id),eval(id+"='"+e.target.value+"'"));
+            }
+            el.addEventListener("change",opt_change,false);
+        }
+        
+        function remove_settings_dialog() {
+            remove(div);
+        }    
+        div.firstChild.addEventListener("click",remove_settings_dialog,false);
+    }
+  
+    var link = div.firstChild;
+    link.addEventListener("click",settings,false);
   
 } /* USE_SETTINGS */
 
@@ -351,125 +349,125 @@ if (USE_SETTINGS) {
 //  COLLECT SOME INFO                   //
 //////////////////////////////////////////
 
-// Meaning of GM Values: (Some of the variable names are in dutch, to stay compatible with older scripts) 
-//
-// DORP (dutch for village): 
-//      id of the current active village. It's 0 when only 1 village is available and does not always accurate.
-// 
-// MARKT (dutch for market):
-//      an array of length 4 containing the amount of resources currently available for sale on the marketplace. (might often be inaccurate)
-//
-// PRODUCTIE (dutch for production):
-//      an array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)
-//
-// ALLIANCE:
-//      dictionary (map) mapping the names of your ally's members to a list of it's villages. 
+function storeInfo(){
+    // Meaning of GM Values: (Some of the variable names are in dutch, to stay compatible with older scripts) 
+    //
+    // DORP (dutch for village): 
+    //      id of the current active village. It's 0 when only 1 village is available and does not always accurate.
+    // 
+    // MARKT (dutch for market):
+    //      an array of length 4 containing the amount of resources currently available for sale on the marketplace. (might often be inaccurate)
+    //
+    // PRODUCTIE (dutch for production):
+    //      an array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)
+    //
+    // ALLIANCE:
+    //      dictionary (map) mapping the names of your ally's members to a list of it's villages. 
 
-none = "0,0,0,0";
+    none = "0,0,0,0";
 
-// Keep track of current city id
-x = location.href.match("newdid=(\\d+)");
-if (x!=null) {
-    dorp_id=x[1]-0;
-    GM_setValue(prefix("DORP"),dorp_id);
-} else {
-    dorp_id=GM_getValue(prefix("DORP"),0);
-}
-
-// Store info about resources put on the market if availbale
-x = document.getElementById("lmid2");
-if (x!=null && x.innerHTML.indexOf("\"dname\"")>0) {
-    var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-    
-    var cnt = new Array(0,0,0,0);
-    
-    for ( var i=0 ; i < res.snapshotLength; i++ )
-    {
-        c = res.snapshotItem(i).textContent - 0;
-        t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
-        cnt[t] += c;
+    // Keep track of current city id
+    x = location.href.match("newdid=(\\d+)");
+    if (x!=null) {
+        dorp_id=x[1]-0;
+        GM_setValue(prefix("DORP"),dorp_id);
+    } else {
+        dorp_id=GM_getValue(prefix("DORP"),0);
     }
-    markt = eval(GM_getValue(prefix("MARKT"), "{}"));
-    if (markt==undefined) markt={};
-    markt[dorp_id]=cnt;
-    GM_setValue(prefix("MARKT"), uneval(markt));
-}
 
-// Store info about production rate if available
-if (location.href.indexOf("dorf1")>0) {
-    var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-    var prod = new Array(0,0,0,0);
+    // Store info about resources put on the market if availbale
+    x = document.getElementById("lmid2");
+    if (x!=null && x.innerHTML.indexOf("\"dname\"")>0) {
+        var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
     
-    for ( var i=0 ; i < res.snapshotLength; i++ )
-    {
-        c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
-        t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
-        prod[t] += c;
-    }
-    productie = eval(GM_getValue(prefix("PRODUCTIE"), "{}"));
-    if (productie==undefined) productie={};
-    productie[dorp_id]=prod;
-    GM_setValue(prefix("PRODUCTIE"), uneval(productie));
-}
-
-// Load ally data
-try {
-    ally = eval(GM_getValue(prefix("ALLIANCE"), "{}"));
-    if (ally==undefined) ally = {};
-} catch (e) {
-    alert(e);
-    ally = { };
-}    
-if (ally==undefined) ally2={};
-
-// Store list of your alliance members.
-if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
-    var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-    if (res.snapshotLength>0) {
-        ally2= ally;
-        ally = {}
-        for ( var i=0 ; i < res.snapshotLength; i++ )
-        {
-            x    = res.snapshotItem(i);
-            name = x.textContent;
-            id   = x.href.match("\\d+")[0];
-            cnt  = x.parentNode.parentNode.childNodes[5].textContent;
-            if (ally2[name] != undefined) {
-                y = ally2[name];
-                y[0] = id;
-                y[1] = cnt;
-                ally[name] = y
-            } else {
-                // [id, pop, {city1: [city1,x,y],city2: [city2,x,y],...} ]
-                ally[name] = [id, cnt, {}];
-            }
+        var cnt = new Array(0,0,0,0);
+    
+        for ( var i=0 ; i < res.snapshotLength; i++ ){
+            c = res.snapshotItem(i).textContent - 0;
+            t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
+            cnt[t] += c;
         }
-        GM_setValue(prefix("ALLIANCE"), uneval(ally));
+        markt = eval(GM_getValue(prefix("MARKT"), "{}"));
+        if (markt==undefined) markt={};
+        markt[dorp_id]=cnt;
+        GM_setValue(prefix("MARKT"), uneval(markt));
     }
-} 
 
-// Get alliance member data
-if (location.href.indexOf("spieler")>0) {
-    who = document.body.innerHTML.match("<td class=\"rbg\" colspan=\"3\">[A-Z][a-z]+ ([^<]+)</td>");
-    if (who) {
-        who = who[1];
-        if (ally[who] != undefined || who == USERNAME) {
-            var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-            cities = {};
-            for ( var i=0 ; i < res.snapshotLength; i++ )
-            {
+    // Store info about production rate if available
+    //function storeProductionRate(){
+    if (location.href.indexOf("dorf1")>0) {
+        var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+        var prod = new Array(0,0,0,0);
+    
+        for ( var i=0 ; i < res.snapshotLength; i++ ){
+            c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
+            t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
+            prod[t] += c;
+        }
+        productie = eval(GM_getValue(prefix("PRODUCTIE"), "{}"));
+        if (productie==undefined) productie={};
+        productie[dorp_id]=prod;
+        GM_setValue(prefix("PRODUCTIE"), uneval(productie));
+    }
+
+    // Load ally data
+    //function captureAllianceData(){
+    try {
+        ally = eval(GM_getValue(prefix("ALLIANCE"), "{}"));
+        if (ally==undefined) ally = {};
+    } catch (e) {
+        alert(e);
+        ally = { };
+    }    
+    if (ally==undefined) ally2={};
+
+    // Store list of your alliance members.
+    if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
+        var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+        if (res.snapshotLength>0) {
+            ally2= ally;
+            ally = {}
+            for ( var i=0 ; i < res.snapshotLength; i++ ){
                 x    = res.snapshotItem(i);
                 name = x.textContent;
-                y    = x.parentNode.parentNode.childNodes[4].textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
-                y[0] = name;none = "0,0,0,0";
-
-                y[1] -= 0;
-                y[2] -= 0;
-                cities[name] = y;
+                id   = x.href.match("\\d+")[0];
+                cnt  = x.parentNode.parentNode.childNodes[5].textContent;
+                if (ally2[name] != undefined) {
+                    y = ally2[name];
+                    y[0] = id;
+                    y[1] = cnt;
+                    ally[name] = y;
+                } else {
+                    // [id, pop, {city1: [city1,x,y],city2: [city2,x,y],...} ]
+                    ally[name] = [id, cnt, {}];
+                }
             }
-            if (ally[who]==undefined) ally[who]=[0,0,{}];
-            ally[who][2] = cities;
             GM_setValue(prefix("ALLIANCE"), uneval(ally));
+        }
+    } 
+
+    // Get alliance member data
+    if (location.href.indexOf("spieler")>0) {
+        who = document.body.innerHTML.match("<td class=\"rbg\" colspan=\"3\">[A-Z][a-z]+ ([^<]+)</td>");
+        if (who) {
+            who = who[1];
+            if (ally[who] != undefined || who == USERNAME) {
+                var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+                cities = {};
+                for ( var i=0 ; i < res.snapshotLength; i++ ){
+                    x    = res.snapshotItem(i);
+                    name = x.textContent;
+                    y    = x.parentNode.parentNode.childNodes[4].textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
+                    y[0] = name;none = "0,0,0,0";
+
+                    y[1] -= 0;
+                    y[2] -= 0;
+                    cities[name] = y;
+                }
+                if (ally[who]==undefined) ally[who]=[0,0,{}];
+                ally[who][2] = cities;
+                GM_setValue(prefix("ALLIANCE"), uneval(ally));
+            }
         }
     }
 }
@@ -479,14 +477,15 @@ if (location.href.indexOf("spieler")>0) {
 //////////////////////////////////////////
 
 // Enhance resource info
-if (USE_ENHANCED_RESOURCE_INFO) {
+function useEnhancedResourceInfo(){
+    //if (USE_ENHANCED_RESOURCE_INFO) {
     head = document.getElementById("lres0");
     if (head!=null) {
         a="";
         head = head.childNodes[1].childNodes[0];
         
         cnt  = eval(GM_getValue(prefix("MARKT"),     "{}"))
-        prod = eval(GM_getValue(prefix("PRODUCTIE"), "{}"));
+            prod = eval(GM_getValue(prefix("PRODUCTIE"), "{}"));
         if (cnt !=undefined) cnt  = cnt [dorp_id];
         if (prod!=undefined) prod = prod[dorp_id];
         if (cnt ==undefined) cnt =[0,0,0,0];
@@ -495,15 +494,15 @@ if (USE_ENHANCED_RESOURCE_INFO) {
         cur = head.textContent.split("\n").filter(function(x) {return x[0]>='0' && x[0]<='9'; });
         
         for ( var i=0 ; i < 4; i++ )
-        {
-            if (cnt[i]>0)
-                c = "+" + cnt[i] + " ";
-            else
-                c = ""
-            p = (prod[i]>0?"+":"") + Math.round(prod[i]/6)/10.0;
-            a+="<td></td><td>"+c+p+"/m</td>";
-            cur[i] = cur[i].split("/")[0];
-        }
+            {
+                if (cnt[i]>0)
+                    c = "+" + cnt[i] + " ";
+                else
+                    c = ""
+                        p = (prod[i]>0?"+":"") + Math.round(prod[i]/6)/10.0;
+                a+="<td></td><td>"+c+p+"/m</td>";
+                cur[i] = cur[i].split("/")[0];
+            }
         a+="<td></td><td></td>";
         
         head.innerHTML += "\n<tr>"+a+"</tr>\n";
@@ -515,33 +514,34 @@ if (USE_ENHANCED_RESOURCE_INFO) {
 //  MARKET COLORS                       //
 //////////////////////////////////////////
 
-if (USE_MARKET_COLORS) {
+//if (USE_MARKET_COLORS) {
+function useMarketColors(){
     function colorify() { 
         x = document.getElementById("lmid2");
         if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
             var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
             
             for ( var i=0 ; i < res.snapshotLength; i++ )
-            {
-                x = res.snapshotItem(i);
-                if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
-                    a = x.childNodes[2].textContent-0;
-                    b = x.childNodes[6].textContent-0;
-                    r = a/b;
-                    if (r>1.5)
-                        color="#ddffdd";
-                    else if (r>1.001)
-                        color = "#eeffdd";
-                    else if (r>0.999)
-                        color = "#ffffdd";
-                    else if (r>0.501)
-                        color = "#ffeedd";
-                    else
-                        color = "#ffdddd";
+                {
+                    x = res.snapshotItem(i);
+                    if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
+                        a = x.childNodes[2].textContent-0;
+                        b = x.childNodes[6].textContent-0;
+                        r = a/b;
+                        if (r>1.5)
+                            color="#ddffdd";
+                        else if (r>1.001)
+                            color = "#eeffdd";
+                        else if (r>0.999)
+                            color = "#ffffdd";
+                        else if (r>0.501)
+                            color = "#ffeedd";
+                        else
+                            color = "#ffdddd";
 
-                    x.style.backgroundColor = color;
+                        x.style.backgroundColor = color;
+                    }
                 }
-            }
         }
     }
     for (i=1; i<=10; i++) 
@@ -554,7 +554,8 @@ if (USE_MARKET_COLORS) {
 //////////////////////////////////////////
 
 // Show lines to allies and yourself
-if (USE_ALLY_LINES) {
+//if (USE_ALLY_LINES) {
+function useAllyLines(){
     // <canvas width=200 height=200 style="position: absolute; left: 80px; top: 100px; z-index: 15;"/>
     var res = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null );
     x = res.singleNodeValue;
@@ -590,13 +591,13 @@ if (USE_ALLY_LINES) {
         function update() {
             x = GM_getValue(prefix("SPECIAL_LOCATIONS"));    
             if (x!==undefined && x!=="") {
-              SPECIAL_LOCATIONS = eval(x);
+                SPECIAL_LOCATIONS = eval(x);
             }
 
             var g = canvas.getContext("2d");
             g.clearRect(0,0,pos[2],pos[3]);
             g.save()
-            g.translate(pos[2]/2-1,pos[3]/2 + 5.5);
+                g.translate(pos[2]/2-1,pos[3]/2 + 5.5);
                         
             function touch(x, y) {
                 x -= posx;
@@ -735,7 +736,8 @@ if (USE_ALLY_LINES) {
 //  REMOVE PLUS BUTTON                  //
 //////////////////////////////////////////
 
-if (REMOVE_PLUS_BUTTON) {
+//if (REMOVE_PLUS_BUTTON) {
+function removePlusButton(){
     plus = document.getElementById("lplus1");
     if (plus) {
         plus.parentNode.style.visibility="hidden";
@@ -747,7 +749,8 @@ if (REMOVE_PLUS_BUTTON) {
 //////////////////////////////////////////
 
 // Modifies Navigation menu (sidebar)
-if (USE_CUSTOM_SIDEBAR) {
+//if (USE_CUSTOM_SIDEBAR) {
+function useCustomSidebar(){
     navi = document.getElementById("navi_table");
     if (navi) {
         if (REMOVE_HOME_LINK)
@@ -822,7 +825,7 @@ if (USE_CUSTOM_SIDEBAR) {
         if (DEBUG_SIDEBAR) {
             for (var j=0; j<oldnavi.length; j++) {
                 add(j+": ","")
-                navi.appendChild(oldnavi[j]);
+                    navi.appendChild(oldnavi[j]);
             }
         }
     }
@@ -832,8 +835,10 @@ if (USE_CUSTOM_SIDEBAR) {
 //  TIMELINE                            //
 //////////////////////////////////////////
 
-tp1 = document.getElementById("tp1");
-if (USE_TIMELINE && tp1) {
+function useTimeline(){
+    tp1 = document.getElementById("tp1");
+    if (!tp1) return;
+    //if (USE_TIMELINE && tp1) {
     /*  A timeline-data-packet torn apart:
         Example: {'1225753710000':[0, 0, 0, 0, 189, 0, 0, 0, 0, 0, 0, 0, "Keert terug van 2. Nador", 0, 0, 0, 0]}
         
@@ -857,8 +862,6 @@ if (USE_TIMELINE && tp1) {
         0,                     16 ~ Amount of grain involved
         "1."]                  17 ~ Issuing city
              
-        Instead of a number, the fields 1 to 11 and 13 to 16 are also allowed to be a tuple (list).
-        In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
     */
 
     ///////////////////////////////////
@@ -885,6 +888,9 @@ if (USE_TIMELINE && tp1) {
         if (e == undefined) {
             e = [0,0,0,0,0,0,0,0,0,0,0,0,msg,0,0,0,0,name];
             events[t]=e;
+        } else {
+            debug(d_low, "An event already exists at this time!");
+            throw "ERR_EVENT_OVERWRITE";
         }
         return e;
     }
@@ -913,20 +919,22 @@ if (USE_TIMELINE && tp1) {
             d.setMilliseconds(0);
         } else {
             debug(d_low, 'Not given any date info for parsing');
-
             d.setMilliseconds(1);
+        }
 
+        if (format=='pm') time[0] -= -12; // We're potentially dealing with strings here, so we can't use the '+' operator...
+
+        d.setHours(time[0]);
+        d.setMinutes(time[1]);
+        d.setSeconds(time[2] == undefined ? 0 : time[2]);
+
+        if (day == undefined){
             // If we aren't explicitly given a day, we need to be careful of wrap-around midnights...
             if (d.getTime() < time_now - 60000){ // 60000 is arbitrary...
                 debug(d_lowest, 'Date rollover - this event occured too far in the past');
                 d.setDate(d.getDate()+1);
             }
         }
-        if (format=='pm') time[0] -= -12; // We're potentially dealing with strings here, so we can't use the '+' operator...
-
-        d.setHours(time[0]);
-        d.setMinutes(time[1]);
-        d.setSeconds(time[2] == undefined ? 0 : time[2]);
 
         debug(d_med, 'parseTime() returning '+d.getTime());
 
@@ -952,7 +960,13 @@ if (USE_TIMELINE && tp1) {
                 
                 t = parseTime(time.slice(1, 4)).getTime();
                 
-                e = getevent(t,where);
+                try {
+                    e = getevent(t,where);
+                }
+                catch(er){
+                    if (er == "ERR_EVENT_OVERWRITE") continue;
+                    throw er;
+                }
                 for (var j = 1; j<12; j++) {
                   y = x.childNodes[2].childNodes[j];
                   if (y!=undefined)
@@ -966,54 +980,57 @@ if (USE_TIMELINE && tp1) {
     
     // Reports 
     if (location.href.indexOf("berichte.php?id")>0) {
-    
-        res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-        x = res.singleNodeValue;
-        if (x != undefined) {
-            if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
-                time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?).(\\d\\d).(\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
-                where = x.childNodes[0].childNodes[3].innerHTML;
+        try {
+            res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
+            x = res.singleNodeValue;
+            if (x != undefined) {
+                if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
+                    time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?).(\\d\\d).(\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
+                    where = x.childNodes[0].childNodes[3].innerHTML;
                 
-                t = parseTime(time.slice(4, 7), '', time.slice(1, 4)).getTime();
-                e = getevent(t,where);
-                e[12] = where;
+                    t = parseTime(time.slice(4, 7), '', time.slice(1, 4)).getTime();
+                    e = getevent(t,where);
+                    e[12] = where;
                 
-                // army composition + losses
-                x = x.childNodes[6].childNodes[1];
-                dualrow=false;
-                if (x.childNodes[2]==undefined) {
-                    x = x.childNodes[1].childNodes[1]; 
-                } else {
-                    x = x.childNodes[2].childNodes[1]; 
-                    dualrow=true;
-                }
-
-                for (var j = 1; j<12; j++) {
-                    y1 = x.childNodes[3].childNodes[j];
-                    if (dualrow) y2 = x.childNodes[4].childNodes[j];
-                    if (y1!=undefined) {
-                        if (dualrow && y2.textContent>0)
-                            e[j] = [y1.textContent - 0, y2.textContent - 0];
-                        else
-                            e[j] = y1.textContent - 0;
+                    // army composition + losses
+                    x = x.childNodes[6].childNodes[1];
+                    dualrow=false;
+                    if (x.childNodes[2]==undefined) {
+                        x = x.childNodes[1].childNodes[1]; 
+                    } else {
+                        x = x.childNodes[2].childNodes[1]; 
+                        dualrow=true;
                     }
-                }
-                
-                // profit
-                if (dualrow) {
-                    if (x.childNodes[5].childNodes[3] != undefined) {
-                        y = x.childNodes[5].childNodes[3].textContent.split(" ");                
-                        for (var j = 1; j<5; j++) {
-                            e[j + 12] = y[j - 1] - 0;
+
+                    for (var j = 1; j<12; j++) {
+                        y1 = x.childNodes[3].childNodes[j];
+                        if (dualrow) y2 = x.childNodes[4].childNodes[j];
+                        if (y1!=undefined) {
+                            if (dualrow && y2.textContent>0)
+                                e[j] = [y1.textContent - 0, y2.textContent - 0];
+                            else
+                                e[j] = y1.textContent - 0;
                         }
                     }
-                } else {
-                    if (x.childNodes[4].childNodes[3] != undefined) {
-                        y = x.childNodes[4].childNodes[3].textContent.split(" ");                
-                        e[16] = 0-y[0];
-                    }                
+                
+                    // profit
+                    if (dualrow) {
+                        if (x.childNodes[5].childNodes[3] != undefined) {
+                            y = x.childNodes[5].childNodes[3].textContent.split(" ");                
+                            for (var j = 1; j<5; j++) {
+                                e[j + 12] = y[j - 1] - 0;
+                            }
+                        }
+                    } else {
+                        if (x.childNodes[4].childNodes[3] != undefined) {
+                            y = x.childNodes[4].childNodes[3].textContent.split(" ");                
+                            e[16] = 0-y[0];
+                        }
+                    }
                 }
             }
+        } catch (er){
+            if (er != "ERR_EVENT_OVERWRITE") throw er;
         }
     }
 
@@ -1041,8 +1058,12 @@ if (USE_TIMELINE && tp1) {
                     h%=127;
                 }
                 t+=h*2;
-                
-                e = getevent(t,where,x);
+                try {
+                    e = getevent(t,where,x);
+                } catch (er){
+                    if (er == "ERR_EVENT_OVERWRITE") continue;
+                    throw er;
+                }
             }
         }
     }
@@ -1077,7 +1098,12 @@ if (USE_TIMELINE && tp1) {
 
             // Some way to incorperate the resources transfered would be nice here. Just throwing them on the end
             // makes for a very cumbersome event...
-            e = getevent(t, type, name);
+            try {
+                e = getevent(t, type, name);
+            } catch (er){
+                if (er == "ERR_EVENT_OVERWRITE") continue;
+                throw er;
+            }
 
             // Add resource pictures and amounts
             for (j=0; j<4; j++)
@@ -1464,7 +1490,7 @@ if (USE_TIMELINE && tp1) {
     
 } /* USE_TIMELINE */
 
-if (USE_EXTRA_VILLAGE) {
+function useExtraVillage(){
     res = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
     
     function newcell(innerhtml) {
@@ -1495,3 +1521,17 @@ script_duration = new Date().getTime() - script_start_time;
     throw e;
 }
 
+function main(){
+    if (USE_SETTINGS){
+        basicSettings();
+        optionsScreen();
+    }
+    storeInfo();
+    if (USE_ENHANCED_RESOURCE_INFO) useEnhancedResourceInfo();
+    if (USE_MARKET_COLORS) useMarketColors();
+    if (USE_ALLY_LINES) useAllyLines();
+    if (REMOVE_PLUS_BUTTON) removePlusButton();
+    if (USE_CUSTOM_SIDEBAR) useCustomSidebar();
+    if (USE_TIMELINE) useTimeline();
+    if (USE_EXTRA_VILLAGE) useExtraVillage();
+}
