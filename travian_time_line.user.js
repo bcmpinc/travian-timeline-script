@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.07
+// @version        0.08
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -149,6 +149,11 @@ function getPos(obj) {
   return [l,t,w,h];
 }
 
+// Remove a DOM element
+function remove(el) {
+    el.parentNode.removeChild(el);
+}
+
 // Create a repeat-string-N-times method for all String objects
 String.prototype.repeat = function(n) {
    var s = "";
@@ -240,7 +245,7 @@ if (USE_SETTINGS) {
         var el = e.target;
         var id = el.id.substr(3);
         var b = !eval(id);
-        eval(id+"="+x);
+        eval(id+"="+b);
         GM_setValue(prefix(id),b);
         el.style.color = b?'green':'red';        
       }
@@ -269,11 +274,25 @@ if (USE_SETTINGS) {
   
 } /* USE_SETTINGS */
 
-none = "0,0,0,0";
-
 //////////////////////////////////////////
 //  COLLECT SOME INFO                   //
 //////////////////////////////////////////
+
+// Meaning of GM Values: (Some of the variable names are in dutch, to stay compatible with older scripts) 
+//
+// DORP (dutch for village): 
+//      id of the current active village. It's 0 when only 1 village is available and does not always accurate.
+// 
+// MARKT (dutch for market):
+//      an array of length 4 containing the amount of resources currently available for sale on the marketplace. (might often be inaccurate)
+//
+// PRODUCTIE (dutch for production):
+//      an array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)
+//
+// ALLIANCE:
+//      dictionary (map) mapping the names of your ally's members to a list of it's villages. 
+
+none = "0,0,0,0";
 
 // Keep track of current city id
 x = location.href.match("newdid=(\\d+)");
@@ -285,8 +304,8 @@ if (x!=null) {
 }
 
 // Store info about resources put on the market if availbale
-// TODO
-if (document.body.innerHTML.match("duur van transport")) {
+x = document.getElementById("lmid2");
+if (x!=null && x.innerHTML.indexOf("\"dname\"")>0) {
     var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
     
     var cnt = new Array(0,0,0,0);
@@ -343,7 +362,8 @@ if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
             id   = x.href.match("\\d+")[0];
             cnt  = x.parentNode.parentNode.childNodes[5].textContent;
             if (ally2[name] != undefined) {
-                y = ally2[name];
+                y = ally2[name];    dd.setHours(server_time[0]);
+
                 y[0] = id;
                 y[1] = cnt;
                 ally[name] = y
@@ -354,7 +374,7 @@ if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
         }
         GM_setValue(prefix("ALLIANCE"), uneval(ally));
     }
-}
+} 
 
 // Get alliance member data
 if (location.href.indexOf("spieler")>0) {
@@ -368,7 +388,8 @@ if (location.href.indexOf("spieler")>0) {
             x    = res.snapshotItem(i);
             name = x.textContent;
             y    = x.parentNode.parentNode.childNodes[4].textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
-            y[0] = name;
+            y[0] = name;none = "0,0,0,0";
+
             y[1] -= 0;
             y[2] -= 0;
             cities[name] = y;
@@ -422,8 +443,8 @@ if (USE_ENHANCED_RESOURCE_INFO) {
 
 if (USE_MARKET_COLORS) {
     function colorify() { 
-        // TODO
-        if (document.body.innerHTML.match("Aanbiedingen op de Marktplaats")) {
+        x = document.getElementById("lmid2");
+        if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
             var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
             
             for ( var i=0 ; i < res.snapshotLength; i++ )
@@ -450,7 +471,7 @@ if (USE_MARKET_COLORS) {
     for (i=1; i<=10; i++) 
         setTimeout(colorify,i*1000);
     colorify();
-}
+} 
 
 //////////////////////////////////////////
 //  ALLY LINES                          //
@@ -583,12 +604,10 @@ if (USE_ALLY_LINES) {
     }
 }
 
-// Remove a DOM element
-function remove(el) {
-    el.parentNode.removeChild(el);
-}
+//////////////////////////////////////////
+//  REMOVE PLUS BUTTON                  //
+//////////////////////////////////////////
 
-// Remove plus button
 if (REMOVE_PLUS_BUTTON) {
     plus = document.getElementById("lplus1");
     if (plus) {
@@ -596,7 +615,11 @@ if (REMOVE_PLUS_BUTTON) {
     }
 }
 
-// Modify Navigation menu
+//////////////////////////////////////////
+//  CUSTOM SIDEBAR                      //
+//////////////////////////////////////////
+
+// Modifies Navigation menu (sidebar)
 if (USE_CUSTOM_SIDEBAR) {
     navi = document.getElementById("navi_table");
     if (navi) {
@@ -678,6 +701,10 @@ if (USE_CUSTOM_SIDEBAR) {
     }
 }
 
+//////////////////////////////////////////
+//  TIMELINE                            //
+//////////////////////////////////////////
+
 if (USE_TIMELINE) {
     /*  A timeline-data-packet torn apart:
         Example: {'1225753710000':[0, 0, 0, 0, 189, 0, 0, 0, 0, 0, 0, 0, "Keert terug van 2. Nador", 0, 0, 0, 0]}
@@ -722,7 +749,7 @@ if (USE_TIMELINE) {
         return e;
     }
     
-    // Reizende legers
+    // Travelling armies
     x = document.getElementById("lmid2");
     if (x && x.innerHTML.match("warsim.php")) {
     
@@ -731,6 +758,7 @@ if (USE_TIMELINE) {
         for ( var i=0 ; i < res.snapshotLength; i++ )
         {
             x = res.snapshotItem(i);
+            // TODO
             what = x.childNodes[3].childNodes[0].innerHTML;
             if (what == "Aankomst") {
                 time = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)");
@@ -755,7 +783,7 @@ if (USE_TIMELINE) {
         }
     }
     
-    // Rapportages 
+    // Reports 
     if (location.href.indexOf("berichte.php?id")>0) {
     
         res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
@@ -779,7 +807,7 @@ if (USE_TIMELINE) {
                 e = getevent(t,where);
                 e[12] = where;
                 
-                // leger samenstelling + verliezen
+                // army composition + losses
                 x = x.childNodes[6].childNodes[1].childNodes[2].childNodes[1]; 
                 for (var j = 1; j<12; j++) {
                     y1 = x.childNodes[3].childNodes[j];
@@ -792,7 +820,7 @@ if (USE_TIMELINE) {
                     }
                 }
                 
-                // opbrengst
+                // profit
                 if (x.childNodes[5].childNodes[3] != undefined) {
                     y = x.childNodes[5].childNodes[3].textContent.split(" ");                
                     for (var j = 1; j<5; j++) {
@@ -803,7 +831,7 @@ if (USE_TIMELINE) {
         }
     }
 
-    // Bouwopdracht:
+    // building build task:
     if (location.href.indexOf("dorf")>0) {
         bouw = document.getElementById("lbau1");
         if (bouw == undefined)
@@ -812,7 +840,8 @@ if (USE_TIMELINE) {
             y = bouw.childNodes[1].childNodes[0];
             for (nn in y.childNodes) {
                 x = y.childNodes[nn];
-                time = x.childNodes[3].textContent.match("(\\d\\d?):(\\d\\d)");
+                time = x.childNodes[3].textContent; 
+                time = time.match("(\\d\\d?):(\\d\\d)");
                 where = x.childNodes[1].textContent;
                 
                 q = new Date();
@@ -887,8 +916,20 @@ if (USE_TIMELINE) {
     // Get context
     var g = tl.getContext("2d");
     
+    // get server time
+    
+    server_time = document.getElementById("tp1").textContent.split(":");
+    
     // determine 'now'
     d = new Date();
+    t = d.getTime();
+    d.setHours(server_time[0]);
+    d.setMinutes(server_time[1]);
+    d.setSeconds(server_time[2]);
+    d.setMilliseconds(0);
+    if (d.getTime()<t-60000)
+        d.setDate(d.getDate()+1);
+    
     d.setMilliseconds(0);
     d.setSeconds(0);
     if (d.getMinutes()<15) {
@@ -1082,3 +1123,6 @@ if (USE_EXTRA_VILLAGE) {
         }
     }
 } /* USE_EXTRA_VILLAGE */
+
+
+
