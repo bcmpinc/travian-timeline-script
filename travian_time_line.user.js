@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.16
+// @version        0.17
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -72,7 +72,7 @@ TIMELINE_COLLAPSE_RATE = 50;  // updates of the collapse fade per second.
 TIMELINE_COLOR = "rgba(255, 255, 204, 0.5)"; // Background color of the timeline
 
 KEEP_TIMELINE_UPDATED = false;    // Update the timeline every 'TIMELINE_UPDATE_INTERVAL' msec.
-TIMELINE_UPDATE_INTERVAL = 2000; // Interval between timeline updates in msec.
+TIMELINE_UPDATE_INTERVAL = 30000; // Interval between timeline updates in msec.
 TIMELINE_SCALE_WARP = false;      // Use cubic transformation on the timeline to make events close to 'now' have more space than events far away.
 
 TIME_DIFFERENCE = 0; // server time - local time
@@ -1208,6 +1208,12 @@ if (USE_TIMELINE && tp1) {
 
         g.fillStyle = "rgb(0,0,255)";
         drawtime(diff, n);
+
+        // Highlight the 'elapsed time since last refresh'
+        diff2 = (script_start_time - d.getTime()) / 1000 / 60;
+        y2 = tl_warp(diff2);
+        g.fillStyle = "rgba(0,128,255,0.1)";
+        g.fillRect(9-TIMELINE_SIZES_WIDTH, y,TIMELINE_SIZES_WIDTH+1, y2-y);
 
         unit = new Array(17);
         for (i=1; i<12; i++) {
