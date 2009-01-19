@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.15
+// @version        0.16
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -69,6 +69,11 @@ TIMELINE_SIZES_WIDTH   = 430; // width of the timeline (in pixels)
 TIMELINE_COLLAPSED_WIDTH = 60;// width of the timeline when collapsed (in pixels)
 TIMELINE_COLLAPSE_SPEED = 1500;// collapse fade speed in pixels per second.
 TIMELINE_COLLAPSE_RATE = 50;  // updates of the collapse fade per second.
+TIMELINE_COLOR = "rgba(255, 255, 204, 0.5)"; // Background color of the timeline
+
+KEEP_TIMELINE_UPDATED = false;    // Update the timeline every 'TIMELINE_UPDATE_INTERVAL' msec.
+TIMELINE_UPDATE_INTERVAL = 2000; // Interval between timeline updates in msec.
+TIMELINE_SCALE_WARP = false;      // Use cubic transformation on the timeline to make events close to 'now' have more space than events far away.
 
 TIME_DIFFERENCE = 0; // server time - local time
 
@@ -131,27 +136,30 @@ function prefix(s) {
 
 
 if (USE_SETTINGS) {
-  x = GM_getValue(prefix("USERNAME")); 
-  if (x) USERNAME = x;
+  
+  //TIMELINE_COLOR
 
-  x = GM_getValue(prefix("RACE")); 
-  if (x) RACE = x;
-
-  var saved_settings=["SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
+  var saved_settings=["USERNAME", "RACE",
+                      
+                      "SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
                       "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
                       "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
                       "SHOW_TIMELINE_REPORT_INFO", "COLLAPSE_TIMELINE",
                       
                       "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
-                      "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE"
+                      "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE", "TIMELINE_COLLAPSED_WIDTH",
+                      "TIMELINE_COLOR", "KEEP_TIMELINE_UPDATED", "TIMELINE_SCALE_WARP"
                       ];
 
   for (i in saved_settings) {
     var v = saved_settings[i];
     x = GM_getValue(prefix(v));    
-    if (x!=undefined) {
-      if (x=="") x=0;
-      eval(v+"="+x);
+    if (x!==undefined && x!=="") {
+      try {
+          eval(v+"="+x);
+      } catch (e) {
+          eval(v+"=x");      
+      }
     }
   }
 } /* USE_SETTINGS */
@@ -167,7 +175,6 @@ if (USE_SETTINGS) {
 // Get relative position of a dom element
 // Modified to work in the used situation.USE_SERVER_TIME
 function getPos(obj) {
-  var curleft = curtop = 0;
   var w = obj.offsetWidth;
   var h = obj.offsetHeight;
   var l = obj.offsetLeft;
@@ -208,6 +215,7 @@ if (USE_SETTINGS) {
   div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
   document.body.appendChild(div);
   
+  // The settings/options window is only generated when needed.
   function settings() {
     var div = document.createElement("div");
     div.style.position = "fixed";
@@ -244,6 +252,9 @@ if (USE_SETTINGS) {
     uses+='==\n==';
     using("use server time", "USE_SERVER_TIME");
     uses+="(use a 24 hours clock)";
+    uses+='==\n==';
+    using("keep timeline updated", "KEEP_TIMELINE_UPDATED");
+    using("warp timeline scale", "TIMELINE_SCALE_WARP");
     
     var race='<select id="tl_RACE">';
     for (var i=0; i<3; i++) {
@@ -254,23 +265,27 @@ if (USE_SETTINGS) {
     race+='</select>';
     
     var sizeoptions='';
-    function tlo(n, v) {
-      nn="TIMELINE_SIZES_"+n;
-      sizeoptions += "    "+n.pad(8)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
+    function tlo(n, v, nn) {
+      if (!nn)
+        nn="TIMELINE_SIZES_"+n;
+      sizeoptions += "    "+n.pad(16)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
     }
     tlo("WIDTH","px");
+    tlo("COLLAPSED","px","TIMELINE_COLLAPSED_WIDTH");
     tlo("HEIGHT","px/min");
     tlo("HISTORY","min");
     tlo("FUTURE","min");
     
-    box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div><hr/>'+
+    box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div>'+
+                    '<i>Leave input fields empty to use the default value.</i><hr/>'+
                     'USERNAME = <input id="TL_USERNAME" value="'+USERNAME+'"/>\n'+
                     'RACE     = '+race+'\n'+
                     'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
                     'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
+                    'TIMELINE_COLOR  = <input id="TL_TIMELINE_COLOR" value="'+TIMELINE_COLOR+'"/> (as in css)\n'+
                     'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
                     'VILLAGES='+uneval(VILLAGES)+'\n'+
-                    '<hr/>'+'script duration: '+script_duration+'ms.';
+                    '<hr/>'+'script duration: '+script_duration+'ms.\n';
     
     var list = box.childNodes[0].childNodes;
     for (i in list) {    
@@ -832,7 +847,7 @@ if (USE_TIMELINE && tp1) {
         return e;
     }
     
-    // Travelling armies
+    // Travelling armies (rally point)
     x = document.getElementById("lmid2");
     if (x!=null && x.innerHTML.indexOf("warsim.php")>0) {
     
@@ -985,7 +1000,7 @@ if (USE_TIMELINE && tp1) {
     tlc.style.width    = (COLLAPSE_TIMELINE?TIMELINE_COLLAPSED_WIDTH:TIMELINE_SIZES_WIDTH) + "px";
     tlc.style.height   = TIMELINE_SIZES_FULL_HEIGHT + "px";
     tlc.style.zIndex   = "20";
-    tlc.style.backgroundColor="rgba(255,255,204,0.5)";
+    tlc.style.backgroundColor=TIMELINE_COLOR;
     tlc.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
     tlc.style.overflow = "hidden";
     tl.id = "tl";
@@ -996,6 +1011,7 @@ if (USE_TIMELINE && tp1) {
     tlc.appendChild(tl);
     document.body.appendChild(tlc);
     
+    // Code for expanding/collapsing the timeline.
     if (COLLAPSE_TIMELINE) {
         tl_col_cur = TIMELINE_COLLAPSED_WIDTH;
         tl_col_tar = TIMELINE_COLLAPSED_WIDTH;
@@ -1038,6 +1054,7 @@ if (USE_TIMELINE && tp1) {
         tlc.addEventListener('mouseout',tlc_collapse,false);
     }
     
+    // Show/hide timeline (click-event listener)
     function toggle_tl(e) {
         tlc.style.visibility=tlc.style.visibility!='hidden'?'hidden':'visible';
         GM_setValue(prefix("TL_VISIBLE"), tlc.style.visibility);
@@ -1059,194 +1076,254 @@ if (USE_TIMELINE && tp1) {
     button.addEventListener('click',toggle_tl,true);
     button.innerHTML = "timeline";
     document.body.appendChild(button);
-    
-    // Get context
-    var g = tl.getContext("2d");
 
-    // get server time
-    server_time = tp1.textContent.split(":");
+    function determine_now() {
+        // d = time corresponding to the top of the timeline
+        // n = current time. (with time difference applied)
         
-    // determine 'now'
-    d = new Date();
-    d.setTime(d.getTime()+TIME_DIFFERENCE*3600000); // Adjust local time to server time.
-    if (USE_SERVER_TIME) {
-        t = d.getTime();
-        d.setHours(server_time[0]);
-        d.setMinutes(server_time[1]);
-        d.setSeconds(server_time[2]);
+        // get server time
+        server_time = tp1.textContent.split(":");
+            
+        // determine 'now'
+        d = new Date();
+        d.setTime(d.getTime()+TIME_DIFFERENCE*3600000); // Adjust local time to server time.
+        if (USE_SERVER_TIME) {
+            t = d.getTime();
+            d.setHours(server_time[0]);
+            d.setMinutes(server_time[1]);
+            d.setSeconds(server_time[2]);
+            d.setMilliseconds(0);
+            if (d.getTime()<t-60000)
+                d.setDate(d.getDate()+1);
+        }
+
+        n = new Date();
+        n.setTime(d.getTime());
+        
         d.setMilliseconds(0);
-        if (d.getTime()<t-60000)
-            d.setDate(d.getDate()+1);
+        d.setSeconds(0);
+        if (d.getMinutes()<15) {
+            d.setMinutes(0);
+        } else if (d.getMinutes()<45) {
+            d.setMinutes(30);
+        } else {
+            d.setMinutes(60);    
+        }
+        
+        tl_warp_now = (n.getTime() - d.getTime())/1000/60 + TIMELINE_SIZES_HISTORY;
+        tl_warp_now/=TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE;
     }
 
-    n = new Date();
-    n.setTime(d.getTime());
-    
-    d.setMilliseconds(0);
-    d.setSeconds(0);
-    if (d.getMinutes()<15) {
-        d.setMinutes(0);
-    } else if (d.getMinutes()<45) {
-        d.setMinutes(30);
-    } else {
-        d.setMinutes(60);    
-    }
-    
     // Clean old events:
+    determine_now();
     list = { };
     old = d.getTime()-TIMELINE_SIZES_HISTORY*60000;
     for (e in events) {
         if (e>old) {
             list[e] = events[e];            
-            // room for updates:
+            // room for updates: (for migration to new versions of this script)
         }
     }
     events=list;
     GM_setValue(prefix("TIMELINE"),uneval(events));
+
+    // warp helper function
+    function tl_warp_deform(y) {
+        return y - y*(y-tl_warp_now)*(y-1);
+    }
     
-    // Draw bar
-    g.translate(TIMELINE_SIZES_WIDTH - 9.5, TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT + .5);
-    
-    g.strokeStyle = "rgb(0,0,0)";
-    g.beginPath();
-    g.moveTo(0,-TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT);
-    g.lineTo(0, TIMELINE_SIZES_FUTURE  * TIMELINE_SIZES_HEIGHT);
-    g.stroke();
-    for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=1) {
-        g.beginPath();
-        l = -2;
-        ll = 0;
-        if (i%5 == 0) l-=2;
-        if (i%15 == 0) l-=2;
-        if ((i + d.getMinutes())%60 == 0) ll+=8;        
-        g.moveTo(l, i*TIMELINE_SIZES_HEIGHT);
-        g.lineTo(ll,  i*TIMELINE_SIZES_HEIGHT);    
-        g.stroke();
+    // transforms the y coordinate if TIMELINE_SCALE_WARP is in use.
+    function tl_warp(y) {
+        if (!TIMELINE_SCALE_WARP) return y*TIMELINE_SIZES_HEIGHT;
+        y+=TIMELINE_SIZES_HISTORY;
+        y/=TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE;
+        
+        y = tl_warp_deform(tl_warp_deform(y));
+        
+        y*=TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE;
+        y-=TIMELINE_SIZES_HISTORY;
+        return y*TIMELINE_SIZES_HEIGHT;
     }
 
-    // Draw times
-    g.mozTextStyle = "8pt Monospace";
-    function drawtime(i, t) {
-        h = t.getHours()+"";
-        m = t.getMinutes()+"";
-        if (m.length==1) m = "0" + m;
-        x = h+":"+m;
-
+    // Wrapped timeline drawing code in a function such that it can be called once every minute.
+    function update_timeline() {
+        determine_now();
+        
+        // Get context
+        var g = tl.getContext("2d");
+        g.clearRect(0,0,TIMELINE_SIZES_WIDTH,TIMELINE_SIZES_FULL_HEIGHT);
         g.save();
-        g.translate(-g.mozMeasureText(x) - 10, 4 + i * TIMELINE_SIZES_HEIGHT);
-        g.mozDrawText(x);    
-        g.restore();    
-    }
-    for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=15) {
-        t = new Date(d);
-        t.setMinutes(t.getMinutes() + i);
-        drawtime(i, t);
-    }
-
-    // Draw current time
-    g.strokeStyle = "rgb(0,0,255)";
-    g.beginPath();
-    diff = (n.getTime() - d.getTime()) / 1000 / 60;
-    y = diff * TIMELINE_SIZES_HEIGHT;
-    g.moveTo(-8, y);
-    g.lineTo( 4, y);    
-    g.lineTo( 6, y-2);    
-    g.lineTo( 8, y);    
-    g.lineTo( 6, y+2);    
-    g.lineTo( 4, y);    
-    g.stroke();
-
-    g.fillStyle = "rgb(0,0,255)";
-    drawtime(diff, n);
-
-    unit = new Array(17);
-    for (i=1; i<12; i++) {
-        unit[i] = new Image();
-        if (i==11)
-            unit[i].src = "img/un/u/hero.gif"
-        else
-            unit[i].src = "img/un/u/"+(RACE*10+i)+".gif";
-    }
-
-    for (i=13; i<17; i++) {
-        unit[i] = new Image();
-        unit[i].src = "img/un/r/"+(i-12)+".gif";
-    }
-
-
-    function left(q) {
-        if (q.constructor == Array)
-            return q[0]-q[1];
-        else
-            return q-0;
-    }
-
-    // Draw data
-    for (e in events) {
-        p = events[e];
-        diff = (e - d.getTime()) / 1000 / 60;
-        y = diff * TIMELINE_SIZES_HEIGHT;
-        y = Math.round(y);
+                
+        // Draw bar
+        g.translate(TIMELINE_SIZES_WIDTH - 9.5, TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT + .5);
+        
         g.strokeStyle = "rgb(0,0,0)";
         g.beginPath();
-        g.moveTo(-10, y);
-        g.lineTo(-50, y);    
+        g.moveTo(0,-TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT);
+        g.lineTo(0, TIMELINE_SIZES_FUTURE  * TIMELINE_SIZES_HEIGHT);
         g.stroke();
-        
-        g.fillStyle = "rgb(0,128,0)";
-        var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
-        cap = (cap<=0)?"*":"";
-        g.save();
-        g.translate(20 - TIMELINE_SIZES_WIDTH - g.mozMeasureText(cap), y+4);
-        g.mozDrawText(cap + p[12]);
-        g.restore();
-
-        if (p[17]) {
-            g.fillStyle = "rgb(0,0,128)";
-            g.save();
-            g.translate(20 - TIMELINE_SIZES_WIDTH, y-5);
-            g.mozDrawText(p[17]);
-            g.restore();
+        for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=1) {
+            g.beginPath();
+            l = -2;
+            ll = 0;
+            if (i%5 == 0) l-=2;
+            if (i%15 == 0) l-=2;
+            if ((i + d.getMinutes())%60 == 0) ll+=8;        
+            g.moveTo(l, tl_warp(i));
+            g.lineTo(ll,  tl_warp(i));    
+            g.stroke();
         }
 
-        if (SHOW_TIMELINE_REPORT_INFO) {
-            g.fillStyle = "rgb(64,192,64)";
+        // Draw times
+        g.mozTextStyle = "8pt Monospace";
+        function drawtime(i, t) {
+            h = t.getHours()+"";
+            m = t.getMinutes()+"";
+            if (m.length==1) m = "0" + m;
+            x = h+":"+m;
+
             g.save();
-            g.translate(-40, y+4);
-            for (i = 16; i>0; i--) {
-                if (i==12)
-                    g.fillStyle = "rgb(0,0,255)";
-                else if (p[i]) {
-                    g.translate(-unit[i].width - 8, 0);
-                    g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
-                    if (p[i].constructor == Array) {
-                        g.fillStyle = "rgb(192,0,0)";
-                        g.translate(-g.mozMeasureText(-p[i][1]) - 2, 0);
-                        g.mozDrawText(-p[i][1]);
+            g.translate(-g.mozMeasureText(x) - 10, 4 + tl_warp(i));
+            g.mozDrawText(x);    
+            g.restore();    
+        }
+        for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=15) {
+            t = new Date(d);
+            t.setMinutes(t.getMinutes() + i);
+            drawtime(i, t);
+        }
+
+        // Draw current time
+        g.strokeStyle = "rgb(0,0,255)";
+        g.beginPath();
+        diff = (n.getTime() - d.getTime()) / 1000 / 60;
+        y = tl_warp(diff);
+        g.moveTo(-8, y);
+        g.lineTo( 4, y);    
+        g.lineTo( 6, y-2);    
+        g.lineTo( 8, y);    
+        g.lineTo( 6, y+2);    
+        g.lineTo( 4, y);    
+        g.stroke();
+
+        g.fillStyle = "rgb(0,0,255)";
+        drawtime(diff, n);
+
+        unit = new Array(17);
+        for (i=1; i<12; i++) {
+            unit[i] = new Image();
+            if (i==11)
+                unit[i].src = "img/un/u/hero.gif"
+            else
+                unit[i].src = "img/un/u/"+(RACE*10+i)+".gif";
+        }
+
+        for (i=13; i<17; i++) {
+            unit[i] = new Image();
+            unit[i].src = "img/un/r/"+(i-12)+".gif";
+        }
+
+
+        function left(q) {
+            if (q.constructor == Array)
+                return q[0]-q[1];
+            else
+                return q-0;
+        }
+
+        // Draw data
+        for (e in events) {
+            p = events[e];
+            diff = (e - d.getTime()) / 1000 / 60;
+            y = tl_warp(diff);
+            y = Math.round(y);
+            g.strokeStyle = "rgb(0,0,0)";
+            g.beginPath();
+            g.moveTo(-10, y);
+            g.lineTo(-50, y);    
+            g.stroke();
+            
+            g.fillStyle = "rgb(0,128,0)";
+            var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
+            cap = (cap<=0)?"*":"";
+            g.save();
+            g.translate(20 - TIMELINE_SIZES_WIDTH - g.mozMeasureText(cap), y+4);
+            g.mozDrawText(cap + p[12]);
+            g.restore();
+
+            if (p[17]) {
+                g.fillStyle = "rgb(0,0,128)";
+                g.save();
+                g.translate(20 - TIMELINE_SIZES_WIDTH, y-5);
+                g.mozDrawText(p[17]);
+                g.restore();
+            }
+
+            if (SHOW_TIMELINE_REPORT_INFO) {
+                g.fillStyle = "rgb(64,192,64)";
+                g.save();
+                g.translate(-40, y+4);
+                for (i = 16; i>0; i--) {
+                    if (i==12)
                         g.fillStyle = "rgb(0,0,255)";
-                        g.translate(-g.mozMeasureText(p[i][0]), 0);
-                        g.mozDrawText(p[i][0]);
-                    } else {
-                        g.translate(-g.mozMeasureText(p[i]) - 2, 0);
-                        g.mozDrawText(p[i]);
+                    else if (p[i]) {
+                        g.translate(-unit[i].width - 8, 0);
+                        g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
+                        if (p[i].constructor == Array) {
+                            g.fillStyle = "rgb(192,0,0)";
+                            g.translate(-g.mozMeasureText(-p[i][1]) - 2, 0);
+                            g.mozDrawText(-p[i][1]);
+                            g.fillStyle = "rgb(0,0,255)";
+                            g.translate(-g.mozMeasureText(p[i][0]), 0);
+                            g.mozDrawText(p[i][0]);
+                        } else {
+                            g.translate(-g.mozMeasureText(p[i]) - 2, 0);
+                            g.mozDrawText(p[i]);
+                        }
                     }
                 }
             }
+            g.restore();
         }
         g.restore();
+        if (KEEP_TIMELINE_UPDATED) {
+            setTimeout(update_timeline,TIMELINE_UPDATE_INTERVAL);
+        }
     }
     
+    update_timeline();
+        
+    // For displaying time properly.
     function pad2(x) {
         if (x<10) return "0"+x;
         else return x;
     }
     
+    // To keep the link with the 'travian task queue'-script working properly, we also need to be able 
+    // to undo the warping. I'm using a simple binairy search for that.
+    function tl_unwarp(y) {
+        y-=TIMELINE_SIZES_HISTORY*TIMELINE_SIZES_HEIGHT;
+        if (!TIMELINE_SCALE_WARP) return y/TIMELINE_SIZES_HEIGHT;
+        var b_l = -TIMELINE_SIZES_HISTORY;
+        var b_h =  TIMELINE_SIZES_FUTURE;
+        for (i=0; i<32; i++) {
+            b_m = (b_l+b_h)/2;
+            if (y<tl_warp(b_m)) {
+                b_h=b_m;
+            } else {
+                b_l=b_m;
+            }
+        }
+        return (b_l+b_h)/2;
+    }
+    
+    // The click event listener for the link  with the 'travian task queue'-script.
     function setAt(e) {
         var at = document.getElementById("at");
         if (at) {
             // d = 'top of the timeline time'        
             var n = new Date();
-            n.setTime(d.getTime() + (e.pageY/TIMELINE_SIZES_HEIGHT-TIMELINE_SIZES_HISTORY) *60*1000);
+            n.setTime(d.getTime() + (tl_unwarp(e.pageY)) *60*1000);
             s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
             at.value=s;
         }
