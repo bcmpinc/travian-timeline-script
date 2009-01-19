@@ -41,7 +41,7 @@ script_start_time = new Date().getTime();
 
 // Debug functions...
 var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-//* d_none is for the final release - don't forget to set it before uploading
+/* d_none is for the final release - don't forget to set it before uploading
 var d_level=d_none;/*/
 var d_level=d_all;//*/
 
@@ -85,7 +85,7 @@ FIX_TIMELINE = false;       // Keep timeline on the same position when scrolling
 TIMELINE_SIZES_HISTORY =  90; // minutes +/- 15 min, for aligning
 TIMELINE_SIZES_FUTURE  =  90; // minutes
 TIMELINE_SIZES_HEIGHT  =   5; // pixel height of one minute.
-TIMELINE_SIZES_WIDTH   = 430; // width of the timeline (in pixels)
+TIMELINE_SIZES_WIDTH   = 400; // width of the timeline (in pixels)
 TIMELINE_COLLAPSED_WIDTH = 60;// width of the timeline when collapsed (in pixels)
 TIMELINE_COLLAPSE_SPEED = 1500;// collapse fade speed in pixels per second.
 TIMELINE_COLLAPSE_RATE = 50;  // updates of the collapse fade per second.
@@ -232,8 +232,16 @@ function optionsScreen(){
     var div = document.createElement("div");
     div.style.position = "absolute";
     div.style.zIndex = "2";
-    div.style.left = "5px";
-    div.style.top = "38px";
+    var right = TIMELINE_SIZES_WIDTH;
+    if (COLLAPSE_TIMELINE) right = TIMELINE_COLLAPSED_WIDTH;
+    if (!USE_TIMELINE) right = 0;
+    right+=5;
+    div.style.right = right+"px";
+    div.style.top = "-5px";
+    div.style.MozBorderRadius = "6px";
+    div.style.padding = "3px";
+    div.style.border = "1px solid #999";
+    div.style.background = "#ccc";
     div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
     document.body.appendChild(div);
   
