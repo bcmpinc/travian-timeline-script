@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.14
+// @version        0.15
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -635,7 +635,7 @@ if (USE_ALLY_LINES) {
                 alert(e);
             }
         }            
-        
+
         document.addEventListener('click',upd,true);
         document.addEventListener('keydown',upd,true);
         document.addEventListener('keyup',upd,true);
@@ -1039,9 +1039,8 @@ if (USE_TIMELINE && tp1) {
     }
     
     function toggle_tl(e) {
-        e=document.getElementById('tlc');
-        e.style.visibility=e.style.visibility!='hidden'?'hidden':'visible';
-        GM_setValue(prefix("TL_VISIBLE"), e.style.visibility);
+        tlc.style.visibility=tlc.style.visibility!='hidden'?'hidden':'visible';
+        GM_setValue(prefix("TL_VISIBLE"), tlc.style.visibility);
     }
     
     button = document.createElement("div");
@@ -1083,7 +1082,7 @@ if (USE_TIMELINE && tp1) {
     n = new Date();
     n.setTime(d.getTime());
     
-    d.setMilliseconds(0);addEventListener('click',toggle_tl,true);
+    d.setMilliseconds(0);
     d.setSeconds(0);
     if (d.getMinutes()<15) {
         d.setMinutes(0);
@@ -1253,7 +1252,7 @@ if (USE_TIMELINE && tp1) {
         }
     }
     
-    tl.addEventListener("click",setAt,false);
+    tlc.addEventListener("click",setAt,false);
     
 } /* USE_TIMELINE */
 
