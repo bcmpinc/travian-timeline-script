@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.18
+// @version        0.19
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -78,6 +78,30 @@ TIMELINE_SCALE_WARP = false;      // Use cubic transformation on the timeline to
 TIME_DIFFERENCE = 0; // server time - local time
 
 SIDEBAR_HR = true;      // Use <hr> to seperate sidebar sections instead of <br>
+
+// This needs to be wrapped in a function and called by the entire DOM structure loading.
+// Right now, it occasionally will run before the site loads properly and the screen
+// gets mashed.
+
+// Debug functions...
+var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
+/* d_none is for the final release - don't forget to set it before uploading
+var d_level=d_highest;/*/
+var d_level=d_none;//*/
+
+/*************************************************
+ * Provides basic debugging
+ *************************************************/
+function debug(lvl, msg){
+    if (lvl <= d_level) GM_log("\n"+msg);
+}
+
+/*************************************************
+ * Shortcut to debug at the highest level
+ *************************************************/
+function dbg(msg){
+    debug(d_highest, msg);
+}
 
 // Numbers for original sidebar links
 //-1: -- break --
@@ -850,15 +874,63 @@ if (USE_TIMELINE && tp1) {
     }
     tl_update_data();
     
-    function getevent(t, msg) {
+    // Added a third optional parameter to fix a bug with event overwriting. The event would be encountered,
+    // this function wouldn't change it and return right away, and then the code following it would
+    // be executed corrupting the event. This is a quick fix, but it really doesn't solve the problem.
+    function getevent(t, msg, name) {
+        if (name == undefined) name = '';
         e = events[t];
         if (e == undefined) {
-            e = [0,0,0,0,0,0,0,0,0,0,0,0,msg,0,0,0,0,""];
+            e = [0,0,0,0,0,0,0,0,0,0,0,0,msg,0,0,0,0,name];
             events[t]=e;
         }
         return e;
     }
     
+    function parseTime(time, format, day){ // Written by Adriaan
+        // time is interpreted as [hours, minutes, seconds (optional)]
+        // format is either 'am', 'pm', or '' (optional).
+        // day is [day, month, year (optional)]. (all optional)
+        // TODO: support non-european date/time formats (orderings change...)
+
+        debug(d_med, 'Parsing capture time info!\ntime='+time.join(':')+' '+(format==undefined?'':format)+(day==undefined?'':(' day='+day.join('.'))));
+
+        d = new Date();
+        d.setTime(d.getTime()+TIME_DIFFERENCE*3600000);
+        time_now = d.getTime();
+
+        // If we're given a date as well as a time... as in reports etc
+        if (day != undefined){
+            debug(d_low, 'Given date info to parse');
+            d.setDate(day[0]);
+            d.setMonth(day[1] - 1);
+            if (day[2] != undefined) d.setYear('20'+day[2]);
+
+            // The milliseconds are here so that a report doesn't prevent a build from being listed if they're at the same time.
+            // This is a *bit* of a hack...
+            d.setMilliseconds(0);
+        } else {
+            debug(d_low, 'Not given any date info for parsing');
+
+            d.setMilliseconds(1);
+
+            // If we aren't explicitly given a day, we need to be careful of wrap-around midnights...
+            if (d.getTime() < time_now - 60000){ // 60000 is arbitrary...
+                debug(d_lowest, 'Date rollover - this event occured too far in the past');
+                d.setDate(d.getDate()+1);
+            }
+        }
+        if (format=='pm') time[0] -= -12; // We're potentially dealing with strings here, so we can't use the '+' operator...
+
+        d.setHours(time[0]);
+        d.setMinutes(time[1]);
+        d.setSeconds(time[2] == undefined ? 0 : time[2]);
+
+        debug(d_med, 'parseTime() returning '+d.getTime());
+
+        return d;
+    }
+
     // Travelling armies (rally point)
     x = document.getElementById("lmid2");
     if (x!=null && x.innerHTML.indexOf("warsim.php")>0) {
@@ -875,16 +947,8 @@ if (USE_TIMELINE && tp1) {
             try {
                 time = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)");
                 where = x.childNodes[0].childNodes[2].textContent;
-                q = new Date();
-                q.setTime(q.getTime()+TIME_DIFFERENCE*360000);  // Adjust local time to server time.
-                t = q.getTime();
-                q.setHours(time[1]);
-                q.setMinutes(time[2]);
-                q.setSeconds(time[3]);
-                q.setMilliseconds(0);
-                if (q.getTime()<t-60000)
-                    q.setDate(q.getDate()+1);
-                t = q.getTime();
+                
+                t = parseTime(time.slice(1, 4)).getTime();
                 
                 e = getevent(t,where);
                 for (var j = 1; j<12; j++) {
@@ -907,17 +971,8 @@ if (USE_TIMELINE && tp1) {
             if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
                 time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?).(\\d\\d).(\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
                 where = x.childNodes[0].childNodes[3].innerHTML;
-                q = new Date(); 
-                q.setTime(q.getTime()+TIME_DIFFERENCE*3600000);  // Adjust local time to server time.
-                t = q.getTime();
-                q.setYear("20"+time[3]);
-                q.setMonth(time[2] - 1);
-                q.setDate(time[1]);
-                q.setHours(time[4]);
-                q.setMinutes(time[5]);
-                q.setSeconds(time[6]);
-                q.setMilliseconds(0);
-                t = q.getTime();
+                
+                t = parseTime(time.slice(4, 7), '', time.slice(1, 4)).getTime();
                 e = getevent(t,where);
                 e[12] = where;
                 
@@ -972,20 +1027,9 @@ if (USE_TIMELINE && tp1) {
                 time = x.childNodes[3].textContent; 
                 time = time.match("(\\d\\d?):(\\d\\d) ?([a-z]*)");
                 where = x.childNodes[1].textContent;
-                if (time[3]=="pm") 
-                    time[1]-=-12;
                 
-                q = new Date();
-                q.setTime(q.getTime()+TIME_DIFFERENCE*3600000);  // Adjust local time to server time.
-                t = q.getTime();
-                q.setHours(time[1]);
-                q.setMinutes(time[2]);
-                q.setSeconds(0);
-                q.setMilliseconds(1);
-                if (q.getTime()<t-60000)
-                    q.setDate(q.getDate()+1);
-                t = q.getTime();
-                            
+                t = parseTime(time.slice(1, 3), time[3]).getTime();
+
                 res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
                 x = res.singleNodeValue.textContent;
                 var h = 0;
@@ -996,9 +1040,46 @@ if (USE_TIMELINE && tp1) {
                 }
                 t+=h*2;
                 
-                e = getevent(t,where);
-                e[17] = x;
+                e = getevent(t,where,x);
             }
+        }
+    }
+
+    // Market Deliveries - written by Adriaan
+    if (location.href.indexOf('build.php')>0 && // If we're on a building page
+        document.forms[0] != undefined &&
+        document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
+        // Then this must be the market! (in a language-insensitive manner :D)
+
+        var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        for (var i=0; i < shipment.snapshotLength; i++){
+            x = shipment.snapshotItem(i);
+
+            // Extract the arrival time
+            time = x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
+            debug(d_low, "Merchant arriving at "+time);
+
+            // Extract the value of the shipment - we don't really need this at the moment...
+            res = x.childNodes[4].childNodes[1].textContent.split(' | ');
+            debug(d_low, "Merchant carrying "+res);
+
+            // Extract the village name
+            name = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
+            debug(d_low, "Arriving at "+name);
+
+            // Extract the action type
+            type = x.childNodes[0].childNodes[3].textContent;
+
+            // Parse time appropriately...
+            t = parseTime(time.slice(1, 3), time[3]).getTime();
+
+            // Some way to incorperate the resources transfered would be nice here. Just throwing them on the end
+            // makes for a very cumbersome event...
+            e = getevent(t, type, name);
+
+            // Add resource pictures and amounts
+            for (j=0; j<4; j++)
+                e[13+j]=res[j];
         }
     }
 
@@ -1291,7 +1372,7 @@ if (USE_TIMELINE && tp1) {
             if (SHOW_TIMELINE_REPORT_INFO) {
                 g.fillStyle = "rgb(64,192,64)";
                 g.save();
-                g.translate(-40, y+4);
+                g.translate(-40, y+4+12); // Move this below the message.
                 for (i = 16; i>0; i--) {
                     if (i==12)
                         g.fillStyle = "rgb(0,0,255)";
@@ -1369,6 +1450,15 @@ if (USE_TIMELINE && tp1) {
     }
     
     tlc.addEventListener("click",setAt,false);
+
+    // TODO: This might be useful for displaying only the events from *some* villages, not all at once
+    // Could maybe have the basic canvas with just the timeline and no events, and then layer
+    // canvases on top with events from just one village? That way can turn them on/off at will.
+    // It would also be best to save the point of rotation as a GM_value...
+    // Mouse Scroll Wheel
+    // Could scroll backwards and forwards on the timeline
+    // We also probably want to stop the mouse scrolling from propegating in this case...
+    // tlc.addEventListener('DOMMouseScroll', function (e){}, false);
     
 } /* USE_TIMELINE */
 
