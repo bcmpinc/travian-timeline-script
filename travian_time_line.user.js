@@ -869,7 +869,9 @@ function useTimeline(){
         0,                     15 ~ Amount of iron involved
         0,                     16 ~ Amount of grain involved
         "1."]                  17 ~ Issuing city
-             
+
+        Instead of a number, the fields 1 to 11 and 13 to 16 are also allowed to be a tuple (list).
+        In this case the first field is the original amount and the second field is the amount by which the amount has decreased.             
     */
 
     ///////////////////////////////////
