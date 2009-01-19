@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.08
+// @version        0.09
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -18,6 +18,8 @@
 // It does modify the html of the page.
 // It's completely passive: it does not click links automatically or send http requests.
 // If you have the taskqueue script, you can click on the timeline to enter the schedule time.
+
+try {
 
 //////////////////////////////////////////
 //  SCRIPT CONFIG  ( DEFAULT SETTINGS ) //
@@ -48,6 +50,8 @@ TIMELINE_SIZES_HISTORY =  90; // minutes +/- 15 min, for aligning
 TIMELINE_SIZES_FUTURE  =  90; // minutes
 TIMELINE_SIZES_HEIGHT  =   5; // pixel height of one minute.
 TIMELINE_SIZES_WIDTH   = 430; // width of the timeline
+
+TIME_DIFFERENCE = 0; // server time - local time
 
 SIDEBAR_HR = true;      // Use <hr> to seperate sidebar sections instead of <br>
 
@@ -118,7 +122,7 @@ if (USE_SETTINGS) {
                       "USE_EXTRA_VILLAGE",
                       
                       "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
-                      "TIMELINE_SIZES_WIDTH"
+                      "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE"
                       ];
 
   for (i in saved_settings) {
@@ -234,6 +238,7 @@ if (USE_SETTINGS) {
                     'USERNAME = <input id="TL_USERNAME" value="'+USERNAME+'"/>\n'+
                     'RACE     = '+race+'\n'+
                     'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
+                    'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
                     'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
                     'VILLAGES='+uneval(VILLAGES)+'\n'+
                     '';
@@ -449,22 +454,24 @@ if (USE_MARKET_COLORS) {
             
             for ( var i=0 ; i < res.snapshotLength; i++ )
             {
-                x = res.snapshotItem(i);
-                a = x.childNodes[2].textContent-0;
-                b = x.childNodes[6].textContent-0;
-                r = a/b;
-                if (r>1.5)
-                    color="#ddffdd";
-                else if (r>1.001)
-                    color = "#eeffdd";
-                else if (r>0.999)
-                    color = "#ffffdd";
-                else if (r>0.501)
-                    color = "#ffeedd";
-                else
-                    color = "#ffdddd";
+                if (x.childNodes[6]!=undefined && x.childNodes[6]>0) {
+                    x = res.snapshotItem(i);
+                    a = x.childNodes[2].textContent-0;
+                    b = x.childNodes[6].textContent-0;
+                    r = a/b;
+                    if (r>1.5)
+                        color="#ddffdd";
+                    else if (r>1.001)
+                        color = "#eeffdd";
+                    else if (r>0.999)
+                        color = "#ffffdd";
+                    else if (r>0.501)
+                        color = "#ffeedd";
+                    else
+                        color = "#ffdddd";
 
-                x.style.backgroundColor = color;
+                    x.style.backgroundColor = color;
+                }
             }
         }
     }
@@ -751,7 +758,7 @@ if (USE_TIMELINE) {
     
     // Travelling armies
     x = document.getElementById("lmid2");
-    if (x && x.innerHTML.match("warsim.php")) {
+    if (x!=null && x.innerHTML.indexOf("warsim.php")>0) {
     
         var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
         
@@ -764,6 +771,7 @@ if (USE_TIMELINE) {
                 time = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)");
                 where = x.childNodes[0].childNodes[2].textContent;
                 q = new Date();
+                q.setTime(q.getTime()+TIME_DIFFERENCE*360000);  // Adjust local time to server time.
                 t = q.getTime();
                 q.setHours(time[1]);
                 q.setMinutes(time[2]);
@@ -788,12 +796,12 @@ if (USE_TIMELINE) {
     
         res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
         x = res.singleNodeValue;
-        if (x!= undefined && x.childNodes[0].childNodes[3]!=undefined) {
-            what = x.childNodes[0].childNodes[3].textContent;
-            if (what.match(" viel ")) {
-                time = x.childNodes[2].childNodes[3].textContent.match("op (\\d\\d?).(\\d\\d).(\\d\\d) om (\\d\\d?):(\\d\\d):(\\d\\d)");
-                where = what.match("viel (.*) aan")[1];
-                q = new Date();
+        if (x != undefined) {
+            if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
+                time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?).(\\d\\d).(\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
+                where = x.childNodes[0].childNodes[3].innerHTML;
+                q = new Date(); 
+                q.setTime(q.getTime()+TIME_DIFFERENCE*3600000);  // Adjust local time to server time.
                 t = q.getTime();
                 q.setYear("20"+time[3]);
                 q.setMonth(time[2] - 1);
@@ -803,17 +811,24 @@ if (USE_TIMELINE) {
                 q.setSeconds(time[6]);
                 q.setMilliseconds(0);
                 t = q.getTime();
-
                 e = getevent(t,where);
                 e[12] = where;
                 
                 // army composition + losses
-                x = x.childNodes[6].childNodes[1].childNodes[2].childNodes[1]; 
+                x = x.childNodes[6].childNodes[1];
+                dualrow=false;
+                if (x.childNodes[2]==undefined) {
+                    x = x.childNodes[1].childNodes[1]; 
+                } else {
+                    x = x.childNodes[2].childNodes[1]; 
+                    dualrow=true;
+                }
+
                 for (var j = 1; j<12; j++) {
                     y1 = x.childNodes[3].childNodes[j];
-                    y2 = x.childNodes[4].childNodes[j];
+                    if (dualrow) y2 = x.childNodes[4].childNodes[j];
                     if (y1!=undefined) {
-                        if (y2.textContent>0)
+                        if (dualrow && y2.textContent>0)
                             e[j] = [y1.textContent - 0, y2.textContent - 0];
                         else
                             e[j] = y1.textContent - 0;
@@ -821,11 +836,18 @@ if (USE_TIMELINE) {
                 }
                 
                 // profit
-                if (x.childNodes[5].childNodes[3] != undefined) {
-                    y = x.childNodes[5].childNodes[3].textContent.split(" ");                
-                    for (var j = 1; j<5; j++) {
-                        e[j + 12] = y[j - 1] - 0;
+                if (dualrow) {
+                    if (x.childNodes[5].childNodes[3] != undefined) {
+                        y = x.childNodes[5].childNodes[3].textContent.split(" ");                
+                        for (var j = 1; j<5; j++) {
+                            e[j + 12] = y[j - 1] - 0;
+                        }
                     }
+                } else {
+                    if (x.childNodes[4].childNodes[3] != undefined) {
+                        y = x.childNodes[4].childNodes[3].textContent.split(" ");                
+                        e[16] = 0-y[0];
+                    }                
                 }
             }
         }
@@ -845,6 +867,7 @@ if (USE_TIMELINE) {
                 where = x.childNodes[1].textContent;
                 
                 q = new Date();
+                q.setTime(q.getTime()+TIME_DIFFERENCE*3600000);  // Adjust local time to server time.
                 t = q.getTime();
                 q.setHours(time[1]);
                 q.setMinutes(time[2]);
@@ -922,6 +945,7 @@ if (USE_TIMELINE) {
     
     // determine 'now'
     d = new Date();
+    d.setTime(d.getTime()+TIME_DIFFERENCE*3600000); // Adjust local time to server time.
     t = d.getTime();
     d.setHours(server_time[0]);
     d.setMinutes(server_time[1]);
@@ -929,6 +953,9 @@ if (USE_TIMELINE) {
     d.setMilliseconds(0);
     if (d.getTime()<t-60000)
         d.setDate(d.getDate()+1);
+
+    n = new Date();
+    n.setTime(d.getTime());
     
     d.setMilliseconds(0);
     d.setSeconds(0);
@@ -994,7 +1021,6 @@ if (USE_TIMELINE) {
     // Draw current time
     g.strokeStyle = "rgb(0,0,255)";
     g.beginPath();
-    n = new Date();
     diff = (n.getTime() - d.getTime()) / 1000 / 60;
     y = diff * TIMELINE_SIZES_HEIGHT;
     g.moveTo(-8, y);
@@ -1064,7 +1090,7 @@ if (USE_TIMELINE) {
         for (i = 16; i>0; i--) {
             if (i==12)
                 g.fillStyle = "rgb(0,0,255)";
-            else if (p[i]>0) {
+            else if (p[i]) {
                 g.translate(-unit[i].width - 8, 0);
                 g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
                 if (p[i].constructor == Array) {
@@ -1124,5 +1150,5 @@ if (USE_EXTRA_VILLAGE) {
     }
 } /* USE_EXTRA_VILLAGE */
 
-
+} catch (e) {alert("Timeline caught an error: "+e);}
 
