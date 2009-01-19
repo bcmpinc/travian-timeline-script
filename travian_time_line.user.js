@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.10
+// @version        0.11
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -377,8 +377,7 @@ if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
             id   = x.href.match("\\d+")[0];
             cnt  = x.parentNode.parentNode.childNodes[5].textContent;
             if (ally2[name] != undefined) {
-                y = ally2[name];    dd.setHours(server_time[0]);
-
+                y = ally2[name];
                 y[0] = id;
                 y[1] = cnt;
                 ally[name] = y
