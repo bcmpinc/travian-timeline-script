@@ -11,7 +11,7 @@
 // @exclude        http://help.travian*.*
 // @exclude        http://*.travian*.*/manual.php*
 
-// @author         bcmpinc
+// @author         bcmpinc & arandia
 // ==/UserScript==
 
 // This script improves the information provided by Travian. For example: by adding 
@@ -221,6 +221,19 @@ try {
         n = n-this.length;
         if (n<=0) return this;
         return this+" ".repeat(n);
+    }
+    
+    Math.sinh = function(x) { 
+        return .5*(Math.exp(x)-Math.exp(-x));
+    }
+    Math.cosh = function(x) { 
+        return .5*(Math.exp(x)+Math.exp(-x));
+    }
+    Math.arsinh = function(x) { 
+        return Math.log(x+Math.sqrt(x*x+1));
+    }
+    Math.arcosh = function(x) { 
+        return Math.log(x+Math.sqrt(x*x-1));
     }
 
     //////////////////////////////////////////
@@ -512,8 +525,10 @@ try {
                     cur[i] = cur[i].split("/")[0];
                 }
             a+="<td></td><td></td>";
-        
-            head.innerHTML += "\n<tr>"+a+"</tr>\n";
+            
+            tr = document.createElement("tr");
+            head.appendChild(tr);
+            tr.innerHTML = a;
 
         }
     }
