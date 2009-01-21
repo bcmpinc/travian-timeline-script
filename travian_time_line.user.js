@@ -1107,9 +1107,13 @@ try {
                 time = x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
                 debug(d_low, "Merchant arriving at "+time);
 
-                // Extract the value of the shipment - we don't really need this at the moment...
+                // Extract the value of the shipment
                 res = x.childNodes[4].childNodes[1].textContent.split(' | ');
                 debug(d_low, "Merchant carrying "+res);
+                
+                // Check if merchant is returning
+                ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
+                if (ret) debug(d_low, "Merchant is returning");
 
                 // Extract the village name
                 name = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
@@ -1130,9 +1134,10 @@ try {
                     throw er;
                 }
 
-                // Add resource pictures and amounts
-                for (j=0; j<4; j++)
-                    e[13+j]=res[j];
+                // Add resource pictures and amounts (if sending)
+                if (!ret)
+                    for (j=0; j<4; j++)
+                        e[13+j]=res[j];
             }
         }
 
