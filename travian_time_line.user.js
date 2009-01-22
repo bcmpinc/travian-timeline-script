@@ -11,8 +11,27 @@
 // @exclude        http://help.travian*.*
 // @exclude        http://*.travian*.*/manual.php*
 
-// @author         bcmpinc & arandia
+// @author         bcmpinc
+// @author         arandia
+// @license        GPL 3 or any later version
 // ==/UserScript==
+
+/*****************************************************************************
+ * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ *
+ * This is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Public License for more details
+ *
+ * To obtain a copy of the GNU General Public License, please see
+ * <http://www.gnu.org.licenses/>
+ *****************************************************************************/
+
 
 // This script improves the information provided by Travian. For example: by adding 
 // a timeline that shows different events like completion of build tasks and the 
@@ -28,6 +47,7 @@
 //  - If you have the 'Travian Beyond'-script, additional villages will also get an 
 //    attack and a merchant link button. (Currently you have to add these additional 
 //    villages in the scripts source code.)
+
 
 try {
     script_start_time = new Date().getTime();
@@ -50,6 +70,7 @@ try {
      *************************************************/
     function debug(lvl, msg){
         if (lvl <= d_level) GM_log("\n"+msg);
+        //if (unsafeWindow.console) unsafeWindow.console.log(msg); // firebug logging
     }
 
     /*************************************************
