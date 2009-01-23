@@ -1100,7 +1100,7 @@ try {
                     t = parseTime(time.slice(1, 3), time[3]).getTime();
 
                     res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-                    x = res.singleNodeValue.textContent;
+
                     var h = 0;
                     for(var i = 0; i < x.length; i ++) {
                         h*=13;
@@ -1109,7 +1109,7 @@ try {
                     }
                     t+=h*2;
                     try {
-                        e = getevent(t,where,x);
+                        e = getevent(t, where, active_vil);
                     } catch (er){
                         if (er == "ERR_EVENT_OVERWRITE") continue;
                         throw er;
