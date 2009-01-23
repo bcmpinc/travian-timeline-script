@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.20
+// @version        0.21
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -61,7 +61,7 @@ try {
 
     // Debug functions...
     var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-    /* d_none is for the final release - don't forget to set it before uploading
+    //* d_none is for the final release - don't forget to set it before uploading
     var d_level=d_none;/*/
     var d_level=d_all;//*/
 
@@ -941,7 +941,7 @@ try {
             return e;
         }
     
-        function parseTime(time, format, day){ // Written by Adriaan
+        function parseTime(time, format, day){
             // time is interpreted as [hours, minutes, seconds (optional)]
             // format is either 'am', 'pm', or '' (optional).
             // day is [day, month, year (optional)]. (all optional)
@@ -986,6 +986,10 @@ try {
 
             return d;
         }
+
+        // Extract the active village
+        active_vil = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
+        debug(d_low, "The active village is: "+active_vil);
 
         // Travelling armies (rally point)
         x = document.getElementById("lmid2");
@@ -1114,7 +1118,7 @@ try {
             }
         }
 
-        // Market Deliveries - written by Adriaan
+        // Market Deliveries
         if (location.href.indexOf('build.php')>0 && // If we're on a building page
             document.forms[0] != undefined &&
             document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
@@ -1136,20 +1140,14 @@ try {
                 ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
                 if (ret) debug(d_low, "Merchant is returning");
 
-                // Extract the village name
-                name = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
-                debug(d_low, "Arriving at "+name);
-
                 // Extract the action type
                 type = x.childNodes[0].childNodes[3].textContent;
 
                 // Parse time appropriately...
                 t = parseTime(time.slice(1, 3), time[3]).getTime();
 
-                // Some way to incorperate the resources transfered would be nice here. Just throwing them on the end
-                // makes for a very cumbersome event...
                 try {
-                    e = getevent(t, type, name);
+                    e = getevent(t, type, active_vil);
                 } catch (er){
                     if (er == "ERR_EVENT_OVERWRITE") continue;
                     throw er;
@@ -1159,6 +1157,58 @@ try {
                 if (!ret)
                     for (j=0; j<4; j++)
                         e[13+j]=res[j];
+            }
+        }
+
+        // Research Events
+        // Ok, the idea here is to look for a building with a table of class 'tbg' that has a
+        // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
+        // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
+        if (location.href.indexOf('build.php')>0){ // If we're not on a building page, don't bother with the expensive evaluation
+            try {
+                x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
+                                      document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+                if (x.snapshotLength == 1){
+                    //alert("You must be on an *active* research building");
+                    x = x.snapshotItem(0).parentNode;
+
+                    // Extract the completion time
+                    time = x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
+                    debug(d_low, "Research completing at "+time);
+
+                    // And parse it appropriately
+                    t = parseTime(time.slice(1, 3), time[3]).getTime();
+
+                    // Extract the unit being upgraded
+                    type = x.childNodes[3].textContent;
+                    debug(d_low, "Upgrading "+type);
+
+                    // Extract the name of the building where the upgrade is occuring
+                    // y is the table above the research-in-progress table
+                    y = x.parentNode.parentNode.previousSibling.previousSibling.childNodes[1];
+                    building = y.childNodes[0].childNodes[1].textContent;
+                    debug(d_low, "Upgrading at the "+building);
+
+                    // Extract the level upgrading to - not for the acadamy!
+                    // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
+                    // in there could create compatibility problems... so keep it remote with textContent.
+                    for (var i=0; i < y.childNodes.length; i++){
+                        level = y.childNodes[i].childNodes[1].textContent.match(type+' ([(][A-Z][a-z]* )(\\d\\d?)([)])');
+                        if (level){
+                            level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
+                            level = level[1]+level[2]+level[3];
+                            debug(d_low, "Upgrading to "+level);
+                            break;
+                        }
+                    }
+
+                    // And now throw all of this information into an event
+                    // Don't throw in the level information if we're  researching a new unit at the acadamy... because there isn't any!
+                    e = getevent(t, building+': '+type+(level ? ' '+level : ''), active_vil);
+
+                } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
+            } catch (er){
+                if (er != "ERR_EVENT_OVERWRITE") throw er;
             }
         }
 
