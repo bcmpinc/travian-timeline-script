@@ -1011,7 +1011,7 @@ try {
                         t = parseTime(time.slice(1, 4)).getTime();
                 
                         try {
-                            e = getevent(t,where);
+                            e = getevent(t, where, active_vil);
                         }
                         catch(er){
                             if (er == "ERR_EVENT_OVERWRITE") continue;
