@@ -5,7 +5,9 @@ Timeline Events,Look&Feel:
 - Capture mousewheel scrolling and use it to extend the timeline
 - Figure out a way to filter the events by village
 - Add colour to determine the event type
-- Capture research events
++ Capture research events - DONE
+- Add filter to disable the displaying of some events (based on type)
+  - and/or add a way of disabling the capture of certain event types
 
 Other Features:
 - Add method for configuration of 'extra villages'
