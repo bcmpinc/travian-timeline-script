@@ -116,76 +116,128 @@ function nothing(){alert(this);}
 try{
 
 Feature=new Object();
-Feature.list={ };
+Feature.list=[];
+Feature.init=nothing;
+Feature.run =nothing;
+Feature.setting=function(name, def_val) {
+    var s = new Object();
+    s.prototype=Settings;
+    s.fullname = Settings.server+'.'+this.name+'.'+name;
+    s.name = name;
+    s.value = def_val;
+    s.read();
+    this[name]=s;
+    return s;
+};
 Feature.create=function(name){
     var x=new Object();
+    x.prototype=Feature;
     x.name = name;
-    x.init = nothing;
-    x.run  = nothing;
-    x.settings=nothing;
     Feature.list[name]=x;
     global[name]=x;
     return x;
 };
+// Executes the function specified by fn_name
+// wrapped by a try..catch block and stores
+// the start and endtime of execution.
+Feature.call=function(fn_name) {
+    this.start[fn_name] = new Date().getTime();
+    try {
+        this[fn_name]();
+    } catch (e) {
+        GM_log(e)
+    }
+    this.end[fn_name] = new Date().getTime();
+};
+// Executes (using Feature.call) the function
+// specified by fn_name for all Features 
+// created with Feature.create()
+// in the order they have been created.
 Feature.forall=function(fn_name) {
     for (var n in this.list) {
-        var x = this.list[n];
-        x.start = new Date().getTime();
-        try {
-            x[fn_name]();
-        } catch (e) {
-            GM_log(e)
-        }
-        x.end = new Date().getTime();
+        this.list[n].call(fn_name);
     }
 };
+
+/****************************************
+ *  SETTINGS
+ ****************************************/
+
+Feature.create("Settings");
+Settings.server=function(){
+    var url = location.href.match("//(\\w+)\\.travian.(\\w+)/");
+    return url[2]+(url[1]=='speed'?'x':url[1].substr(1));
+}();
+Settings.setting=
+Settings.read=function() {
+    var x = GM_getValue(this.fullname);
+    if (x!==undefined && x!=="") {
+        try {
+            x=eval(x);
+            if (x!="") {
+                this.value=x;
+            }
+        } catch (e) {
+            GM_log(e);
+        }
+    }
+}
+Settings.write=function() {
+    GM_setValue(this.fullname, this.value);
+}
+
+
+// BWC (backwards compatability code)
+function prefix(s) {
+    return "speed.nl."+s;
+}
 
 /****************************************
  *  DEBUG
  ****************************************/
 
 Feature.create("Debug");
+// These categories are in order from extremely severe to extremely verbose and
+// are converted to functions in the Debug namespace using the specified name. 
+// Note that these can't be used during Feature creation. Use Debug
+// Example: Debug.warning("This shouldn't have happend!");
+// Using the index is also allowed: Debug[1]("This shouldn't have happend!");
+// has the same effect as the previous example.
 Debug.categories=["fatal","error","warning","info","debug"];
 Debug.none   =-1;
-Debug.all    =Debug.debug;
+Debug.all    =Debug.categories.length;
 /* Debug.none is for the final release - don't forget to set it before uploading
 Debug.level  =Debug.none;/*/
 Debug.level  =Debug.all;//*/
-for (var i in Debug.categories) {
-    Debug[Debug.categories[i]]=function(msg) {
-        if (i <= this.level) this.print(msg);
+Debug.print  =GM_log;
+Debug.init   =function() {
+    for (var i in Debug.categories) {
+        Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
     }
 }
-Debug.print  =GM_log;
 
-}catch(e){alert(e);}
+// BWC:
+//* d_none is for the final release - don't forget to set it before uploading
+var d_level=d_none;/*/
+var d_level=d_all;//*/
+var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
+function debug(lvl, msg){
+    //if (unsafeWindow.console) unsafeWindow.console.log(msg); // firebug logging
+    Debug.print(msg);
+}
+dbg=Debug.print;
+
+/****************************************
+ *  CURRENT END OF REDESING ATTEMPT
+ ****************************************/
+
+
     //////////////////////////////////////////
     //  SCRIPT CONFIG  ( DEFAULT SETTINGS ) //
     // You can modify them whatever you like//
     //   however, they will be overwritten  //
     //        by any in-game settings       //
     //////////////////////////////////////////
-
-    // Debug functions...
-    var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-    //* d_none is for the final release - don't forget to set it before uploading
-    var d_level=d_none;/*/
-    var d_level=d_all;//*/
-
-    /*************************************************
-     * Provides basic debugging
-     *************************************************/
-    function debug(lvl, msg){
-        if (lvl <= d_level) GM_log("\n"+msg);
-        //if (unsafeWindow.console) unsafeWindow.console.log(msg); // firebug logging
-    }
-
-    /*************************************************
-     * Shortcut to debug at the highest level
-     *************************************************/
-    function dbg(msg){
-        debug(d_highest, msg);
-    }
 
     USERNAME = "someone";               // your username
     RACE = 1;                           // Your race (0=Romans, 1=Teutons, 2=Gauls)
@@ -275,12 +327,6 @@ Debug.print  =GM_log;
     //  LOAD IN-GAME SETTINGS               //
     //////////////////////////////////////////
 
-    var url = location.href.match("//(\\w+)\\.travian.(\\w+)/");
-    var gm_prefix = url[1]+'.'+url[2]+'.';
-    var travian_world_analyzer_server_code = url[2]+(url[1]=='speed'?'x':url[1].substr(1));
-    function prefix(s) {
-        return gm_prefix+s;
-    }
 
     window.addEventListener('load', main, false); // Run everything after the DOM loads!
 
@@ -357,7 +403,7 @@ Debug.print  =GM_log;
             document.body.appendChild(div);
     
             var box = div.childNodes[1].firstChild;
-    
+    GM_setValue
             var uses = "";
             function using(n, v) {
                 uses+='[<span style="cursor: pointer; color: '+(eval(v)?'green':'red')+'" id="TL_'+v+'">'+n+"</span>]";
@@ -1674,6 +1720,8 @@ Debug.print  =GM_log;
     } /* USE_EXTRA_VILLAGE */
 
     script_duration = 0;
+
+}catch(e){alert(e);}
 
 function main(){
     if (USE_SETTINGS){

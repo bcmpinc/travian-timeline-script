@@ -12,6 +12,8 @@ Timeline Events,Look&Feel:
 Other Features:
 - Add method for configuration of 'extra villages'
 - Add names to special locations.
+- Fix concurrency bug with special locations.
+- Repair Ally-lines' ally determination algorithm
 
 New Features:
 - Modify all the links for more robust navigation
