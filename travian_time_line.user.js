@@ -48,10 +48,117 @@
 //    attack and a merchant link button. (Currently you have to add these additional 
 //    villages in the scripts source code.)
 
+/*****************************************************************************/
 
-try {
-    script_start_time = new Date().getTime();
+/****************************************
+ *  JAVASCRIPT ENHANCEMENTS
+ ****************************************/
 
+// Make the global variable global, such that global variables can be created 
+// at local scope and the use of global variables at local scope can be made 
+// explicit.
+var global = this;
+
+// Get relative position of a dom element
+// Modified to work in the used situation.
+// TODO consider removal of this function.
+function getPos(obj) { 
+    var w = obj.offsetWidth;
+    var h = obj.offsetHeight;
+    var l = obj.offsetLeft;
+    var t = obj.offsetTop;
+    return [l,t,w,h];
+}
+
+// Remove a DOM element
+function remove(el) {
+    el.parentNode.removeChild(el);
+}
+
+// Concatenates the original string n times.
+String.prototype.repeat = function(n) {
+    var s = "";
+    while (--n >= 0) {
+        s += this;
+    }
+    return s;
+}
+
+// Add spaces (or s) to make the string have a length of at least n
+// s must have length 1.
+String.prototype.pad = function(n,s) {
+    if (s=undefined) s=" ";
+    n = n-this.length;
+    if (n<=0) return this;
+    return this+s.repeat(n);
+}
+
+// Functions missing in Math
+Math.sinh = function(x) { 
+    return .5*(Math.exp(x)-Math.exp(-x));
+}
+Math.cosh = function(x) { 
+    return .5*(Math.exp(x)+Math.exp(-x));
+}
+Math.arsinh = function(x) { 
+    return Math.log(x+Math.sqrt(x*x+1));
+}
+Math.arcosh = function(x) { 
+    return Math.log(x+Math.sqrt(x*x-1));
+}
+
+function nothing(){alert(this);}
+
+/****************************************
+ *  FEATURE
+ ****************************************/
+
+try{
+
+Feature=new Object();
+Feature.list={ };
+Feature.create=function(name){
+    var x=new Object();
+    x.name = name;
+    x.init = nothing;
+    x.run  = nothing;
+    x.settings=nothing;
+    Feature.list[name]=x;
+    global[name]=x;
+    return x;
+};
+Feature.forall=function(fn_name) {
+    for (var n in this.list) {
+        var x = this.list[n];
+        x.start = new Date().getTime();
+        try {
+            x[fn_name]();
+        } catch (e) {
+            GM_log(e)
+        }
+        x.end = new Date().getTime();
+    }
+};
+
+/****************************************
+ *  DEBUG
+ ****************************************/
+
+Feature.create("Debug");
+Debug.categories=["fatal","error","warning","info","debug"];
+Debug.none   =-1;
+Debug.all    =Debug.debug;
+/* Debug.none is for the final release - don't forget to set it before uploading
+Debug.level  =Debug.none;/*/
+Debug.level  =Debug.all;//*/
+for (var i in Debug.categories) {
+    Debug[Debug.categories[i]]=function(msg) {
+        if (i <= this.level) this.print(msg);
+    }
+}
+Debug.print  =GM_log;
+
+}catch(e){alert(e);}
     //////////////////////////////////////////
     //  SCRIPT CONFIG  ( DEFAULT SETTINGS ) //
     // You can modify them whatever you like//
@@ -209,53 +316,6 @@ try {
     //////////////////////////////////////////
     //  SCRIPT CODE                         //
     //////////////////////////////////////////
-
-    //////////////////////////////////////////
-    //  JAVASCRIPT ENHANCEMENTS             //
-    //////////////////////////////////////////
-
-    // Get relative position of a dom element
-    // Modified to work in the used situation.USE_SERVER_TIME
-    function getPos(obj) {
-        var w = obj.offsetWidth;
-        var h = obj.offsetHeight;
-        var l = obj.offsetLeft;
-        var t = obj.offsetTop;
-        return [l,t,w,h];
-    }
-
-    // Remove a DOM element
-    function remove(el) {
-        el.parentNode.removeChild(el);
-    }
-
-    // Create a repeat-string-N-times method for all String objects
-    String.prototype.repeat = function(n) {
-        var s = "";
-        while (--n >= 0) {
-            s += this;
-        }
-        return s;
-    }
-
-    String.prototype.pad = function(n) {
-        n = n-this.length;
-        if (n<=0) return this;
-        return this+" ".repeat(n);
-    }
-    
-    Math.sinh = function(x) { 
-        return .5*(Math.exp(x)-Math.exp(-x));
-    }
-    Math.cosh = function(x) { 
-        return .5*(Math.exp(x)+Math.exp(-x));
-    }
-    Math.arsinh = function(x) { 
-        return Math.log(x+Math.sqrt(x*x+1));
-    }
-    Math.arcosh = function(x) { 
-        return Math.log(x+Math.sqrt(x*x-1));
-    }
 
     //////////////////////////////////////////
     //  OPTIONS SCREEN                      //
@@ -1442,7 +1502,7 @@ try {
             drawtime(diff, n);
 
             // Highlight the 'elapsed time since last refresh'
-            diff2 = (script_start_time - d.getTime()) / 1000 / 60;
+            diff2 = (new Date().getTime() - d.getTime()) / 1000 / 60;
             y2 = tl_warp(diff2);
             g.fillStyle = "rgba(0,128,255,0.1)";
             g.fillRect(9-TIMELINE_SIZES_WIDTH, y,TIMELINE_SIZES_WIDTH+1, y2-y);
@@ -1612,15 +1672,7 @@ try {
         }
     } /* USE_EXTRA_VILLAGE */
 
-    script_duration = new Date().getTime() - script_start_time;
-} catch (e) {
-    if (USE_DEBUG_MODE) 
-        alert("Timeline caught an error: \n"+
-              e.name+" at line "+e.lineNumber+"\n"+
-              "Message:"+e.message+"\n"+
-              "Stack trace:\n"+e.stack);
-    throw e;
-}
+    script_duration = 0;
 
 function main(){
     if (USE_SETTINGS){
