@@ -1502,7 +1502,8 @@ Debug.print  =GM_log;
             drawtime(diff, n);
 
             // Highlight the 'elapsed time since last refresh'
-            diff2 = (new Date().getTime() - d.getTime()) / 1000 / 60;
+            if (global.script_start==undefined) global.script_start = new Date().getTime();
+            diff2 = (global.script_start - d.getTime()) / 1000 / 60;
             y2 = tl_warp(diff2);
             g.fillStyle = "rgba(0,128,255,0.1)";
             g.fillRect(9-TIMELINE_SIZES_WIDTH, y,TIMELINE_SIZES_WIDTH+1, y2-y);
