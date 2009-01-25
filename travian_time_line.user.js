@@ -121,17 +121,18 @@ Feature.init=nothing;
 Feature.run =nothing;
 Feature.setting=function(name, def_val) {
     var s = new Object();
-    s.prototype=Settings;
+    s.__proto__= Settings;
     s.fullname = Settings.server+'.'+this.name+'.'+name;
     s.name = name;
-    s.value = def_val;
+    s.parent = this;
+    this[name] = def_val;
     s.read();
-    this[name]=s;
+    this['_'+name]=s;
     return s;
 };
 Feature.create=function(name){
     var x=new Object();
-    x.prototype=Feature;
+    x.__proto__=Feature;
     x.name = name;
     Feature.list[name]=x;
     global[name]=x;
@@ -140,22 +141,28 @@ Feature.create=function(name){
 // Executes the function specified by fn_name
 // wrapped by a try..catch block and stores
 // the start and endtime of execution.
-Feature.call=function(fn_name) {
+// If (once), this function can't be called
+// anymore in the future.
+Feature.run=function(fn_name, once) {
+    if (once==undefined) once=false;
+    if (!this.start) this.start=new Object();
     this.start[fn_name] = new Date().getTime();
     try {
         this[fn_name]();
     } catch (e) {
         GM_log(e)
     }
+    if (once) this[fn_name]=nothing;
+    if (!this.end) this.end=new Object();
     this.end[fn_name] = new Date().getTime();
 };
 // Executes (using Feature.call) the function
 // specified by fn_name for all Features 
 // created with Feature.create()
 // in the order they have been created.
-Feature.forall=function(fn_name) {
+Feature.forall=function(fn_name, once) {
     for (var n in this.list) {
-        this.list[n].call(fn_name);
+        this.list[n].run(fn_name, once);
     }
 };
 
@@ -168,24 +175,24 @@ Settings.server=function(){
     var url = location.href.match("//(\\w+)\\.travian.(\\w+)/");
     return url[2]+(url[1]=='speed'?'x':url[1].substr(1));
 }();
-Settings.setting=
 Settings.read=function() {
     var x = GM_getValue(this.fullname);
     if (x!==undefined && x!=="") {
         try {
             x=eval(x);
             if (x!="") {
-                this.value=x;
+                this.parent[this.name]=x;
             }
         } catch (e) {
             GM_log(e);
         }
     }
-}
+};
 Settings.write=function() {
-    GM_setValue(this.fullname, this.value);
-}
-
+    GM_setValue(this.fullname, this.parent[this.name]);
+};
+Settings.setting("username","someone"); // your username
+Settings.setting("race",1);             // Your race (0=Romans, 1=Teutons, 2=Gauls)
 
 // BWC (backwards compatability code)
 function prefix(s) {
@@ -199,7 +206,6 @@ function prefix(s) {
 Feature.create("Debug");
 // These categories are in order from extremely severe to extremely verbose and
 // are converted to functions in the Debug namespace using the specified name. 
-// Note that these can't be used during Feature creation. Use Debug
 // Example: Debug.warning("This shouldn't have happend!");
 // Using the index is also allowed: Debug[1]("This shouldn't have happend!");
 // has the same effect as the previous example.
@@ -214,15 +220,15 @@ Debug.init   =function() {
     for (var i in Debug.categories) {
         Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
     }
-}
+};
+Debug.run("init",true);
+//if (unsafeWindow.console) unsafeWindow.console.log(msg); // firebug logging
+
 
 // BWC:
-//* d_none is for the final release - don't forget to set it before uploading
-var d_level=d_none;/*/
-var d_level=d_all;//*/
+var d_level=d_all;
 var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
 function debug(lvl, msg){
-    //if (unsafeWindow.console) unsafeWindow.console.log(msg); // firebug logging
     Debug.print(msg);
 }
 dbg=Debug.print;
