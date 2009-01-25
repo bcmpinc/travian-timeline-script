@@ -87,7 +87,7 @@ String.prototype.repeat = function(n) {
 // Add spaces (or s) to make the string have a length of at least n
 // s must have length 1.
 String.prototype.pad = function(n,s) {
-    if (s=undefined) s=" ";
+    if (s==undefined) s=" ";
     n = n-this.length;
     if (n<=0) return this;
     return this+s.repeat(n);
@@ -107,7 +107,7 @@ Math.arcosh = function(x) {
     return Math.log(x+Math.sqrt(x*x-1));
 }
 
-function nothing(){alert(this);}
+function nothing(){}
 
 /****************************************
  *  FEATURE
@@ -127,13 +127,14 @@ Feature.setting=function(name, def_val) {
     s.parent = this;
     this[name] = def_val;
     s.read();
-    this['_'+name]=s;
+    this.s[name]=s;
     return s;
 };
 Feature.create=function(name){
     var x=new Object();
     x.__proto__=Feature;
     x.name = name;
+    x.s=new Object();
     Feature.list[name]=x;
     global[name]=x;
     return x;
@@ -143,14 +144,14 @@ Feature.create=function(name){
 // the start and endtime of execution.
 // If (once), this function can't be called
 // anymore in the future.
-Feature.run=function(fn_name, once) {
+Feature.call=function(fn_name, once) {
     if (once==undefined) once=false;
     if (!this.start) this.start=new Object();
     this.start[fn_name] = new Date().getTime();
     try {
         this[fn_name]();
     } catch (e) {
-        GM_log(e)
+        GM_log(this.name+'.'+fn_name+': '+e)
     }
     if (once) this[fn_name]=nothing;
     if (!this.end) this.end=new Object();
@@ -162,7 +163,7 @@ Feature.run=function(fn_name, once) {
 // in the order they have been created.
 Feature.forall=function(fn_name, once) {
     for (var n in this.list) {
-        this.list[n].run(fn_name, once);
+        this.list[n].call(fn_name, once);
     }
 };
 
@@ -193,11 +194,83 @@ Settings.write=function() {
 };
 Settings.setting("username","someone"); // your username
 Settings.setting("race",1);             // Your race (0=Romans, 1=Teutons, 2=Gauls)
+Settings.s.race.write();
+Settings.run=function() {
+    // Create link for opening the settings menu.
+    var div = document.createElement("div");
+    div.style.position = "absolute";
+    div.style.zIndex = "2";
+    var right = Timeline.width;
+    if (Timeline.collapse) right = Timeline.collapse_width;
+    if (!Timeline.enabled) right = 0;
+    right+=5;
+    div.style.right = right+"px";
+    div.style.top = "-5px";
+    div.style.MozBorderRadius = "6px";
+    div.style.padding = "3px";
+    div.style.border = "1px solid #999";
+    div.style.background = "#ccc";
+    div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
+    document.body.appendChild(div);
+    var link = div.firstChild;
+    link.addEventListener("click",Settings.show,false);    
+};
+Settings.show=function() {
+    var w = document.createElement("div");
+    w.style.position = "fixed";
+    w.style.zIndex = "250";
+    w.style.left = "0px";
+    w.style.top = "0px";
+    w.style.right = "0px";
+    w.style.bottom = "0px";
+    w.style.background = "rgba(192,192,192,0.8)";
+    w.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
+        '<div style="position: absolute; left: 50%; top: 50%;">'+
+        '<pre style="position: absolute; left: -300px; top: -200px; width: 600px; height: 400px;'+
+        ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
+        '</pre></div>';
+    document.body.appendChild(w);
+    Settings.window = w;
+    try {
+        var p = w.childNodes[1].childNodes[0];
+        function add_el(type) {
+            var el=document.createElement(type);
+            p.appendChild(el);
+            return el;
+        }
+        var title = add_el('div');
+        title.innerHTML="Travian Time Line Settings";
+        title.style.fontWeight="bold";
+        title.style.textAlign="center";
+        for (var n in Feature.list) {
+            var f = Feature.list[n];
+            if (f.s!=undefined) {
+                add_el('hr');
+                var head = add_el("div");
+                head.innerHTML=f.name+':';
+                head.style.fontWeight="bold";
+                var body = "";
+                for (var i in f.s) {
+                    body+=i.pad(16)+": "+f[i]+"\n";
+                }
+                add_el("div").innerHTML=body;
+            }
+        }
+    } catch (e) {
+        GM_log(e.lineNumber-347+': '+e);
+    }    
+    w.firstChild.addEventListener("click",Settings.close,false);
+};
+Settings.close=function(){
+    remove(Settings.window);
+};
 
 // BWC (backwards compatability code)
 function prefix(s) {
     return "speed.nl."+s;
 }
+
+
 
 /****************************************
  *  DEBUG
@@ -213,8 +286,8 @@ Debug.categories=["fatal","error","warning","info","debug"];
 Debug.none   =-1;
 Debug.all    =Debug.categories.length;
 /* Debug.none is for the final release - don't forget to set it before uploading
-Debug.level  =Debug.none;/*/
-Debug.level  =Debug.all;//*/
+Debug.setting("level", Debug.none);/*/
+Debug.setting("level", Debug.all);//*/
 Debug.print  =GM_log;
 Debug.init   =function() {
     for (var i in Debug.categories) {
@@ -233,6 +306,23 @@ function debug(lvl, msg){
 }
 dbg=Debug.print;
 
+
+
+/****************************************
+ *  TIMELINE
+ ****************************************/
+Feature.create("Timeline");
+Timeline.setting("enabled", true); // enable the timeline
+Timeline.setting("width", 400);    // width of the timeline (in pixels)
+Timeline.setting("height", 5);     // pixel height of one minute.
+Timeline.setting("history", 90);   // minutes +/- 15 min, for aligning
+Timeline.setting("future", 90);    // minutes
+Timeline.setting("collapse", false);       // Make the timeline very small by default
+Timeline.setting("collapse_width", 60);    // width of the timeline when collapsed (in pixels)
+Timeline.setting("collapse_speed", 1500);  // collapse fade speed in pixels per second
+Timeline.setting("collapse_rate", 50);     // updates of the collapse fade per second
+Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of the timeline
+
 /****************************************
  *  CURRENT END OF REDESING ATTEMPT
  ****************************************/
@@ -248,7 +338,7 @@ dbg=Debug.print;
     USERNAME = "someone";               // your username
     RACE = 1;                           // Your race (0=Romans, 1=Teutons, 2=Gauls)
 
-    USE_TIMELINE = true;                // enable the timeline.
+    Timeline.enabled = true;                // enable the timeline.
     USE_ALLY_LINES = true;              // Draw lines on the area map to allies.
     USE_CUSTOM_SIDEBAR = true;          // Modify the links in the sidebar.
     USE_MARKET_COLORS = true;           // Color the market offers to quickly determine their value.
@@ -259,7 +349,7 @@ dbg=Debug.print;
     USE_SERVER_TIME = false;            // Use the server time instead of the local clock. Requires a 24 hours clock.
     USE_DEBUG_MODE = false;             // Makes the script throw an alert when something bad happened.
     SHOW_TIMELINE_REPORT_INFO = true;   // Show the size of the army, the losses and the amount of resources stolen.
-    COLLAPSE_TIMELINE = false;          // Make the timeline very small by default
+    Timeline.collapse = false;          // Make the timeline very small by default
 
     REMOVE_PLUS_BUTTON = true;  // Removes the Plus button
     REMOVE_PLUS_COLOR = true;   // De-colors the Plus link (needs USE_CUSTOM_SIDEBAR)
@@ -267,15 +357,6 @@ dbg=Debug.print;
     REMOVE_HOME_LINK = true;    // Redirects travian image to current page instead of travian homepage.
 
     FIX_TIMELINE = false;       // Keep timeline on the same position when scrolling the window.
-
-    TIMELINE_SIZES_HISTORY =  90; // minutes +/- 15 min, for aligning
-    TIMELINE_SIZES_FUTURE  =  90; // minutes
-    TIMELINE_SIZES_HEIGHT  =   5; // pixel height of one minute.
-    TIMELINE_SIZES_WIDTH   = 400; // width of the timeline (in pixels)
-    TIMELINE_COLLAPSED_WIDTH = 60;// width of the timeline when collapsed (in pixels)
-    TIMELINE_COLLAPSE_SPEED = 1500;// collapse fade speed in pixels per second.
-    TIMELINE_COLLAPSE_RATE = 50;  // updates of the collapse fade per second.
-    TIMELINE_COLOR = "rgba(255, 255, 204, 0.5)"; // Background color of the timeline
 
     KEEP_TIMELINE_UPDATED = false;    // Update the timeline every 'TIMELINE_UPDATE_INTERVAL' msec.
     TIMELINE_UPDATE_INTERVAL = 30000; // Interval between timeline updates in msec.
@@ -338,18 +419,18 @@ dbg=Debug.print;
 
     //if (USE_SETTINGS) {
     function set_basic_settings(){  
-        //TIMELINE_COLOR
+        //Timeline.color
 
         var saved_settings=["USERNAME", "RACE",
                       
-                            "SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
+                            "SPECIAL_LOCATIONS","VILLAGES","Timeline.enabled","USE_ALLY_LINES",
                             "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
                             "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
-                            "SHOW_TIMELINE_REPORT_INFO", "COLLAPSE_TIMELINE",
+                            "SHOW_TIMELINE_REPORT_INFO", "Timeline.collapse",
                       
-                            "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
-                            "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE", "TIMELINE_COLLAPSED_WIDTH",
-                            "TIMELINE_COLOR", "KEEP_TIMELINE_UPDATED", "TIMELINE_SCALE_WARP"
+                            "Timeline.history","Timeline.future","Timeline.height",
+                            "Timeline.width", "TIME_DIFFERENCE", "Timeline.collapse_width",
+                            "Timeline.color", "KEEP_TIMELINE_UPDATED", "TIMELINE_SCALE_WARP"
                             ];
 
         for (i in saved_settings) {
@@ -378,9 +459,9 @@ dbg=Debug.print;
         var div = document.createElement("div");
         div.style.position = "absolute";
         div.style.zIndex = "2";
-        var right = TIMELINE_SIZES_WIDTH;
-        if (COLLAPSE_TIMELINE) right = TIMELINE_COLLAPSED_WIDTH;
-        if (!USE_TIMELINE) right = 0;
+        var right = Timeline.width;
+        if (Timeline.collapse) right = Timeline.collapse_width;
+        if (!Timeline.enabled) right = 0;
         right+=5;
         div.style.right = right+"px";
         div.style.top = "-5px";
@@ -409,12 +490,11 @@ dbg=Debug.print;
             document.body.appendChild(div);
     
             var box = div.childNodes[1].firstChild;
-    GM_setValue
             var uses = "";
             function using(n, v) {
                 uses+='[<span style="cursor: pointer; color: '+(eval(v)?'green':'red')+'" id="TL_'+v+'">'+n+"</span>]";
             }
-            using("timeline", "USE_TIMELINE");
+            using("timeline", "Timeline.enabled");
             using("ally lines", "USE_ALLY_LINES");
             using("custom sidebar", "USE_CUSTOM_SIDEBAR");
             using("market colors", "USE_MARKET_COLORS");
@@ -423,7 +503,7 @@ dbg=Debug.print;
             using("extra village", "USE_EXTRA_VILLAGE");
             using("debug mode", "USE_DEBUG_MODE");
             uses+='==\n==';
-            using("collapse timeline", "COLLAPSE_TIMELINE");
+            using("collapse timeline", "Timeline.collapse");
             using("timeline extended info", "SHOW_TIMELINE_REPORT_INFO");
             uses+='==\n==';
             using("use server time", "USE_SERVER_TIME");
@@ -447,7 +527,7 @@ dbg=Debug.print;
                 sizeoptions += "    "+n.pad(16)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
             }
             tlo("WIDTH","px");
-            tlo("COLLAPSED","px","TIMELINE_COLLAPSED_WIDTH");
+            tlo("COLLAPSED","px","Timeline.collapse_width");
             tlo("HEIGHT","px/min");
             tlo("HISTORY","min");
             tlo("FUTURE","min");
@@ -458,7 +538,7 @@ dbg=Debug.print;
                 'RACE     = '+race+'\n'+
                 'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
                 'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
-                'TIMELINE_COLOR  = <input id="TL_TIMELINE_COLOR" value="'+TIMELINE_COLOR+'"/> (as in css)\n'+
+                'Timeline.color  = <input id="TL_Timeline.color" value="'+Timeline.color+'"/> (as in css)\n'+
                 'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
                 'VILLAGES='+uneval(VILLAGES)+'\n'+
                 '<hr/>'+'script duration: '+script_duration+'ms.\n';
@@ -807,7 +887,7 @@ dbg=Debug.print;
                 }                
                 g.restore();
             
-                wasc = travian_world_analyzer_server_code;
+                wasc = Settings.server;
                 rdiv.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
                     "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",5\" > 5</a>, "+
                     "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",10\">10</a>, "+
@@ -994,7 +1074,7 @@ dbg=Debug.print;
     function tl_main(){
         tp1 = document.getElementById("tp1");
         if (!tp1) return;
-        //if (USE_TIMELINE && tp1) {
+        //if (Timeline.enabled && tp1) {
         /*  A timeline-data-packet torn apart:
             Example: {'1225753710000':[0, 0, 0, 0, 189, 0, 0, 0, 0, 0, 0, 0, "Keert terug van 2. Nador", 0, 0, 0, 0]}
         
@@ -1272,7 +1352,7 @@ dbg=Debug.print;
                 // Add resource pictures and amounts (if sending)
                 if (!ret)
                     for (j=0; j<4; j++)
-                        e[13+j]=res[j];
+                        e[13+j]=res[j]-0;
             }
         }
 
@@ -1333,7 +1413,7 @@ dbg=Debug.print;
         /////////////////////////////////
 
 
-        TIMELINE_SIZES_FULL_HEIGHT  = (TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE)*TIMELINE_SIZES_HEIGHT; // pixels
+        TIMELINE_SIZES_FULL_HEIGHT  = (Timeline.history+Timeline.future)*Timeline.height; // pixels
 
         // Create timeline canvas + container
         tl = document.createElement("canvas");
@@ -1344,24 +1424,24 @@ dbg=Debug.print;
             tlc.style.position = "absolute";
         tlc.style.top      = "0px";
         tlc.style.right    = "0px";
-        tlc.style.width    = (COLLAPSE_TIMELINE?TIMELINE_COLLAPSED_WIDTH:TIMELINE_SIZES_WIDTH) + "px";
+        tlc.style.width    = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
         tlc.style.height   = TIMELINE_SIZES_FULL_HEIGHT + "px";
         tlc.style.zIndex   = "20";
-        tlc.style.backgroundColor=TIMELINE_COLOR;
+        tlc.style.backgroundColor=Timeline.color;
         tlc.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
         tlc.style.overflow = "hidden";
         tl.id = "tl";
-        tl.width  = TIMELINE_SIZES_WIDTH;
+        tl.width  = Timeline.width;
         tl.height = TIMELINE_SIZES_FULL_HEIGHT;
         tl.style.position = "relative";
-        tl.style.left = (COLLAPSE_TIMELINE?TIMELINE_COLLAPSED_WIDTH-TIMELINE_SIZES_WIDTH:0)+"px";
+        tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
         tlc.appendChild(tl);
         document.body.appendChild(tlc);
     
         // Code for expanding/collapsing the timeline.
-        if (COLLAPSE_TIMELINE) {
-            tl_col_cur = TIMELINE_COLLAPSED_WIDTH;
-            tl_col_tar = TIMELINE_COLLAPSED_WIDTH;
+        if (Timeline.collapse) {
+            tl_col_cur = Timeline.collapse_width;
+            tl_col_tar = Timeline.collapse_width;
             tl_col_run = false;
             tl_col_prev = 0;
             function tlc_fade() {
@@ -1374,26 +1454,26 @@ dbg=Debug.print;
                     return;
                 }
                 if (tl_col_cur<tl_col_tar) {
-                    tl_col_cur+=TIMELINE_COLLAPSE_SPEED*diff;
+                    tl_col_cur+=Timeline.collapse_speed*diff;
                     if (tl_col_cur>tl_col_tar)
                         tl_col_cur=tl_col_tar;
                 }
                 if (tl_col_cur>tl_col_tar) {
-                    tl_col_cur-=TIMELINE_COLLAPSE_SPEED*diff;
+                    tl_col_cur-=Timeline.collapse_speed*diff;
                     if (tl_col_cur<tl_col_tar)
                         tl_col_cur=tl_col_tar;
                 }
                 tlc.style.width = tl_col_cur + "px";
-                tlc.firstChild.style.left = (tl_col_cur-TIMELINE_SIZES_WIDTH)+"px";
-                setTimeout(tlc_fade, 1000/TIMELINE_COLLAPSE_RATE);
+                tlc.firstChild.style.left = (tl_col_cur-Timeline.width)+"px";
+                setTimeout(tlc_fade, 1000/Timeline.collapse_rate);
             }
             function tlc_expand(e) {
-                tl_col_tar = TIMELINE_SIZES_WIDTH;
+                tl_col_tar = Timeline.width;
                 tl_col_prev = new Date().getTime();
                 if (!tl_col_run) tlc_fade();
             }
             function tlc_collapse(e) {
-                tl_col_tar = TIMELINE_COLLAPSED_WIDTH;
+                tl_col_tar = Timeline.collapse_width;
                 tl_col_prev = new Date().getTime();
                 if (!tl_col_run) tlc_fade();
             }
@@ -1457,14 +1537,14 @@ dbg=Debug.print;
                 d.setMinutes(60);    
             }
         
-            tl_warp_now = (n.getTime() - d.getTime())/1000/60 + TIMELINE_SIZES_HISTORY;
-            tl_warp_now/=TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE;
+            tl_warp_now = (n.getTime() - d.getTime())/1000/60 + Timeline.history;
+            tl_warp_now/=Timeline.history+Timeline.future;
         }
 
         // Clean old events:
         determine_now();
         list = { };
-        old = d.getTime()-TIMELINE_SIZES_HISTORY*60000;
+        old = d.getTime()-Timeline.history*60000;
         for (e in events) {
             if (e>old) {
                 list[e] = events[e];            
@@ -1481,15 +1561,15 @@ dbg=Debug.print;
     
         // transforms the y coordinate if TIMELINE_SCALE_WARP is in use.
         function tl_warp(y) {
-            if (!TIMELINE_SCALE_WARP) return y*TIMELINE_SIZES_HEIGHT;
-            y+=TIMELINE_SIZES_HISTORY;
-            y/=TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE;
+            if (!TIMELINE_SCALE_WARP) return y*Timeline.height;
+            y+=Timeline.history;
+            y/=Timeline.history+Timeline.future;
         
             y = tl_warp_deform(tl_warp_deform(y));
         
-            y*=TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE;
-            y-=TIMELINE_SIZES_HISTORY;
-            return y*TIMELINE_SIZES_HEIGHT;
+            y*=Timeline.history+Timeline.future;
+            y-=Timeline.history;
+            return y*Timeline.height;
         }
 
         // Wrapped timeline drawing code in a function such that it can be called once every minute.
@@ -1499,18 +1579,18 @@ dbg=Debug.print;
         
             // Get context
             var g = tl.getContext("2d");
-            g.clearRect(0,0,TIMELINE_SIZES_WIDTH,TIMELINE_SIZES_FULL_HEIGHT);
+            g.clearRect(0,0,Timeline.width,TIMELINE_SIZES_FULL_HEIGHT);
             g.save();
                 
             // Draw bar
-            g.translate(TIMELINE_SIZES_WIDTH - 9.5, TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT + .5);
+            g.translate(Timeline.width - 9.5, Timeline.history * Timeline.height + .5);
         
             g.strokeStyle = "rgb(0,0,0)";
             g.beginPath();
-            g.moveTo(0,-TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT);
-            g.lineTo(0, TIMELINE_SIZES_FUTURE  * TIMELINE_SIZES_HEIGHT);
+            g.moveTo(0,-Timeline.history * Timeline.height);
+            g.lineTo(0, Timeline.future  * Timeline.height);
             g.stroke();
-            for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=1) {
+            for (var i=-Timeline.history; i<=Timeline.future; i+=1) {
                 g.beginPath();
                 l = -2;
                 ll = 0;
@@ -1535,7 +1615,7 @@ dbg=Debug.print;
                 g.mozDrawText(x);    
                 g.restore();    
             }
-            for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=15) {
+            for (var i=-Timeline.history; i<=Timeline.future; i+=15) {
                 t = new Date(d);
                 t.setMinutes(t.getMinutes() + i);
                 drawtime(i, t);
@@ -1562,7 +1642,7 @@ dbg=Debug.print;
             diff2 = (global.script_start - d.getTime()) / 1000 / 60;
             y2 = tl_warp(diff2);
             g.fillStyle = "rgba(0,128,255,0.1)";
-            g.fillRect(9-TIMELINE_SIZES_WIDTH, y,TIMELINE_SIZES_WIDTH+1, y2-y);
+            g.fillRect(9-Timeline.width, y,Timeline.width+1, y2-y);
 
             unit = new Array(17);
             for (i=1; i<12; i++) {
@@ -1590,7 +1670,7 @@ dbg=Debug.print;
             for (e in events) {
                 p = events[e];
                 diff = (e - d.getTime()) / 1000 / 60;
-                if (diff<-TIMELINE_SIZES_HISTORY || diff>TIMELINE_SIZES_FUTURE) continue;
+                if (diff<-Timeline.history || diff>Timeline.future) continue;
                 y = tl_warp(diff);
                 y = Math.round(y);
                 g.strokeStyle = "rgb(0,0,0)";
@@ -1603,14 +1683,14 @@ dbg=Debug.print;
                 var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
                 cap = (cap<=0)?"*":"";
                 g.save();
-                g.translate(20 - TIMELINE_SIZES_WIDTH - g.mozMeasureText(cap), y+4);
+                g.translate(20 - Timeline.width - g.mozMeasureText(cap), y+4);
                 g.mozDrawText(cap + p[12]);
                 g.restore();
 
                 if (p[17]) {
                     g.fillStyle = "rgb(0,0,128)";
                     g.save();
-                    g.translate(20 - TIMELINE_SIZES_WIDTH, y-5);
+                    g.translate(20 - Timeline.width, y-5);
                     g.mozDrawText(p[17]);
                     g.restore();
                 }
@@ -1668,10 +1748,10 @@ dbg=Debug.print;
         // To keep the link with the 'travian task queue'-script working properly, we also need to be able 
         // to undo the warping. I'm using a simple binairy search for that.
         function tl_unwarp(y) {
-            y-=TIMELINE_SIZES_HISTORY*TIMELINE_SIZES_HEIGHT;
-            if (!TIMELINE_SCALE_WARP) return y/TIMELINE_SIZES_HEIGHT;
-            var b_l = -TIMELINE_SIZES_HISTORY;
-            var b_h =  TIMELINE_SIZES_FUTURE;
+            y-=Timeline.history*Timeline.height;
+            if (!TIMELINE_SCALE_WARP) return y/Timeline.height;
+            var b_l = -Timeline.history;
+            var b_h =  Timeline.future;
             for (i=0; i<32; i++) {
                 b_m = (b_l+b_h)/2;
                 if (y<tl_warp(b_m)) {
@@ -1706,7 +1786,7 @@ dbg=Debug.print;
         // We also probably want to stop the mouse scrolling from propegating in this case...
         // tlc.addEventListener('DOMMouseScroll', function (e){}, false);
     
-    } /* USE_TIMELINE */
+    } /* Timeline.enabled */
 
     function ev_main(){
         res = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
@@ -1733,6 +1813,8 @@ dbg=Debug.print;
 
 }catch(e){alert(e);}
 
+Feature.forall('init',true);
+
 function main(){
     if (USE_SETTINGS){
 	    set_basic_settings();
@@ -1744,6 +1826,7 @@ function main(){
     if (USE_ALLY_LINES) al_main();
     if (REMOVE_PLUS_BUTTON) remove_plus_button();
     if (USE_CUSTOM_SIDEBAR) csb_main();
-    if (USE_TIMELINE) tl_main();
+    if (Timeline.enabled) tl_main();
     if (USE_EXTRA_VILLAGE) ev_main();
+    Feature.forall('run',true);
 }
