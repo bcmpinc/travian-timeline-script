@@ -988,7 +988,11 @@ try {
         }
 
         // Extract the active village
-        active_vil = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
+        try {
+            active_vil = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
+        } catch (e) {
+            active_vil = 0;
+        }
         debug(d_low, "The active village is: "+active_vil);
 
         // Travelling armies (rally point)
