@@ -61,7 +61,7 @@ try {
 
     // Debug functions...
     var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-    /* d_none is for the final release - don't forget to set it before uploading
+    //* d_none is for the final release - don't forget to set it before uploading
     var d_level=d_none;/*/
     var d_level=d_all;//*/
 
