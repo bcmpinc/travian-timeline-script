@@ -1202,9 +1202,16 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
                     // If it isn't this will certainly fail.
                     try {
                         time = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)");
+                        duration = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24;
+                        duration = Math.floor(duration);
                         where = x.childNodes[0].childNodes[2].textContent;
                 
-                        t = parseTime(time.slice(1, 4)).getTime();
+                        t = parseTime(time.slice(1, 4));
+                        if (duration > 0){
+                            debug(d_low, 'Duration is > 24 hours: '+duration);
+                            t.setDate(t.getDate()+duration);
+                        }
+                        t = t.getTime();
                 
                         try {
                             e = getevent(t, where, active_vil);
@@ -1291,9 +1298,15 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
                     x = y.childNodes[nn];
                     time = x.childNodes[3].textContent; 
                     time = time.match("(\\d\\d?):(\\d\\d) ?([a-z]*)");
+                    duration = Math.floor(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
                     where = x.childNodes[1].textContent;
                 
-                    t = parseTime(time.slice(1, 3), time[3]).getTime();
+                    t = parseTime(time.slice(1, 3), time[3]);
+                    if (duration > 0){
+                        debug(d_low, 'Duration is > 24 hours: '+duration);
+                        t.setDate(t.getDate()+duration);
+                    }
+                    t = t.getTime();
 
                     res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
 
@@ -1328,6 +1341,9 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
                 time = x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
                 debug(d_low, "Merchant arriving at "+time);
 
+                // Extract the duration of the shipment
+                duration = Math.floor(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
+
                 // Extract the value of the shipment
                 res = x.childNodes[4].childNodes[1].textContent.split(' | ');
                 debug(d_low, "Merchant carrying "+res);
@@ -1340,7 +1356,12 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
                 type = x.childNodes[0].childNodes[3].textContent;
 
                 // Parse time appropriately...
-                t = parseTime(time.slice(1, 3), time[3]).getTime();
+                t = parseTime(time.slice(1, 3), time[3]);
+                if (duration > 0){
+                    debug(d_low, 'Duration is > 24 hours: '+duration);
+                    t.setDate(t.getDate()+duration);
+                }
+                t = t.getTime();
 
                 try {
                     e = getevent(t, type, active_vil);
@@ -1372,8 +1393,16 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
                     time = x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
                     debug(d_low, "Research completing at "+time);
 
+                    // Extract the duration
+                    duration = Math.floor(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
+
                     // And parse it appropriately
-                    t = parseTime(time.slice(1, 3), time[3]).getTime();
+                    t = parseTime(time.slice(1, 3), time[3]);
+                    if (duration > 0){
+                        debug(d_low, 'Duration is > 24 hours: '+duration);
+                        t.setDate(t.getDate()+duration);
+                    }
+                    t = t.getTime();
 
                     // Extract the unit being upgraded
                     type = x.childNodes[3].textContent;
