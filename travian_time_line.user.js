@@ -61,7 +61,7 @@ try {
 
     // Debug functions...
     var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-    //* d_none is for the final release - don't forget to set it before uploading
+    /* d_none is for the final release - don't forget to set it before uploading
     var d_level=d_none;/*/
     var d_level=d_all;//*/
 
@@ -103,14 +103,16 @@ try {
 
     FIX_TIMELINE = false;       // Keep timeline on the same position when scrolling the window.
 
-    TIMELINE_SIZES_HISTORY =  90; // minutes +/- 15 min, for aligning
-    TIMELINE_SIZES_FUTURE  =  90; // minutes
-    TIMELINE_SIZES_HEIGHT  =   5; // pixel height of one minute.
-    TIMELINE_SIZES_WIDTH   = 400; // width of the timeline (in pixels)
-    TIMELINE_COLLAPSED_WIDTH = 60;// width of the timeline when collapsed (in pixels)
-    TIMELINE_COLLAPSE_SPEED = 1500;// collapse fade speed in pixels per second.
-    TIMELINE_COLLAPSE_RATE = 50;  // updates of the collapse fade per second.
-    TIMELINE_COLOR = "rgba(255, 255, 204, 0.5)"; // Background color of the timeline
+    TIMELINE_SIZES_HISTORY    =   90; // minutes +/- 15 min, for aligning. This is the amount that is displayed.
+    TIMELINE_SIZES_FUTURE     =   90; // minutes. The amount displayed
+    TIMELINE_DISTANCE_HISTORY =  270; // minutes, the distance that can be scrolled backwards in history (from 0).
+    TIMELINE_DISTANCE_FUTURE  =  270; // minutes, the distance that can be scrolled into the future (from 0).
+    TIMELINE_SIZES_HEIGHT     =    5; // pixel height of one minute.
+    TIMELINE_SIZES_WIDTH      =  400; // width of the timeline (in pixels)
+    TIMELINE_COLLAPSED_WIDTH  =   60; // width of the timeline when collapsed (in pixels)
+    TIMELINE_COLLAPSE_SPEED   = 1500; // collapse fade speed in pixels per second.
+    TIMELINE_COLLAPSE_RATE    =   50; // updates of the collapse fade per second.
+    TIMELINE_COLOR            = "rgba(255, 255, 204, 0.5)"; // Background color of the timeline
 
     KEEP_TIMELINE_UPDATED = false;    // Update the timeline every 'TIMELINE_UPDATE_INTERVAL' msec.
     TIMELINE_UPDATE_INTERVAL = 30000; // Interval between timeline updates in msec.
@@ -188,7 +190,8 @@ try {
                             "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
                             "SHOW_TIMELINE_REPORT_INFO", "COLLAPSE_TIMELINE",
                       
-                            "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE","TIMELINE_SIZES_HEIGHT",
+                            "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE", "TIMELINE_DISTANCE_HISTORY",
+                            "TIMELINE_DISTANCE_FUTURE", "TIMELINE_SIZES_HEIGHT",
                             "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE", "TIMELINE_COLLAPSED_WIDTH",
                             "TIMELINE_COLOR", "KEEP_TIMELINE_UPDATED", "TIMELINE_SCALE_WARP"
                             ];
@@ -291,7 +294,7 @@ try {
             div.style.background = "rgba(192,192,192,0.8)";
             div.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
                 '<div style="position: absolute; left: 50%; top: 50%;">'+
-                '<pre style="position: absolute; left: -300px; top: -200px; width: 600px; height: 400px;'+
+                '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 450px;'+
                 ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
                 '</pre></div>';
             document.body.appendChild(div);
@@ -332,13 +335,15 @@ try {
             function tlo(n, v, nn) {
                 if (!nn)
                     nn="TIMELINE_SIZES_"+n;
-                sizeoptions += "    "+n.pad(16)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
+                sizeoptions += "    "+n.pad(18)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
             }
             tlo("WIDTH","px");
             tlo("COLLAPSED","px","TIMELINE_COLLAPSED_WIDTH");
             tlo("HEIGHT","px/min");
             tlo("HISTORY","min");
             tlo("FUTURE","min");
+            tlo("SCROLLABLE HISTORY", "min", "TIMELINE_DISTANCE_HISTORY");
+            tlo("SCROLLABLE FUTURE", 'min', "TIMELINE_DISTANCE_FUTURE");
     
             box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div>'+
                 '<i>Leave input fields empty to use the default value.</i><hr/>'+
@@ -1618,9 +1623,15 @@ try {
         // canvases on top with events from just one village? That way can turn them on/off at will.
         // It would also be best to save the point of rotation as a GM_value...
         // Mouse Scroll Wheel
+        function tl_mouse_wheel(e){
+            e.stopPropagation();
+            e.preventDefault();
+            dbg(e.detail);
+        }
+
         // Could scroll backwards and forwards on the timeline
         // We also probably want to stop the mouse scrolling from propegating in this case...
-        // tlc.addEventListener('DOMMouseScroll', function (e){}, false);
+        tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
     
     } /* USE_TIMELINE */
 
