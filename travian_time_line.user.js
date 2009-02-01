@@ -119,15 +119,19 @@ Feature=new Object();
 Feature.list=[];
 Feature.init=nothing;
 Feature.run =nothing;
-Feature.setting=function(name, def_val) {
+Feature.setting=function(name, def_val, type, typedata, description) {
     var s = new Object();
-    s.__proto__= Settings;
-    s.fullname = Settings.server+'.'+this.name+'.'+name;
-    s.name = name;
-    s.parent = this;
-    this[name] = def_val;
+    if (type==undefined) type=Settings.type.none;
+    s.__proto__   = Settings;
+    s.fullname    = Settings.server+'.'+this.name+'.'+name;
+    s.parent      = this;
+    s.name        = name;
+    this[name]    = def_val;
+    s.type        = type;
+    s.typedata    = typedata;
+    s.description = description;
     s.read();
-    this.s[name]=s;
+    this.s[name]  = s;
     return s;
 };
 Feature.create=function(name){
@@ -172,6 +176,7 @@ Feature.forall=function(fn_name, once) {
  ****************************************/
 
 Feature.create("Settings");
+Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4};
 Settings.server=function(){
     // This should give the server id as used by travian analyzer.
     var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
@@ -181,22 +186,57 @@ Settings.server=function(){
     return url[3]+a;
 }();
 Settings.read=function() {
-    var x = GM_getValue(this.fullname);
-    if (x!==undefined && x!=="") {
-        try {
-            x=eval(x);
-            if (x!="") {
+    try {
+        switch (this.type) {
+            case Settings.type.none:
+            break;
+
+            case Settings.type.string:
+            var x = GM_getValue(this.fullname);
+            if (x!==undefined && x!=="") 
                 this.parent[this.name]=x;
-            }
-        } catch (e) {
-            GM_log(e);
+            break;
+
+            case Settings.type.integer:
+            case Settings.type.enumeration:
+            var x = GM_getValue(this.fullname);
+            if (x!==undefined && x!=="") 
+                this.parent[this.name]=x-0;
+            break;
+
+            case Settings.type.object:
+            var x = GM_getValue(this.fullname);
+            if (x!==undefined && x!=="") 
+                this.parent[this.name]=eval(x);
+            break;
         }
+    } catch (e) {
+        GM_log(e);
     }
 };
 Settings.write=function() {
-    GM_setValue(this.fullname, this.parent[this.name]);
+    try {
+        switch (this.type) {
+            case Settings.type.none:
+            // TODO: use debug!
+            alert("This setting ("+this.fullname+") has no type and can't be stored!");
+            break;
+
+            case Settings.type.string:
+            case Settings.type.integer:
+            case Settings.type.enumeration:
+            GM_setValue(this.fullname, this.parent[this.name]);
+            break;
+
+            case Settings.type.object:
+            GM_setValue(this.fullname, uneval(this.parent[this.name]));
+            break;
+        }
+    } catch (e) {
+        GM_log(e);
+    }
 };
-Settings.setting("username","someone"); // your username
+Settings.setting("username","someone", Settings.type); // your username
 Settings.setting("race",1);             // Your race (0=Romans, 1=Teutons, 2=Gauls)
 Settings.run=function() {
     // Create link for opening the settings menu.
@@ -216,6 +256,7 @@ Settings.run=function() {
     div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
     document.body.appendChild(div);
     var link = div.firstChild;
+    link.style.cursor="pointer";
     link.addEventListener("click",Settings.show,false);    
 };
 Settings.show=function() {
@@ -268,7 +309,7 @@ Settings.close=function(){
     remove(Settings.window);
 };
 
-// BWC (backwards compatability code)
+// TODO: remove following BWC (backwards compatability code)
 function prefix(s) {
     return "speed.nl."+s;
 }
@@ -301,7 +342,7 @@ Debug.run("init",true);
 //if (unsafeWindow.console) unsafeWindow.console.log(msg); // firebug logging
 
 
-// BWC:
+// TODO: remove following BWC:
 var d_level=d_all;
 var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
 function debug(lvl, msg){
@@ -411,8 +452,6 @@ Timeline.setting("report_info", true);     // Show the size of the army, the los
     //  LOAD IN-GAME SETTINGS               //
     //////////////////////////////////////////
 
-
-    window.addEventListener('load', main, false); // Run everything after the DOM loads!
 
     //if (USE_SETTINGS) {
     function set_basic_settings(){  
@@ -1856,3 +1895,6 @@ function main(){
     if (USE_EXTRA_VILLAGE) ev_main();
     Feature.forall('run',true);
 }
+
+window.addEventListener('load', main, false); // Run everything after the DOM loads!
+//main();
