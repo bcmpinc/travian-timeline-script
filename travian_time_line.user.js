@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.22
+// @version        0.23
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -61,7 +61,7 @@ try {
 
     // Debug functions...
     var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-    /* d_none is for the final release - don't forget to set it before uploading
+    //* d_none is for the final release - don't forget to set it before uploading
     var d_level=d_none;/*/
     var d_level=d_all;//*/
 
@@ -106,7 +106,6 @@ try {
     TIMELINE_SIZES_HISTORY    =   90; // minutes +/- 15 min, for aligning. This is the amount that is displayed.
     TIMELINE_SIZES_FUTURE     =   90; // minutes. The amount displayed
     TIMELINE_DISTANCE_HISTORY =  270; // minutes, the distance that can be scrolled backwards in history (from 0).
-    TIMELINE_DISTANCE_FUTURE  =  270; // minutes, the distance that can be scrolled into the future (from 0).
     TIMELINE_SIZES_HEIGHT     =    5; // pixel height of one minute.
     TIMELINE_SIZES_WIDTH      =  400; // width of the timeline (in pixels)
     TIMELINE_COLLAPSED_WIDTH  =   60; // width of the timeline when collapsed (in pixels)
@@ -173,6 +172,7 @@ try {
     var url = location.href.match("//(\\w+)\\.travian.(\\w+)/");
     var gm_prefix = url[1]+'.'+url[2]+'.';
     var travian_world_analyzer_server_code = url[2]+(url[1]=='speed'?'x':url[1].substr(1));
+    var tl_scroll_offset = 0; // This is how far the timeline has been offset by scrolling, in pixels
     function prefix(s) {
         return gm_prefix+s;
     }
@@ -191,9 +191,9 @@ try {
                             "SHOW_TIMELINE_REPORT_INFO", "COLLAPSE_TIMELINE",
                       
                             "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE", "TIMELINE_DISTANCE_HISTORY",
-                            "TIMELINE_DISTANCE_FUTURE", "TIMELINE_SIZES_HEIGHT",
-                            "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE", "TIMELINE_COLLAPSED_WIDTH",
-                            "TIMELINE_COLOR", "KEEP_TIMELINE_UPDATED", "TIMELINE_SCALE_WARP"
+                            "TIMELINE_SIZES_HEIGHT", "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE",
+                            "TIMELINE_COLLAPSED_WIDTH", "TIMELINE_COLOR", "KEEP_TIMELINE_UPDATED",
+                            "TIMELINE_SCALE_WARP"
                             ];
 
         for (i in saved_settings) {
@@ -335,15 +335,14 @@ try {
             function tlo(n, v, nn) {
                 if (!nn)
                     nn="TIMELINE_SIZES_"+n;
-                sizeoptions += "    "+n.pad(18)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
+                sizeoptions += "    "+n.pad(16)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
             }
             tlo("WIDTH","px");
             tlo("COLLAPSED","px","TIMELINE_COLLAPSED_WIDTH");
             tlo("HEIGHT","px/min");
             tlo("HISTORY","min");
             tlo("FUTURE","min");
-            tlo("SCROLLABLE HISTORY", "min", "TIMELINE_DISTANCE_HISTORY");
-            tlo("SCROLLABLE FUTURE", 'min', "TIMELINE_DISTANCE_FUTURE");
+            tlo("SAVED HISTORY", "min", "TIMELINE_DISTANCE_HISTORY");
     
             box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div>'+
                 '<i>Leave input fields empty to use the default value.</i><hr/>'+
@@ -1383,10 +1382,10 @@ try {
             tl_warp_now/=TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE;
         }
 
-        // Clean old events:
+        // Delete events older than TIMELINE_DISTANCE_HISTORY
         determine_now();
         list = { };
-        old = d.getTime()-TIMELINE_SIZES_HISTORY*60000;
+        old = d.getTime()-TIMELINE_DISTANCE_HISTORY*60000;
         for (e in events) {
             if (e>old) {
                 list[e] = events[e];            
@@ -1415,7 +1414,8 @@ try {
         }
 
         // Wrapped timeline drawing code in a function such that it can be called once every minute.
-        function update_timeline() {
+        function update_timeline(once) {
+            if (once == undefined) once = false;
             determine_now();
             tl_update_data();
         
@@ -1430,22 +1430,23 @@ try {
             g.strokeStyle = "rgb(0,0,0)";
             g.beginPath();
             g.moveTo(0,-TIMELINE_SIZES_HISTORY * TIMELINE_SIZES_HEIGHT);
-            g.lineTo(0, TIMELINE_SIZES_FUTURE  * TIMELINE_SIZES_HEIGHT);
+            g.lineTo(0, TIMELINE_SIZES_FUTURE * TIMELINE_SIZES_HEIGHT);
             g.stroke();
-            for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=1) {
+            for (var i=-TIMELINE_SIZES_HISTORY - tl_scroll_offset; i<=TIMELINE_SIZES_FUTURE - tl_scroll_offset; i+=1) {
                 g.beginPath();
                 l = -2;
                 ll = 0;
                 if (i%5 == 0) l-=2;
                 if (i%15 == 0) l-=2;
-                if ((i + d.getMinutes())%60 == 0) ll+=8;        
-                g.moveTo(l, tl_warp(i));
-                g.lineTo(ll,  tl_warp(i));    
+                if ((i + d.getMinutes())%60 == 0) ll+=8;
+                g.moveTo(l, tl_warp(i + tl_scroll_offset));
+                g.lineTo(ll,  tl_warp(i + tl_scroll_offset));    
                 g.stroke();
             }
 
             // Draw times
             g.mozTextStyle = "8pt Monospace";
+            function round15(i){ return Math.floor(i/15)*15;}
             function drawtime(i, t) {
                 h = t.getHours()+"";
                 m = t.getMinutes()+"";
@@ -1453,11 +1454,12 @@ try {
                 x = h+":"+m;
 
                 g.save();
-                g.translate(-g.mozMeasureText(x) - 10, 4 + tl_warp(i));
+                g.translate(-g.mozMeasureText(x) - 10, 4 + tl_warp(i + tl_scroll_offset));
                 g.mozDrawText(x);    
                 g.restore();    
             }
-            for (var i=-TIMELINE_SIZES_HISTORY; i<=TIMELINE_SIZES_FUTURE; i+=15) {
+            for (var i=round15(-TIMELINE_SIZES_HISTORY - tl_scroll_offset);
+                 i <= round15(TIMELINE_SIZES_FUTURE - tl_scroll_offset); i+=15) {
                 t = new Date(d);
                 t.setMinutes(t.getMinutes() + i);
                 drawtime(i, t);
@@ -1467,7 +1469,7 @@ try {
             g.strokeStyle = "rgb(0,0,255)";
             g.beginPath();
             diff = (n.getTime() - d.getTime()) / 1000 / 60;
-            y = tl_warp(diff);
+            y = tl_warp(diff + tl_scroll_offset);
             g.moveTo(-8, y);
             g.lineTo( 4, y);    
             g.lineTo( 6, y-2);    
@@ -1481,7 +1483,7 @@ try {
 
             // Highlight the 'elapsed time since last refresh'
             diff2 = (script_start_time - d.getTime()) / 1000 / 60;
-            y2 = tl_warp(diff2);
+            y2 = tl_warp(diff2 + tl_scroll_offset);
             g.fillStyle = "rgba(0,128,255,0.1)";
             g.fillRect(9-TIMELINE_SIZES_WIDTH, y,TIMELINE_SIZES_WIDTH+1, y2-y);
 
@@ -1510,7 +1512,7 @@ try {
             // Draw data
             for (e in events) {
                 p = events[e];
-                diff = (e - d.getTime()) / 1000 / 60;
+                diff = (e - d.getTime()) / 1000 / 60 + tl_scroll_offset;
                 if (diff<-TIMELINE_SIZES_HISTORY || diff>TIMELINE_SIZES_FUTURE) continue;
                 y = tl_warp(diff);
                 y = Math.round(y);
@@ -1573,7 +1575,7 @@ try {
                 g.restore();
             }
             g.restore();
-            if (KEEP_TIMELINE_UPDATED) {
+            if (KEEP_TIMELINE_UPDATED && !once) {
                 setTimeout(update_timeline,TIMELINE_UPDATE_INTERVAL);
             }
         }
@@ -1624,9 +1626,12 @@ try {
         // It would also be best to save the point of rotation as a GM_value...
         // Mouse Scroll Wheel
         function tl_mouse_wheel(e){
-            e.stopPropagation();
+            if (tl_scroll_offset - 2*e.detail > TIMELINE_DISTANCE_HISTORY - TIMELINE_SIZES_HISTORY) return;
+
+            e.stopPropagation(); // Kill the event to the standard window...
             e.preventDefault();
-            dbg(e.detail);
+            tl_scroll_offset -= e.detail * TIMELINE_SIZES_HEIGHT; // tl_scroll_offset is in minutes...
+            update_timeline(true); // We don't want this call to start its own series of display updates...
         }
 
         // Could scroll backwards and forwards on the timeline
