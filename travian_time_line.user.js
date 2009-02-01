@@ -176,7 +176,7 @@ Feature.forall=function(fn_name, once) {
  ****************************************/
 
 Feature.create("Settings");
-Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4};
+Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
 Settings.server=function(){
     // This should give the server id as used by travian analyzer.
     var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
@@ -218,6 +218,12 @@ Settings.read=function() {
             if (x!==undefined && x!=="") 
                 this.set(eval(x));
             break;
+
+            case Settings.type.bool:
+            var x = GM_getValue(this.fullname);
+            if (x!==undefined && x!=="") 
+                this.set(x==true);
+            break;
         }
     } catch (e) {
         GM_log(e);
@@ -230,12 +236,13 @@ Settings.write=function() {
         switch (this.type) {
             case Settings.type.none:
             // TODO: use debug!
-            alert("This setting ("+this.fullname+") has no type and can't be stored!");
+            Debug.warning("This setting ("+this.fullname+") has no type and can't be stored!");
             break;
 
             case Settings.type.string:
             case Settings.type.integer:
             case Settings.type.enumeration:
+            case Settings.type.bool:
             GM_setValue(this.fullname, this.get());
             break;
 
@@ -266,7 +273,7 @@ Settings.config=function(parent_element) {
             case Settings.type.string:
             case Settings.type.integer: {
                 {
-                    var input = '<input id="tl.'+this.fullname+'" value="'+this.get()+'"/>';
+                    var input = '<input value="'+this.get()+'"/>';
                     s.innerHTML = this.name.pad(16)+": "+input+"\n";
                 }
                 s.childNodes[1].addEventListener("change",function (e) {
@@ -280,7 +287,7 @@ Settings.config=function(parent_element) {
 
             case Settings.type.enumeration: {
                 {
-                    var select='<select id="tl.'+this.fullname+'">';
+                    var select='<select>';
                     var j = this.get();
                     for (var i in this.typedata) {
                         select+='<option value="'+i+'"';
@@ -300,6 +307,20 @@ Settings.config=function(parent_element) {
             
             case Settings.type.object: {
                 s.innerHTML = this.name.pad(16)+": (Object)\n";
+                break;
+            }
+            
+            case Settings.type.bool: {
+                s.style.cursor = "pointer";
+                s.style.color  = this.get()?'green':'red';
+                s.innerHTML = this.name.pad(16)+": <u>"+this.get()+"</u>\n";
+                s.addEventListener("click",function (e) {
+                    var val=!setting.get();
+                    s.style.color  = val?'green':'red';
+                    s.childNodes[1].innerHTML = val;
+                    setting.set(val);
+                    setting.write();
+                },false);
                 break;
             }
         }
@@ -399,12 +420,8 @@ Feature.create("Debug");
 // Example: Debug.warning("This shouldn't have happend!");
 // Using the index is also allowed: Debug[1]("This shouldn't have happend!");
 // has the same effect as the previous example.
-Debug.categories=["fatal","error","warning","info","debug"];
-Debug.none   =-1;
-Debug.all    =Debug.categories.length;
-/* Debug.none is for the final release - don't forget to set it before uploading
-Debug.setting("level", Debug.none);/*/
-Debug.setting("level", Debug.all);//*/
+Debug.categories=["none","fatal","error","warning","info","debug","all"];
+Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (In descending order of severity.)");
 Debug.print  =GM_log;
 Debug.init   =function() {
     for (var i in Debug.categories) {
@@ -429,7 +446,7 @@ dbg=Debug.print;
  *  TIMELINE
  ****************************************/
 Feature.create("Timeline");
-Timeline.setting("enabled", true); // enable the timeline
+Timeline.setting("enabled", true, Settings.type.bool, undefined, "Enable the timeline"); 
 Timeline.setting("width", 400);    // width of the timeline (in pixels)
 Timeline.setting("height", 5);     // pixel height of one minute.
 Timeline.setting("history", 90);   // minutes +/- 15 min, for aligning
