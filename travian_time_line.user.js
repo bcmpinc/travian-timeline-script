@@ -172,7 +172,7 @@ try {
     var url = location.href.match("//(\\w+)\\.travian.(\\w+)/");
     var gm_prefix = url[1]+'.'+url[2]+'.';
     var travian_world_analyzer_server_code = url[2]+(url[1]=='speed'?'x':url[1].substr(1));
-    var tl_scroll_offset = 0; // This is how far the timeline has been offset by scrolling, in pixels
+    var tl_scroll_offset = 0; // This is how far the timeline has been offset by scrolling, in minutes
     function prefix(s) {
         return gm_prefix+s;
     }
@@ -1626,7 +1626,7 @@ try {
         // It would also be best to save the point of rotation as a GM_value...
         // Mouse Scroll Wheel
         function tl_mouse_wheel(e){
-            if (tl_scroll_offset - 2*e.detail > TIMELINE_DISTANCE_HISTORY - TIMELINE_SIZES_HISTORY) return;
+            if (tl_scroll_offset - e.detail * TIMELINE_SIZES_HEIGHT >= TIMELINE_DISTANCE_HISTORY - TIMELINE_SIZES_HISTORY) return;
 
             e.stopPropagation(); // Kill the event to the standard window...
             e.preventDefault();
