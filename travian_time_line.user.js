@@ -274,12 +274,27 @@ Settings.config=function(parent_element) {
                     if (setting.type==Settings.type.integer) val-=0;
                     setting.set(val);
                     setting.write();
-                },false);;
+                },false);
                 break;
             }
 
             case Settings.type.enumeration: {
-                s.innerHTML = this.name.pad(16)+": "+this.get()+"\n";
+                {
+                    var select='<select id="tl.'+this.fullname+'">';
+                    var j = this.get();
+                    for (var i in this.typedata) {
+                        select+='<option value="'+i+'"';
+                        if (i==j) select+='selected="" ';
+                        select+='>'+this.typedata[i]+'</option>';
+                    }
+                    select+='</select>';                
+                    s.innerHTML = this.name.pad(16)+": "+select+"\n";
+                }
+                s.childNodes[1].addEventListener("change",function (e) {
+                    var val=e.target.value-0;
+                    setting.set(val);
+                    setting.write();
+                },false);
                 break;
             }
             
