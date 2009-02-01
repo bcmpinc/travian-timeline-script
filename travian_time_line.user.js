@@ -463,17 +463,17 @@ dbg=Debug.print;
  *  TIMELINE
  ****************************************/
 Feature.create("Timeline");
-Timeline.setting("enabled", true, Settings.type.bool,    undefined, "Enable the timeline"); 
+Timeline.setting("enabled",     true, Settings.type.bool, undefined, "Enable the timeline"); 
+Timeline.setting("collapse",   false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
 Timeline.setting("width",    400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
 Timeline.setting("height",     5, Settings.type.integer, undefined, "Height of one minute (in pixels)");
 Timeline.setting("history",   90, Settings.type.integer, undefined, "The length of the history, that's visible (in minutes)");
 Timeline.setting("future",    90, Settings.type.integer, undefined, "The length of the future, that's visible (in minutes)");
-Timeline.setting("collapse", false, Settings.type.bool,  undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
-Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
+Timeline.setting("collapse_width",   60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
 Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
-Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
-Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
-Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
 
 
 
