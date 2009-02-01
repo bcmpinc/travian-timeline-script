@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.22
+// @version        0.30
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -185,12 +185,21 @@ Settings.server=function(){
     if (url[1]=='speed2') a='y';
     return url[3]+a;
 }();
+
+// Get the value of this setting.
+// Note that (for example) 
+// "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
 Settings.get=function() {
     return this.parent[this.name];
 }
+
+// Set the value of this setting.
+// Note that (for example) 
+// "Settings.username = u;" and "Settings.s.username.set(u);" have the same effect.
 Settings.set=function(value) {
     this.parent[this.name]=value;
 }
+
 // Retrieves the value from the GM persistent storage database aka about:config
 // Settings are not automatically updated. 
 // Call this if the value might have changed and you want it's latest value.
@@ -331,7 +340,7 @@ Settings.config=function(parent_element) {
     }
 };
 Settings.setting("username","someone", Settings.type.string, undefined, "The name you use to log in into your account.");
-Settings.setting("race",1, Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+Settings.setting("race",0, Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
@@ -394,6 +403,14 @@ Settings.show=function() {
                 }
             }
         }
+        add_el('hr');
+        var notice = add_el('div');
+        notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
+            "GNU General Public License as published by the Free Software Foundation;\n"+
+            "either version 3 of the License, or (at your option) any later version.\n"+
+            "This program comes with ABSOLUTELY NO WARRANTY!\n\n";
+        notice.style.color="lightgray";
+        notice.style.fontStyle="italic";
     } catch (e) {
         GM_log(e.lineNumber-347+': '+e);
     }    
@@ -446,17 +463,20 @@ dbg=Debug.print;
  *  TIMELINE
  ****************************************/
 Feature.create("Timeline");
-Timeline.setting("enabled", true, Settings.type.bool, undefined, "Enable the timeline"); 
-Timeline.setting("width", 400);    // width of the timeline (in pixels)
-Timeline.setting("height", 5);     // pixel height of one minute.
-Timeline.setting("history", 90);   // minutes +/- 15 min, for aligning
-Timeline.setting("future", 90);    // minutes
-Timeline.setting("collapse", false);       // Make the timeline very small by default
-Timeline.setting("collapse_width", 60);    // width of the timeline when collapsed (in pixels)
-Timeline.setting("collapse_speed", 1500);  // collapse fade speed in pixels per second
-Timeline.setting("collapse_rate", 50);     // updates of the collapse fade per second
-Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of the timeline
-Timeline.setting("report_info", true);     // Show the size of the army, the losses and the amount of resources stolen.
+Timeline.setting("enabled", true, Settings.type.bool,    undefined, "Enable the timeline"); 
+Timeline.setting("width",    400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
+Timeline.setting("height",     5, Settings.type.integer, undefined, "Height of one minute (in pixels)");
+Timeline.setting("history",   90, Settings.type.integer, undefined, "The length of the history, that's visible (in minutes)");
+Timeline.setting("future",    90, Settings.type.integer, undefined, "The length of the future, that's visible (in minutes)");
+Timeline.setting("collapse", false, Settings.type.bool,  undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
+Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
+Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
+Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
+Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+
+
+
 /****************************************
  *  CURRENT END OF REDESING ATTEMPT
  ****************************************/
