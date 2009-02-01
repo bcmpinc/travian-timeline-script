@@ -185,6 +185,12 @@ Settings.server=function(){
     if (url[1]=='speed2') a='y';
     return url[3]+a;
 }();
+Settings.get=function() {
+    return this.parent[this.name];
+}
+Settings.set=function(value) {
+    this.parent[this.name]=value;
+}
 Settings.read=function() {
     try {
         switch (this.type) {
@@ -194,20 +200,20 @@ Settings.read=function() {
             case Settings.type.string:
             var x = GM_getValue(this.fullname);
             if (x!==undefined && x!=="") 
-                this.parent[this.name]=x;
+                this.set(x);
             break;
 
             case Settings.type.integer:
             case Settings.type.enumeration:
             var x = GM_getValue(this.fullname);
             if (x!==undefined && x!=="") 
-                this.parent[this.name]=x-0;
+                this.set(x-0);
             break;
 
             case Settings.type.object:
             var x = GM_getValue(this.fullname);
             if (x!==undefined && x!=="") 
-                this.parent[this.name]=eval(x);
+                this.set(eval(x));
             break;
         }
     } catch (e) {
@@ -225,19 +231,42 @@ Settings.write=function() {
             case Settings.type.string:
             case Settings.type.integer:
             case Settings.type.enumeration:
-            GM_setValue(this.fullname, this.parent[this.name]);
+            GM_setValue(this.fullname, this.get());
             break;
 
             case Settings.type.object:
-            GM_setValue(this.fullname, uneval(this.parent[this.name]));
+            GM_setValue(this.fullname, uneval(this.get()));
             break;
         }
     } catch (e) {
         GM_log(e);
     }
 };
-Settings.setting("username","someone", Settings.type); // your username
-Settings.setting("race",1);             // Your race (0=Romans, 1=Teutons, 2=Gauls)
+Settings.config=function(parent_element) {
+    try {
+        var s = document.createElement("span");
+        switch (this.type) {
+            case Settings.type.none:
+            s.innerHTML = this.name.pad(16)+": "+this.get()+"\n";
+            break;
+
+            case Settings.type.string:
+            case Settings.type.integer:
+            case Settings.type.enumeration:
+            s.innerHTML = this.name.pad(16)+": "+this.get()+"\n";
+            break;
+
+            case Settings.type.object:
+            s.innerHTML = this.name.pad(16)+": (Object)\n";
+            break;
+        }
+        parent_element.appendChild(s);
+    } catch (e) {
+        GM_log(e);
+    }
+};
+Settings.setting("username","someone", Settings.type.string, undefined, "The name you use to log in into your account.");
+Settings.setting("race",1, Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
@@ -293,11 +322,10 @@ Settings.show=function() {
                 var head = add_el("div");
                 head.innerHTML=f.name+':';
                 head.style.fontWeight="bold";
-                var body = "";
+                var body = add_el("div");
                 for (var i in f.s) {
-                    body+=i.pad(16)+": "+f[i]+"\n";
+                    f.s[i].config(body);
                 }
-                add_el("div").innerHTML=body;
             }
         }
     } catch (e) {
