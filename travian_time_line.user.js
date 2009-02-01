@@ -173,8 +173,12 @@ Feature.forall=function(fn_name, once) {
 
 Feature.create("Settings");
 Settings.server=function(){
-    var url = location.href.match("//(\\w+)\\.travian.(\\w+)/");
-    return url[2]+(url[1]=='speed'?'x':url[1].substr(1));
+    // This should give the server id as used by travian analyzer.
+    var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
+    var a=url[2];
+    if (url[1]=='speed')  a='x';
+    if (url[1]=='speed2') a='y';
+    return url[3]+a;
 }();
 Settings.read=function() {
     var x = GM_getValue(this.fullname);
