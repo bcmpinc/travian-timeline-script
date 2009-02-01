@@ -191,6 +191,9 @@ Settings.get=function() {
 Settings.set=function(value) {
     this.parent[this.name]=value;
 }
+// Retrieves the value from the GM persistent storage database aka about:config
+// Settings are not automatically updated. 
+// Call this if the value might have changed and you want it's latest value.
 Settings.read=function() {
     try {
         switch (this.type) {
@@ -220,6 +223,8 @@ Settings.read=function() {
         GM_log(e);
     }
 };
+
+// Stores the value in the GM persistent storage database aka about:config 
 Settings.write=function() {
     try {
         switch (this.type) {
@@ -242,24 +247,48 @@ Settings.write=function() {
         GM_log(e);
     }
 };
+
+// Appends a DOM element to parent_element that can be used to modify this setting.
 Settings.config=function(parent_element) {
     try {
         var s = document.createElement("span");
+        var setting = this;
+        // Add tooltip with a description (if available)
+        if (this.description)
+            s.title = this.description;
+        // Create the input element.
         switch (this.type) {
-            case Settings.type.none:
-            s.innerHTML = this.name.pad(16)+": "+this.get()+"\n";
-            break;
+            case Settings.type.none: {
+                s.innerHTML = this.name.pad(16)+": "+this.get()+"\n";
+                break;
+            }
 
             case Settings.type.string:
-            case Settings.type.integer:
-            case Settings.type.enumeration:
-            s.innerHTML = this.name.pad(16)+": "+this.get()+"\n";
-            break;
+            case Settings.type.integer: {
+                {
+                    var input = '<input id="tl.'+this.fullname+'" value="'+this.get()+'"/>';
+                    s.innerHTML = this.name.pad(16)+": "+input+"\n";
+                }
+                s.childNodes[1].addEventListener("change",function (e) {
+                    var val=e.target.value;
+                    if (setting.type==Settings.type.integer) val-=0;
+                    setting.set(val);
+                    setting.write();
+                },false);;
+                break;
+            }
 
-            case Settings.type.object:
-            s.innerHTML = this.name.pad(16)+": (Object)\n";
-            break;
+            case Settings.type.enumeration: {
+                s.innerHTML = this.name.pad(16)+": "+this.get()+"\n";
+                break;
+            }
+            
+            case Settings.type.object: {
+                s.innerHTML = this.name.pad(16)+": (Object)\n";
+                break;
+            }
         }
+        // Insert the element.
         parent_element.appendChild(s);
     } catch (e) {
         GM_log(e);
@@ -324,7 +353,8 @@ Settings.show=function() {
                 head.style.fontWeight="bold";
                 var body = add_el("div");
                 for (var i in f.s) {
-                    f.s[i].config(body);
+                    f.s[i].read();       // Make sure that we have the most accurate value.
+                    f.s[i].config(body); // Add the configuration element.
                 }
             }
         }
@@ -415,7 +445,7 @@ Timeline.setting("report_info", true);     // Show the size of the army, the los
     USE_SETTINGS = true;                // Enable settings menu and use settinge stored by GM_setValue.
 
     USE_SERVER_TIME = false;            // Use the server time instead of the local clock. Requires a 24 hours clock.
-    USE_DEBUG_MODE = false;             // Makes the script throw an alert when something bad happened.
+    USE_DEBUG_MODE = false;             // Makes the script throw an alert when something bad <input id="TL_Settings.username" value="'+Settings.username+'"/>happened.
 
     REMOVE_PLUS_BUTTON = true;  // Removes the Plus button
     REMOVE_PLUS_COLOR = true;   // De-colors the Plus link (needs USE_CUSTOM_SIDEBAR)
