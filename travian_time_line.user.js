@@ -198,7 +198,6 @@ Settings.write=function() {
 };
 Settings.setting("username","someone"); // your username
 Settings.setting("race",1);             // Your race (0=Romans, 1=Teutons, 2=Gauls)
-Settings.s.race.write();
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
@@ -326,7 +325,7 @@ Timeline.setting("collapse_width", 60);    // width of the timeline when collaps
 Timeline.setting("collapse_speed", 1500);  // collapse fade speed in pixels per second
 Timeline.setting("collapse_rate", 50);     // updates of the collapse fade per second
 Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of the timeline
-
+Timeline.setting("report_info", true);     // Show the size of the army, the losses and the amount of resources stolen.
 /****************************************
  *  CURRENT END OF REDESING ATTEMPT
  ****************************************/
@@ -339,10 +338,6 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
     //        by any in-game settings       //
     //////////////////////////////////////////
 
-    USERNAME = "someone";               // your username
-    RACE = 1;                           // Your race (0=Romans, 1=Teutons, 2=Gauls)
-
-    Timeline.enabled = true;                // enable the timeline.
     USE_ALLY_LINES = true;              // Draw lines on the area map to allies.
     USE_CUSTOM_SIDEBAR = true;          // Modify the links in the sidebar.
     USE_MARKET_COLORS = true;           // Color the market offers to quickly determine their value.
@@ -352,8 +347,6 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
 
     USE_SERVER_TIME = false;            // Use the server time instead of the local clock. Requires a 24 hours clock.
     USE_DEBUG_MODE = false;             // Makes the script throw an alert when something bad happened.
-    SHOW_TIMELINE_REPORT_INFO = true;   // Show the size of the army, the losses and the amount of resources stolen.
-    Timeline.collapse = false;          // Make the timeline very small by default
 
     REMOVE_PLUS_BUTTON = true;  // Removes the Plus button
     REMOVE_PLUS_COLOR = true;   // De-colors the Plus link (needs USE_CUSTOM_SIDEBAR)
@@ -425,12 +418,12 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
     function set_basic_settings(){  
         //Timeline.color
 
-        var saved_settings=["USERNAME", "RACE",
+        var saved_settings=["Settings.username", "Settings.race",
                       
                             "SPECIAL_LOCATIONS","VILLAGES","Timeline.enabled","USE_ALLY_LINES",
                             "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
                             "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
-                            "SHOW_TIMELINE_REPORT_INFO", "Timeline.collapse",
+                            "Timeline.report_info", "Timeline.collapse",
                       
                             "Timeline.history","Timeline.future","Timeline.height",
                             "Timeline.width", "TIME_DIFFERENCE", "Timeline.collapse_width",
@@ -508,7 +501,7 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
             using("debug mode", "USE_DEBUG_MODE");
             uses+='==\n==';
             using("collapse timeline", "Timeline.collapse");
-            using("timeline extended info", "SHOW_TIMELINE_REPORT_INFO");
+            using("timeline extended info", "Timeline.report_info");
             uses+='==\n==';
             using("use server time", "USE_SERVER_TIME");
             uses+="(use a 24 hours clock)";
@@ -516,10 +509,10 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
             using("keep timeline updated", "KEEP_TIMELINE_UPDATED");
             using("warp timeline scale", "TIMELINE_SCALE_WARP");
     
-            var race='<select id="tl_RACE">';
+            var race='<select id="tl_Settings.race">';
             for (var i=0; i<3; i++) {
                 race+='<option value="'+i+'"';
-                if (i==RACE) race+='selected="" ';
+                if (i==Settings.race) race+='selected="" ';
                 race+='>'+['Romans', 'Teutons', 'Gauls'][i]+'</option>';
             }
             race+='</select>';
@@ -538,8 +531,8 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
     
             box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div>'+
                 '<i>Leave input fields empty to use the default value.</i><hr/>'+
-                'USERNAME = <input id="TL_USERNAME" value="'+USERNAME+'"/>\n'+
-                'RACE     = '+race+'\n'+
+                'Settings.username = <input id="TL_Settings.username" value="'+Settings.username+'"/>\n'+
+                'Settings.race     = '+race+'\n'+
                 'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
                 'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
                 'Timeline.color  = <input id="TL_Timeline.color" value="'+Timeline.color+'"/> (as in css)\n'+
@@ -689,7 +682,7 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
             who = document.body.innerHTML.match("<td class=\"rbg\" colspan=\"3\">[A-Z][a-z]+ ([^<]+)</td>");
             if (who) {
                 who = who[1];
-                if (ally[who] != undefined || who == USERNAME) {
+                if (ally[who] != undefined || who == Settings.username) {
                     var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
                     cities = {};
                     for ( var i=0 ; i < res.snapshotLength; i++ ){
@@ -873,7 +866,7 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
                 g.fillStyle   = "rgba(128,128,128,0.8)";
                 for (a in ally) {
                     b = ally[a][2];
-                    if (a == USERNAME) {
+                    if (a == Settings.username) {
                         g.strokeStyle = "rgba(128,64,0,1.0)";
                     } else {
                         g.strokeStyle = "rgba(0,128,255,0.4)";
@@ -1683,7 +1676,7 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
                 if (i==11)
                     unit[i].src = "img/un/u/hero.gif"
                     else
-                        unit[i].src = "img/un/u/"+(RACE*10+i)+".gif";
+                        unit[i].src = "img/un/u/"+(Settings.race*10+i)+".gif";
             }
 
             for (i=13; i<17; i++) {
@@ -1728,7 +1721,7 @@ Timeline.setting("color", "rgba(255, 255, 204, 0.5)"); // Background color of th
                     g.restore();
                 }
 
-                if (SHOW_TIMELINE_REPORT_INFO) {
+                if (Timeline.report_info) {
                     g.fillStyle = "rgb(64,192,64)";
                     g.save();
                     g.translate(-40, y+4+12); // Move this below the message.
