@@ -9,11 +9,19 @@ Timeline Events,Look&Feel:
 - Add filter to disable the displaying of some events (based on type)
   - and/or add a way of disabling the capture of certain event types
 
-Other Features:
-- Add method for configuration of 'extra villages'
-- Add names to special locations.
-- Fix concurrency bug with special locations.
+Settings: 
+- Add support for per element and order editing of lists.
+
+Lines:
+- Add support for categories 
+-- Add categories: you, ally-members, allies ally, nav, (war) enemy, farms, 9-crop, 15-crop, extra-villages, other
+-- Add parameters: description, color, visible
+- Add scale parameter
 - Repair Ally-lines' ally determination algorithm
+- Fix concurrency bug with special locations.
+- Add names to special locations.
+
+Other Features:
 
 New Features:
 - Modify all the links for more robust navigation

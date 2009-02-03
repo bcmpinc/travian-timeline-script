@@ -268,13 +268,13 @@ Settings.config=function(parent_element) {
     try {
         var s = document.createElement("span");
         var setting = this;
-        var settingsname = this.name.replace("_"," ").pad(16);
+        var settingsname = this.name.replace("_"," ").pad(20);
         var hint="";
 
         // Add tooltip with a description (if available)
         if (this.description) {
             s.title = this.description;
-            var h = this.description.match("(\\([-a-zA-Z0-9.,_ ]+\\))$");
+            var h = this.description.match("\\(([-a-zA-Z0-9.,_ ]+)\\)$");
             if (h)
                 hint = " "+h[1];
         }
@@ -322,7 +322,7 @@ Settings.config=function(parent_element) {
             }
             
             case Settings.type.object: {
-                s.innerHTML = this.name.pad(16)+": (Object)\n";
+                s.innerHTML = settingsname+": (Object)"+hint+"\n";
                 break;
             }
             
@@ -467,271 +467,127 @@ dbg=Debug.print;
 
 
 /****************************************
+ *  LINES
+ ****************************************/
+
+Feature.create("Lines");
+Lines.setting("enabled",        true, Settings.type.bool, undefined, "Enable the map lines"); 
+Lines.setting("update_allies",  true, Settings.type.bool, undefined, "Automatically create and remove lines to ally members."); 
+
+
+
+// TODO: remove following BWC:
+USE_EXTRA_VILLAGE = true;           // Add additional vilages to the vilage list.
+
+SPECIAL_LOCATIONS = []; // Draws lines to these locations on the map.
+// SPECIAL_LOCATIONS = [[-85,149],[-80,146],[-300,-292],[-301,-292]]; 
+
+// Idea is to add a special category to some category list here. 
+// These will then also be added to the villages.
+
+// These villages are added to the villages list 
+// (without link, but travian beyond will recognize them and add attack and merchant links)
+
+VILLAGES = [];  
+// VILLAGES = [["WW 1", 25, -155],
+//            ["WW 2", -170, 158]];
+
+
+/****************************************
+ * SIDEBAR
+ ****************************************/
+
+Feature.create("Sidebar");
+Sidebar.setting("enabled",             true, Settings.type.bool, undefined, "Cutomize the sidebar"); 
+Sidebar.setting("use_hr",              true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
+Sidebar.setting("remove_plus_button",  true, Settings.type.bool, undefined, "Removes the Plus button");
+Sidebar.setting("remove_plus_color",   true, Settings.type.bool, undefined, "De-colors the Plus link");
+Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
+Sidebar.setting("remove_home_link",    true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
+
+
+// Numbers for original sidebar links
+//-1: -- break --
+// 0: Home
+// 1: Instructions
+// 2: Profile
+// 3: Log out
+// 4: Forum
+// 5: Chat
+// 6: Travian Plus
+// 7: Support
+
+// Original sidebar links
+// Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
+
+Sidebar.setting("links",      
+            [
+                1,
+                ["FAQ", "http://help.travian.nl/"],
+                ["Travian Forum", "http://forum.travian.nl"],
+                ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
+                -1,
+                2,
+                ["Alliance Forum", "/allianz.php?s=2"],
+                //["Alliantie Forum", "http://www.external-travian-forum.com/"],
+                ["Alliance Overview", "allianz.php"],
+                -1,
+                ["Barracks", "/build.php?gid=19"],
+                ["Stable", "/build.php?gid=20"],
+                ["Workshop", "/build.php?gid=21"],
+                ["Marketplace", "/build.php?gid=17"],
+                ["Rally Point", "/build.php?gid=16"],
+                -1,
+                6,
+                7 
+            ]
+        , Settings.type.object, undefined, "The links of the sidebar."); 
+        
+        
+        
+/****************************************
+ *  MARKET
+ ****************************************/
+
+Feature.create("Market");
+Market.setting("enabled",            true,  Settings.type.bool, undefined, "Color the market offers to quickly determine their value.");
+Market.setting("show_production",    true,  Settings.type.bool, undefined, "Add resource/minute and resources on market information to the resource bar.");
+
+
+
+/****************************************
  *  TIMELINE
  ****************************************/
 Feature.create("Timeline");
-Timeline.setting("enabled",        true,  Settings.type.bool, undefined, "Enable the timeline"); 
-Timeline.setting("collapse",       false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
-Timeline.setting("report_info",    true,  Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
-Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the window.");
-Timeline.setting("keep_updated",   false, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
-Timeline.setting("scale_warp",     false, Settings.type.bool, undefined, "Use cubic transformation on the timeline to make events close to 'now' have more space than events far away.");
+Timeline.setting("enabled",          true,  Settings.type.bool, undefined, "Enable the timeline"); 
+Timeline.setting("collapse",         false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+Timeline.setting("report_info",      true,  Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+Timeline.setting("position_fixed",   false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
+Timeline.setting("keep_updated",     true,  Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
+Timeline.setting("scale_warp",       false, Settings.type.bool, undefined, "Use cubic transformation on the timeline to make events close to 'now' have more space than events far away.");
+Timeline.setting("use_server_time",  false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
 
 Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
-Timeline.setting("width",    400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
-Timeline.setting("height",     5, Settings.type.integer, undefined, "Height of one minute (in pixels)");
-Timeline.setting("history",   90, Settings.type.integer, undefined, "The length of the history, that's visible (in minutes)");
-Timeline.setting("future",    90, Settings.type.integer, undefined, "The length of the future, that's visible (in minutes)");
-Timeline.setting("collapse_width",   60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
-Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
-Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
+Timeline.setting("width",              400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
+Timeline.setting("height",               5, Settings.type.integer, undefined, "Height of one minute (in pixels)");
+Timeline.setting("history",             90, Settings.type.integer, undefined, "The length of the history, that's visible (in minutes)");
+Timeline.setting("future",              90, Settings.type.integer, undefined, "The length of the future, that's visible (in minutes)");
+Timeline.setting("collapse_width",      60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
+Timeline.setting("collapse_speed",    1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
+Timeline.setting("collapse_rate",       50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
 Timeline.setting("distance_history",   270, Settings.type.integer, undefined, "The distance that can be scrolled backwards in history (from 0). (in minutes)");
-Timeline.setting("update_interval",  30000, Settings.type.integer, undefined, "Interval between timeline updates. (in msec.)");
+Timeline.setting("update_interval",  30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
 Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
 Timeline.setting("full_height",          0, Settings.type.none,    undefined, "The calculated height of the timeline. (in pixels)");
+
+Timeline.scroll_offset=0;
+
 
 
 /****************************************
  *  CURRENT END OF REDESING ATTEMPT
  ****************************************/
 
-
-    //////////////////////////////////////////
-    //  SCRIPT CONFIG  ( DEFAULT SETTINGS ) //
-    // You can modify them whatever you like//
-    //   however, they will be overwritten  //
-    //        by any in-game settings       //
-    //////////////////////////////////////////
-
-    USE_ALLY_LINES = true;              // Draw lines on the area map to allies.
-    USE_CUSTOM_SIDEBAR = true;          // Modify the links in the sidebar.
-    USE_MARKET_COLORS = true;           // Color the market offers to quickly determine their value.
-    USE_ENHANCED_RESOURCE_INFO = true;  // Add resource/minute and resources on market to the resource bar.
-    USE_EXTRA_VILLAGE = true;           // Add additional vilages to the vilage list.
-    USE_SETTINGS = true;                // Enable settings menu and use settinge stored by GM_setValue.
-
-    USE_SERVER_TIME = false;            // Use the server time instead of the local clock. Requires a 24 hours clock.
-    USE_DEBUG_MODE = false;             // Makes the script throw an alert when something bad <input id="TL_Settings.username" value="'+Settings.username+'"/>happened.
-
-    REMOVE_PLUS_BUTTON = true;  // Removes the Plus button
-    REMOVE_PLUS_COLOR = true;   // De-colors the Plus link (needs USE_CUSTOM_SIDEBAR)
-    REMOVE_TARGET_BLANK = true; // Removes target="_blank", such that all sidebar links open in the same window.
-    REMOVE_HOME_LINK = true;    // Redirects travian image to current page instead of travian homepage.
-
-    SIDEBAR_HR = true;      // Use <hr> to seperate sidebar sections instead of <br>
-
-    // Numbers for original sidebar links
-    //-1: -- break --
-    // 0: Home
-    // 1: Instructions
-    // 2: Profile
-    // 3: Log out
-    // 4: Forum
-    // 5: Chat
-    // 6: Travian Plus
-    // 7: Support
-
-    // Original sidebar links
-    // SIDEBAR_LINKS = [0,1,2,3,-1,4,5,-1,6,7];
-
-    SIDEBAR_LINKS = [ 1,["FAQ", "http://help.travian.nl/"],
-                      ["Travian Forum", "http://forum.travian.nl"],
-                      ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
-                      -1,
-                      2,
-                      ["Alliance Forum", "/allianz.php?s=2"],
-                      //["Alliantie Forum", "http://www.external-travian-forum.com/"],
-                      ["Alliance Overview", "allianz.php"],
-                      -1,
-                      ["Barracks", "/build.php?gid=19"],
-                      ["Stable", "/build.php?gid=20"],
-                      ["Workshop", "/build.php?gid=21"],
-                      ["Marketplace", "/build.php?gid=17"],
-                      ["Rally Point", "/build.php?gid=16"],
-                      -1,
-                      6,
-                      7 
-                      ];//*/
-
-    SPECIAL_LOCATIONS = []; // Draws lines to these locations on the map.
-    // SPECIAL_LOCATIONS = [[-85,149],[-80,146],[-300,-292],[-301,-292]]; 
-
-    DEBUG_SIDEBAR = false;       // Append original sidebar links, with index numbers
-
-    // These villages are added to the villages list 
-    // (without link, but travian beyond will recognize them and add attack and merchant links)
-    VILLAGES = [];  
-    // VILLAGES = [["WW 1", 25, -155],
-    //            ["WW 2", -170, 158]];
-
-    //////////////////////////////////////////
-    //  LOAD IN-GAME SETTINGS               //
-    //////////////////////////////////////////
-
-    var tl_scroll_offset = 0; // This is how far the timeline has been offset by scrolling, in minutes
-
-    //if (USE_SETTINGS) {
-    function set_basic_settings(){  
-        //Timeline.color
-
-        var saved_settings=["Settings.username", "Settings.race",
-                      
-                            "SPECIAL_LOCATIONS","VILLAGES","Timeline.enabled","USE_ALLY_LINES",
-                            "USE_CUSTOM_SIDEBAR","USE_MARKET_COLORS","USE_ENHANCED_RESOURCE_INFO",
-                            "USE_EXTRA_VILLAGE","USE_SERVER_TIME","USE_DEBUG_MODE", 
-                            "Timeline.report_info", "Timeline.collapse",
-                      
-                            "Timeline.history","Timeline.future","Timeline.height",
-                            "Timeline.width", "Timeline.time_difference", "Timeline.collapse_width",
-                            "Timeline.color", "Timeline.keep_updated", "Timeline.scale_warp"
-                            ];
-
-        for (i in saved_settings) {
-            var v = saved_settings[i];
-            x = GM_getValue(prefix(v));    
-            if (x!==undefined && x!=="") {
-                try {
-                    eval(v+"="+x);
-                } catch (e) {
-                    eval(v+"=x");      
-                }
-            }
-        }
-    } /* USE_SETTINGS */
-
-    //////////////////////////////////////////
-    //  SCRIPT CODE                         //
-    //////////////////////////////////////////
-
-    //////////////////////////////////////////
-    //  OPTIONS SCREEN                      //
-    //////////////////////////////////////////
-
-    //if (USE_SETTINGS) {
-    function set_options_screen(){
-        var div = document.createElement("div");
-        div.style.position = "absolute";
-        div.style.zIndex = "2";
-        var right = Timeline.width;
-        if (Timeline.collapse) right = Timeline.collapse_width;
-        if (!Timeline.enabled) right = 0;
-        right+=5;
-        div.style.right = right+"px";
-        div.style.top = "-5px";
-        div.style.MozBorderRadius = "6px";
-        div.style.padding = "3px";
-        div.style.border = "1px solid #999";
-        div.style.background = "#ccc";
-        div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
-        document.body.appendChild(div);
-  
-        // The settings/options window is only generated when needed.
-        function settings() {
-            var div = document.createElement("div");
-            div.style.position = "fixed";
-            div.style.zIndex = "250";
-            div.style.left = "0px";
-            div.style.top = "0px";
-            div.style.right = "0px";
-            div.style.bottom = "0px";
-            div.style.background = "rgba(192,192,192,0.8)";
-            div.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
-                '<div style="position: absolute; left: 50%; top: 50%;">'+
-                '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 450px;'+
-                ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
-                '</pre></div>';
-            document.body.appendChild(div);
-    
-            var box = div.childNodes[1].firstChild;
-            var uses = "";
-            function using(n, v) {
-                uses+='[<span style="cursor: pointer; color: '+(eval(v)?'green':'red')+'" id="TL_'+v+'">'+n+"</span>]";
-            }
-            using("timeline", "Timeline.enabled");
-            using("ally lines", "USE_ALLY_LINES");
-            using("custom sidebar", "USE_CUSTOM_SIDEBAR");
-            using("market colors", "USE_MARKET_COLORS");
-            uses+='==\n==';
-            using("enhanced resource info", "USE_ENHANCED_RESOURCE_INFO");
-            using("extra village", "USE_EXTRA_VILLAGE");
-            using("debug mode", "USE_DEBUG_MODE");
-            uses+='==\n==';
-            using("collapse timeline", "Timeline.collapse");
-            using("timeline extended info", "Timeline.report_info");
-            uses+='==\n==';
-            using("use server time", "USE_SERVER_TIME");
-            uses+="(use a 24 hours clock)";
-            uses+='==\n==';
-            using("keep timeline updated", "Timeline.keep_updated");
-            using("warp timeline scale", "Timeline.scale_warp");
-    
-            var race='<select id="tl_Settings.race">';
-            for (var i=0; i<3; i++) {
-                race+='<option value="'+i+'"';
-                if (i==Settings.race) race+='selected="" ';
-                race+='>'+['Romans', 'Teutons', 'Gauls'][i]+'</option>';
-            }
-            race+='</select>';
-    
-            var sizeoptions='';
-            function tlo(n, v, nn) {
-                if (!nn)
-                    nn="TIMELINE_SIZES_"+n;
-                sizeoptions += "    "+n.pad(16)+' = <input id="TL_'+nn+'" value="'+eval(nn)+'"/> '+v+'\n';
-            }
-            tlo("WIDTH","px");
-            tlo("COLLAPSED","px","Timeline.collapse_width");
-            tlo("HEIGHT","px/min");
-            tlo("HISTORY","min");
-            tlo("FUTURE","min");
-            tlo("SAVED HISTORY", "min", "Timeline.distance_history");
-    
-            box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div>'+
-                '<i>Leave input fields empty to use the default value.</i><hr/>'+
-                'Settings.username = <input id="TL_Settings.username" value="'+Settings.username+'"/>\n'+
-                'Settings.race     = '+race+'\n'+
-                'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
-                'Timeline.time_difference = <input id="TL_Timeline.time_difference" value="'+Timeline.time_difference+'"/> hours (server time - local time)\n'+
-                'Timeline.color  = <input id="TL_Timeline.color" value="'+Timeline.color+'"/> (as in css)\n'+
-                'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
-                'VILLAGES='+uneval(VILLAGES)+'\n'+
-                '<hr/>'+'script duration: '+script_duration+'ms.\n';
-    
-            var list = box.childNodes[0].childNodes;
-            for (i in list) {    
-                var el = list[i];
-                function toggle(e) {
-                    var el = e.target;
-                    var id = el.id.substr(3);
-                    var b = !eval(id);
-                    eval(id+"="+b);
-                    GM_setValue(prefix(id),b);
-                    el.style.color = b?'green':'red';        
-                }
-                el.addEventListener("click",toggle,false);
-            }
-    
-            var list = box.childNodes;
-            for (i in list) {
-                var el = list[i];
-                function opt_change(e) {
-                    var el = e.target;
-                    var id = el.id.substr(3);
-                    GM_setValue(prefix(id),eval(id+"='"+e.target.value+"'"));
-                }
-                el.addEventListener("change",opt_change,false);
-            }
-        
-            function remove_settings_dialog() {
-                remove(div);
-            }    
-            div.firstChild.addEventListener("click",remove_settings_dialog,false);
-        }
-  
-        var link = div.firstChild;
-        link.addEventListener("click",settings,false);
-  
-    } /* USE_SETTINGS */
 
     //////////////////////////////////////////
     //  COLLECT SOME INFO                   //
@@ -866,7 +722,7 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
 
     // Enhance resource info
     function res_main(){
-        //if (USE_ENHANCED_RESOURCE_INFO) {
+        //if (Market.show_production) {
         head = document.getElementById("lres0");
         if (head!=null) {
             a="";
@@ -904,7 +760,7 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
     //  MARKET COLORS                       //
     //////////////////////////////////////////
 
-    //if (USE_MARKET_COLORS) {
+    //if (Market.enabled) {
     function mkt_main(){
         function colorify() { 
             x = document.getElementById("lmid2");
@@ -944,7 +800,7 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
     //////////////////////////////////////////
 
     // Show lines to allies and yourself
-    //if (USE_ALLY_LINES) {
+    //if (Lines.update_allies) {
     function al_main(){
         // <canvas width=200 height=200 style="position: absolute; left: 80px; top: 100px; z-index: 15;"/>
         var res = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null );
@@ -1126,8 +982,8 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
     //  REMOVE PLUS BUTTON                  //
     //////////////////////////////////////////
 
-    //if (REMOVE_PLUS_BUTTON) {
-    function remove_plus_button(){
+    //if (Sidebar.remove_plus_button) {
+    function fn_remove_plus_button(){
         plus = document.getElementById("lplus1");
         if (plus) {
             plus.parentNode.style.visibility="hidden";
@@ -1139,11 +995,11 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
     //////////////////////////////////////////
 
     // Modifies Navigation menu (sidebar)
-    //if (USE_CUSTOM_SIDEBAR) {
+    //if (Lines.enable) {
     function csb_main(){
         navi = document.getElementById("navi_table");
         if (navi) {
-            if (REMOVE_HOME_LINK)
+            if (Sidebar.remove_home_link)
                 navi.parentNode.childNodes[1].href="?";
             
             navi=navi.childNodes[1].childNodes[0].childNodes[1];
@@ -1160,7 +1016,7 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
             }
 
             function add_break(nr) {
-                if (SIDEBAR_HR) {
+                if (Sidebar.use_hr) {
                     hr=document.createElement("hr");
                     if (nr<navi.childNodes.length) {
                         navi.insertBefore(hr,navi.childNodes[nr]);
@@ -1191,8 +1047,8 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
                 navi.removeChild(navi.childNodes[i]);
         
             // Add new links
-            for (i = 0; i < SIDEBAR_LINKS.length; i++) {
-                x = SIDEBAR_LINKS[i];
+            for (i = 0; i < Sidebar.links.length; i++) {
+                x = Sidebar.links[i];
                 if (x.constructor == Array) {
                     add(x[0], x[1]);
                 } else if (x.constructor == String) {
@@ -1201,21 +1057,13 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
                     add_break();
                 } else {
                     el = oldnavi[x];
-                    if (REMOVE_TARGET_BLANK) {
+                    if (Sidebar.remove_target_blank) {
                         el.removeAttribute("target");
                     }
                     // Remove color from Plus link
-                    if (REMOVE_PLUS_COLOR)
+                    if (Sidebar.remove_plus_color)
                         el.innerHTML=el.textContent;
                     navi.appendChild(el);
-                }
-            }
-
-            // debugging code
-            if (DEBUG_SIDEBAR) {
-                for (var j=0; j<oldnavi.length; j++) {
-                    add(j+": ","")
-                        navi.appendChild(oldnavi[j]);
                 }
             }
         }
@@ -1698,7 +1546,7 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
             // determine 'now'
             d = new Date();
             d.setTime(d.getTime()+Timeline.time_difference*3600000); // Adjust local time to server time.
-            if (USE_SERVER_TIME) {
+            if (Timeline.use_server_time) {
                 t = d.getTime();
                 d.setHours(server_time[0]);
                 d.setMinutes(server_time[1]);
@@ -1775,15 +1623,15 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
             g.moveTo(0,-Timeline.history * Timeline.height);
             g.lineTo(0, Timeline.future  * Timeline.height);
             g.stroke();
-            for (var i=-Timeline.history - tl_scroll_offset; i<=Timeline.future - tl_scroll_offset; i+=1) {
+            for (var i=-Timeline.history - Timeline.scroll_offset; i<=Timeline.future - Timeline.scroll_offset; i+=1) {
                 g.beginPath();
                 l = -2;
                 ll = 0;
                 if (i%5 == 0) l-=2;
                 if (i%15 == 0) l-=2;
                 if ((i + d.getMinutes())%60 == 0) ll+=8;
-                g.moveTo(l, tl_warp(i + tl_scroll_offset));
-                g.lineTo(ll,  tl_warp(i + tl_scroll_offset));    
+                g.moveTo(l, tl_warp(i + Timeline.scroll_offset));
+                g.lineTo(ll,  tl_warp(i + Timeline.scroll_offset));    
                 g.stroke();
             }
 
@@ -1797,12 +1645,12 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
                 x = h+":"+m;
 
                 g.save();
-                g.translate(-g.mozMeasureText(x) - 10, 4 + tl_warp(i + tl_scroll_offset));
+                g.translate(-g.mozMeasureText(x) - 10, 4 + tl_warp(i + Timeline.scroll_offset));
                 g.mozDrawText(x);    
                 g.restore();    
             }
-            for (var i=round15(-Timeline.history - tl_scroll_offset);
-                 i <= round15(Timeline.future - tl_scroll_offset); i+=15) {
+            for (var i=round15(-Timeline.history - Timeline.scroll_offset);
+                 i <= round15(Timeline.future - Timeline.scroll_offset); i+=15) {
                 t = new Date(d);
                 t.setMinutes(t.getMinutes() + i);
                 drawtime(i, t);
@@ -1812,7 +1660,7 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
             g.strokeStyle = "rgb(0,0,255)";
             g.beginPath();
             diff = (n.getTime() - d.getTime()) / 1000 / 60;
-            y = tl_warp(diff + tl_scroll_offset);
+            y = tl_warp(diff + Timeline.scroll_offset);
             g.moveTo(-8, y);
             g.lineTo( 4, y);    
             g.lineTo( 6, y-2);    
@@ -1827,7 +1675,7 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
             // Highlight the 'elapsed time since last refresh'
             if (global.script_start==undefined) global.script_start = new Date().getTime();
             diff2 = (global.script_start - d.getTime()) / 1000 / 60;
-            y2 = tl_warp(diff2 + tl_scroll_offset);
+            y2 = tl_warp(diff2 + Timeline.scroll_offset);
             g.fillStyle = "rgba(0,128,255,0.1)";
             g.fillRect(9-Timeline.width, y,Timeline.width+1, y2-y);
 
@@ -1856,7 +1704,7 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
             // Draw data
             for (e in events) {
                 p = events[e];
-                diff = (e - d.getTime()) / 1000 / 60 + tl_scroll_offset;
+                diff = (e - d.getTime()) / 1000 / 60 + Timeline.scroll_offset;
                 if (diff<-Timeline.history || diff>Timeline.future) continue;
                 y = tl_warp(diff);
                 y = Math.round(y);
@@ -1970,11 +1818,11 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
         // It would also be best to save the point of rotation as a GM_value...
         // Mouse Scroll Wheel
         function tl_mouse_wheel(e){
-            if (tl_scroll_offset - e.detail * Timeline.height >= Timeline.distance_history - Timeline.history) return;
+            if (Timeline.scroll_offset - e.detail * Timeline.height >= Timeline.distance_history - Timeline.history) return;
 
             e.stopPropagation(); // Kill the event to the standard window...
             e.preventDefault();
-            tl_scroll_offset -= e.detail * Timeline.height; // tl_scroll_offset is in minutes...
+            Timeline.scroll_offset -= e.detail * Timeline.height; // Timeline.scroll_offset is in minutes...
             update_timeline(true); // We don't want this call to start its own series of display updates...
         }
 
@@ -2012,16 +1860,12 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
 Feature.forall('init',true);
 
 function main(){
-    if (USE_SETTINGS){
-	    set_basic_settings();
-	    set_options_screen();
-    }
     storeInfo();
-    if (USE_ENHANCED_RESOURCE_INFO) res_main();
-    if (USE_MARKET_COLORS) mkt_main();
-    if (USE_ALLY_LINES) al_main();
-    if (REMOVE_PLUS_BUTTON) remove_plus_button();
-    if (USE_CUSTOM_SIDEBAR) csb_main();
+    if (Market.show_production) res_main();
+    if (Market.enabled) mkt_main();
+    if (Lines.update_allies) al_main();
+    if (Sidebar.remove_plus_button) fn_remove_plus_button();
+    if (Sidebar.enabled) csb_main();
     if (Timeline.enabled) tl_main();
     if (USE_EXTRA_VILLAGE) ev_main();
     Feature.forall('run',true);
