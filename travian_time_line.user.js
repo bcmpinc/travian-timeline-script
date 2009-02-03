@@ -543,6 +543,72 @@ Sidebar.setting("links",
             ]
         , Settings.type.object, undefined, "The links of the sidebar."); 
         
+Sidebar.add=function(text, target) {
+    var el;
+    if (target=="") {
+        el=document.createElement("b");  // Create a bold header
+    } else {
+        el=document.createElement("a");  // Create a normal link
+        el.href=target;
+    }
+    el.innerHTML = text;
+    Sidebar.navi.appendChild(el);
+};
+Sidebar.add_break=function() {
+    if (Sidebar.use_hr) {
+        Sidebar.navi.appendChild(document.createElement("hr"));
+    } else {
+        Sidebar.navi.appendChild(document.createElement("br"));
+        Sidebar.navi.appendChild(document.createElement("br"));
+    }
+};
+Sidebar.run=function() {
+    if (Sidebar.remove_plus_button) {
+        var plus = document.getElementById("lplus1");
+        if (plus) {
+            plus.parentNode.style.visibility="hidden";
+        } else {
+            Debug.info("Couldn't find the plus button.");
+        }
+    }
+
+    var navi_table = document.getElementById("navi_table");
+    if (!navi_table) return;
+    
+    if (Sidebar.remove_home_link)
+        navi_table.parentNode.childNodes[1].href="?";
+            
+    Sidebar.navi = navi_table.childNodes[1].childNodes[0].childNodes[1];
+        
+    // Make copy of links
+    Sidebar.oldnavi = [];
+    for (var i = 0; i < Sidebar.navi.childNodes.length; i++)
+        if (Sidebar.navi.childNodes[i].tagName=="A")
+            Sidebar.oldnavi.push(Sidebar.navi.childNodes[i]);
+
+    // Remove all links
+    for (var i = Sidebar.navi.childNodes.length - 1; i>=0; i--) 
+        Sidebar.navi.removeChild(Sidebar.navi.childNodes[i]);
+        
+    // Add new links
+    for (var i = 0; i < Sidebar.links.length; i++) {
+        var x = Sidebar.links[i];
+        if (x.constructor == Array) {
+            Sidebar.add(x[0], x[1]);
+        } else if (x.constructor == String) {
+            Sidebar.add(x, "");
+        } else if (x<0) {
+            Sidebar.add_break();
+        } else {
+            var el = Sidebar.oldnavi[x];
+            if (Sidebar.remove_target_blank)
+                el.removeAttribute("target"); // Force all links to open in the current page.
+            if (Sidebar.remove_plus_color)
+                el.innerHTML=el.textContent;  // Remove color from Plus link.
+            Sidebar.navi.appendChild(el);
+        }
+    }
+};
         
         
 /****************************************
@@ -974,97 +1040,6 @@ Timeline.scroll_offset=0;
                 addspecial.addEventListener('click',addsl,true);
                 x.appendChild(addspecial); 
                 x.parentNode.style.zIndex=5;
-            }
-        }
-    }
-
-    //////////////////////////////////////////
-    //  REMOVE PLUS BUTTON                  //
-    //////////////////////////////////////////
-
-    //if (Sidebar.remove_plus_button) {
-    function fn_remove_plus_button(){
-        plus = document.getElementById("lplus1");
-        if (plus) {
-            plus.parentNode.style.visibility="hidden";
-        }
-    }
-
-    //////////////////////////////////////////
-    //  CUSTOM SIDEBAR                      //
-    //////////////////////////////////////////
-
-    // Modifies Navigation menu (sidebar)
-    //if (Lines.enable) {
-    function csb_main(){
-        navi = document.getElementById("navi_table");
-        if (navi) {
-            if (Sidebar.remove_home_link)
-                navi.parentNode.childNodes[1].href="?";
-            
-            navi=navi.childNodes[1].childNodes[0].childNodes[1];
-        
-            function add(text, target) {
-                if (target=="") {
-                    el=document.createElement("b");
-                } else {
-                    el=document.createElement("a");
-                    el.href=target;
-                }
-                el.innerHTML = text;
-                navi.appendChild(el);
-            }
-
-            function add_break(nr) {
-                if (Sidebar.use_hr) {
-                    hr=document.createElement("hr");
-                    if (nr<navi.childNodes.length) {
-                        navi.insertBefore(hr,navi.childNodes[nr]);
-                    } else {
-                        navi.appendChild(hr);
-                    }
-                } else {
-                    br1=document.createElement("br");
-                    br2=document.createElement("br");
-                    if (nr<navi.childNodes.length) {
-                        navi.insertBefore(br1,navi.childNodes[nr]);
-                        navi.insertBefore(br2,navi.childNodes[nr]);
-                    } else {
-                        navi.appendChild(br1);
-                        navi.appendChild(br2);
-                    }
-                }
-            }
-        
-            // Make copy of links
-            oldnavi = [];
-            for (i = 0; i < navi.childNodes.length; i++)
-                if (navi.childNodes[i].tagName=="A")
-                    oldnavi.push(navi.childNodes[i]);
-
-            // Remove all links
-            for (i = navi.childNodes.length - 1; i>=0; i--) 
-                navi.removeChild(navi.childNodes[i]);
-        
-            // Add new links
-            for (i = 0; i < Sidebar.links.length; i++) {
-                x = Sidebar.links[i];
-                if (x.constructor == Array) {
-                    add(x[0], x[1]);
-                } else if (x.constructor == String) {
-                    add(x, "");
-                } else if (x<0) {
-                    add_break();
-                } else {
-                    el = oldnavi[x];
-                    if (Sidebar.remove_target_blank) {
-                        el.removeAttribute("target");
-                    }
-                    // Remove color from Plus link
-                    if (Sidebar.remove_plus_color)
-                        el.innerHTML=el.textContent;
-                    navi.appendChild(el);
-                }
             }
         }
     }
@@ -1864,8 +1839,6 @@ function main(){
     if (Market.show_production) res_main();
     if (Market.enabled) mkt_main();
     if (Lines.update_allies) al_main();
-    if (Sidebar.remove_plus_button) fn_remove_plus_button();
-    if (Sidebar.enabled) csb_main();
     if (Timeline.enabled) tl_main();
     if (USE_EXTRA_VILLAGE) ev_main();
     Feature.forall('run',true);
