@@ -463,9 +463,13 @@ dbg=Debug.print;
  *  TIMELINE
  ****************************************/
 Feature.create("Timeline");
-Timeline.setting("enabled",     true, Settings.type.bool, undefined, "Enable the timeline"); 
-Timeline.setting("collapse",   false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
-Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+Timeline.setting("enabled",        true,  Settings.type.bool, undefined, "Enable the timeline"); 
+Timeline.setting("collapse",       false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+Timeline.setting("report_info",    true,  Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the window.");
+Timeline.setting("keep_updated",   false, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
+Timeline.setting("scale_warp",     false, Settings.type.bool, undefined, "Use cubic transformation on the timeline to make events close to 'now' have more space than events far away.");
+
 Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
 Timeline.setting("width",    400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
 Timeline.setting("height",     5, Settings.type.integer, undefined, "Height of one minute (in pixels)");
@@ -474,7 +478,9 @@ Timeline.setting("future",    90, Settings.type.integer, undefined, "The length 
 Timeline.setting("collapse_width",   60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
 Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
 Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
-
+Timeline.setting("distance_history",   270, Settings.type.integer, undefined, "The distance that can be scrolled backwards in history (from 0). (in minutes)");
+Timeline.setting("update_interval",  30000, Settings.type.integer, undefined, "Interval between timeline updates. (in msec.)");
+Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
 
 
 /****************************************
@@ -503,15 +509,6 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
     REMOVE_PLUS_COLOR = true;   // De-colors the Plus link (needs USE_CUSTOM_SIDEBAR)
     REMOVE_TARGET_BLANK = true; // Removes target="_blank", such that all sidebar links open in the same window.
     REMOVE_HOME_LINK = true;    // Redirects travian image to current page instead of travian homepage.
-
-    FIX_TIMELINE = false;       // Keep timeline on the same position when scrolling the window.
-	TIMELINE_DISTANCE_HISTORY =  270; // minutes, the distance that can be scrolled backwards in history (from 0).
-
-    KEEP_TIMELINE_UPDATED = false;    // Update the timeline every 'TIMELINE_UPDATE_INTERVAL' msec.
-    TIMELINE_UPDATE_INTERVAL = 30000; // Interval between timeline updates in msec.
-    TIMELINE_SCALE_WARP = false;      // Use cubic transformation on the timeline to make events close to 'now' have more space than events far away.
-
-    TIME_DIFFERENCE = 0; // server time - local time
 
     SIDEBAR_HR = true;      // Use <hr> to seperate sidebar sections instead of <br>
 
@@ -577,8 +574,8 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
                             "Timeline.report_info", "Timeline.collapse",
                       
                             "Timeline.history","Timeline.future","Timeline.height",
-                            "Timeline.width", "TIME_DIFFERENCE", "Timeline.collapse_width",
-                            "Timeline.color", "KEEP_TIMELINE_UPDATED", "TIMELINE_SCALE_WARP"
+                            "Timeline.width", "Timeline.time_difference", "Timeline.collapse_width",
+                            "Timeline.color", "Timeline.keep_updated", "Timeline.scale_warp"
                             ];
 
         for (i in saved_settings) {
@@ -657,8 +654,8 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
             using("use server time", "USE_SERVER_TIME");
             uses+="(use a 24 hours clock)";
             uses+='==\n==';
-            using("keep timeline updated", "KEEP_TIMELINE_UPDATED");
-            using("warp timeline scale", "TIMELINE_SCALE_WARP");
+            using("keep timeline updated", "Timeline.keep_updated");
+            using("warp timeline scale", "Timeline.scale_warp");
     
             var race='<select id="tl_Settings.race">';
             for (var i=0; i<3; i++) {
@@ -679,14 +676,14 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
             tlo("HEIGHT","px/min");
             tlo("HISTORY","min");
             tlo("FUTURE","min");
-            tlo("SAVED HISTORY", "min", "TIMELINE_DISTANCE_HISTORY");
+            tlo("SAVED HISTORY", "min", "Timeline.distance_history");
     
             box.innerHTML = '<div style="text-align: center;">=='+uses+'==</div>'+
                 '<i>Leave input fields empty to use the default value.</i><hr/>'+
                 'Settings.username = <input id="TL_Settings.username" value="'+Settings.username+'"/>\n'+
                 'Settings.race     = '+race+'\n'+
                 'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
-                'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
+                'Timeline.time_difference = <input id="TL_Timeline.time_difference" value="'+Timeline.time_difference+'"/> hours (server time - local time)\n'+
                 'Timeline.color  = <input id="TL_Timeline.color" value="'+Timeline.color+'"/> (as in css)\n'+
                 'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
                 'VILLAGES='+uneval(VILLAGES)+'\n'+
@@ -1291,7 +1288,7 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
             debug(d_med, 'Parsing capture time info!\ntime='+time.join(':')+' '+(format==undefined?'':format)+(day==undefined?'':(' day='+day.join('.'))));
 
             d = new Date();
-            d.setTime(d.getTime()+TIME_DIFFERENCE*3600000);
+            d.setTime(d.getTime()+Timeline.time_difference*3600000);
             time_now = d.getTime();
 
             // If we're given a date as well as a time... as in reports etc
@@ -1596,7 +1593,7 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
         // Create timeline canvas + container
         tl = document.createElement("canvas");
         tlc = document.createElement("div");
-        if (FIX_TIMELINE)
+        if (Timeline.position_fixed)
             tlc.style.position = "fixed";
         else
             tlc.style.position = "absolute";
@@ -1691,7 +1688,7 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
             
             // determine 'now'
             d = new Date();
-            d.setTime(d.getTime()+TIME_DIFFERENCE*3600000); // Adjust local time to server time.
+            d.setTime(d.getTime()+Timeline.time_difference*3600000); // Adjust local time to server time.
             if (USE_SERVER_TIME) {
                 t = d.getTime();
                 d.setHours(server_time[0]);
@@ -1719,10 +1716,10 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
             tl_warp_now/=Timeline.history+Timeline.future;
         }
 
-        // Delete events older than TIMELINE_DISTANCE_HISTORY
+        // Delete events older than Timeline.distance_history
         determine_now();
         list = { };
-        old = d.getTime()-TIMELINE_DISTANCE_HISTORY*60000;
+        old = d.getTime()-Timeline.distance_history*60000;
         for (e in events) {
             if (e>old) {
                 list[e] = events[e];            
@@ -1737,9 +1734,9 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
             return y - y*(y-tl_warp_now)*(y-1);
         }
     
-        // transforms the y coordinate if TIMELINE_SCALE_WARP is in use.
+        // transforms the y coordinate if Timeline.scale_warp is in use.
         function tl_warp(y) {
-            if (!TIMELINE_SCALE_WARP) return y*Timeline.height;
+            if (!Timeline.scale_warp) return y*Timeline.height;
             y+=Timeline.history;
             y/=Timeline.history+Timeline.future;
         
@@ -1913,8 +1910,8 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
                 g.restore();
             }
             g.restore();
-            if (KEEP_TIMELINE_UPDATED && !once) {
-                setTimeout(update_timeline,TIMELINE_UPDATE_INTERVAL);
+            if (Timeline.keep_updated && !once) {
+                setTimeout(update_timeline,Timeline.update_interval);
             }
         }
     
@@ -1930,7 +1927,7 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
         // to undo the warping. I'm using a simple binairy search for that.
         function tl_unwarp(y) {
             y-=Timeline.history*Timeline.height;
-            if (!TIMELINE_SCALE_WARP) return y/Timeline.height;
+            if (!Timeline.scale_warp) return y/Timeline.height;
             var b_l = -Timeline.history;
             var b_h =  Timeline.future;
             for (i=0; i<32; i++) {
@@ -1964,7 +1961,7 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
         // It would also be best to save the point of rotation as a GM_value...
         // Mouse Scroll Wheel
         function tl_mouse_wheel(e){
-            if (tl_scroll_offset - e.detail * Timeline.height >= TIMELINE_DISTANCE_HISTORY - Timeline.history) return;
+            if (tl_scroll_offset - e.detail * Timeline.height >= Timeline.distance_history - Timeline.history) return;
 
             e.stopPropagation(); // Kill the event to the standard window...
             e.preventDefault();
