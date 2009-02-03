@@ -269,13 +269,16 @@ Settings.config=function(parent_element) {
     try {
         var s = document.createElement("span");
         var setting = this;
+        var settingsname = this.name.replace("_"," ").pad(16);
+
         // Add tooltip with a description (if available)
         if (this.description)
             s.title = this.description;
+
         // Create the input element.
         switch (this.type) {
             case Settings.type.none: {
-                s.innerHTML = this.name.pad(16)+": "+this.get()+"\n";
+                s.innerHTML = settingsname+": "+this.get()+"\n";
                 break;
             }
 
@@ -283,7 +286,7 @@ Settings.config=function(parent_element) {
             case Settings.type.integer: {
                 {
                     var input = '<input value="'+this.get()+'"/>';
-                    s.innerHTML = this.name.pad(16)+": "+input+"\n";
+                    s.innerHTML = settingsname+": "+input+"\n";
                 }
                 s.childNodes[1].addEventListener("change",function (e) {
                     var val=e.target.value;
@@ -304,7 +307,7 @@ Settings.config=function(parent_element) {
                         select+='>'+this.typedata[i]+'</option>';
                     }
                     select+='</select>';                
-                    s.innerHTML = this.name.pad(16)+": "+select+"\n";
+                    s.innerHTML = settingsname+": "+select+"\n";
                 }
                 s.childNodes[1].addEventListener("change",function (e) {
                     var val=e.target.value-0;
@@ -322,7 +325,7 @@ Settings.config=function(parent_element) {
             case Settings.type.bool: {
                 s.style.cursor = "pointer";
                 s.style.color  = this.get()?'green':'red';
-                s.innerHTML = this.name.pad(16)+": <u>"+this.get()+"</u>\n";
+                s.innerHTML = settingsname+": <u>"+this.get()+"</u>\n";
                 s.addEventListener("click",function (e) {
                     var val=!setting.get();
                     s.style.color  = val?'green':'red';
