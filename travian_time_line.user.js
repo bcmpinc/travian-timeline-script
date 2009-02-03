@@ -244,7 +244,6 @@ Settings.write=function() {
     try {
         switch (this.type) {
             case Settings.type.none:
-            // TODO: use debug!
             Debug.warning("This setting ("+this.fullname+") has no type and can't be stored!");
             break;
 
@@ -270,15 +269,20 @@ Settings.config=function(parent_element) {
         var s = document.createElement("span");
         var setting = this;
         var settingsname = this.name.replace("_"," ").pad(16);
+        var hint="";
 
         // Add tooltip with a description (if available)
-        if (this.description)
+        if (this.description) {
             s.title = this.description;
+            var h = this.description.match("(\\([-a-zA-Z0-9.,_ ]+\\))$");
+            if (h)
+                hint = " "+h[1];
+        }
 
         // Create the input element.
         switch (this.type) {
             case Settings.type.none: {
-                s.innerHTML = settingsname+": "+this.get()+"\n";
+                s.innerHTML = settingsname+": "+this.get()+hint+"\n";
                 break;
             }
 
@@ -286,7 +290,7 @@ Settings.config=function(parent_element) {
             case Settings.type.integer: {
                 {
                     var input = '<input value="'+this.get()+'"/>';
-                    s.innerHTML = settingsname+": "+input+"\n";
+                    s.innerHTML = settingsname+": "+input+hint+"\n";
                 }
                 s.childNodes[1].addEventListener("change",function (e) {
                     var val=e.target.value;
@@ -307,7 +311,7 @@ Settings.config=function(parent_element) {
                         select+='>'+this.typedata[i]+'</option>';
                     }
                     select+='</select>';                
-                    s.innerHTML = settingsname+": "+select+"\n";
+                    s.innerHTML = settingsname+": "+select+hint+"\n";
                 }
                 s.childNodes[1].addEventListener("change",function (e) {
                     var val=e.target.value-0;
@@ -325,7 +329,7 @@ Settings.config=function(parent_element) {
             case Settings.type.bool: {
                 s.style.cursor = "pointer";
                 s.style.color  = this.get()?'green':'red';
-                s.innerHTML = settingsname+": <u>"+this.get()+"</u>\n";
+                s.innerHTML = settingsname+": <u>"+this.get()+"</u>"+hint+"\n";
                 s.addEventListener("click",function (e) {
                     var val=!setting.get();
                     s.style.color  = val?'green':'red';
@@ -441,7 +445,7 @@ Feature.create("Debug");
 // Using the index is also allowed: Debug[1]("This shouldn't have happend!");
 // has the same effect as the previous example.
 Debug.categories=["none","fatal","error","warning","info","debug","all"];
-Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (In descending order of severity.)");
+Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
 Debug.print  =GM_log;
 Debug.init   =function() {
     for (var i in Debug.categories) {
@@ -484,6 +488,7 @@ Timeline.setting("collapse_rate",    50, Settings.type.integer, undefined, "Upda
 Timeline.setting("distance_history",   270, Settings.type.integer, undefined, "The distance that can be scrolled backwards in history (from 0). (in minutes)");
 Timeline.setting("update_interval",  30000, Settings.type.integer, undefined, "Interval between timeline updates. (in msec.)");
 Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
+Timeline.setting("full_height",          0, Settings.type.none,    undefined, "The calculated height of the timeline. (in pixels)");
 
 
 /****************************************
@@ -1287,6 +1292,7 @@ Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "I
             // format is either 'am', 'pm', or '' (optional).
             // day is [day, month, year (optional)]. (all optional)
             // TODO: support non-european date/time formats (orderings change...)
+            // TODO: fix the 12pm bug?
 
             debug(d_med, 'Parsing capture time info!\ntime='+time.join(':')+' '+(format==undefined?'':format)+(day==undefined?'':(' day='+day.join('.'))));
 
@@ -1591,7 +1597,7 @@ Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "I
         /////////////////////////////////
 
 
-        TIMELINE_SIZES_FULL_HEIGHT  = (Timeline.history+Timeline.future)*Timeline.height; // pixels
+        Timeline.full_height  = (Timeline.history+Timeline.future)*Timeline.height; // pixels
 
         // Create timeline canvas + container
         tl = document.createElement("canvas");
@@ -1603,14 +1609,14 @@ Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "I
         tlc.style.top      = "0px";
         tlc.style.right    = "0px";
         tlc.style.width    = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
-        tlc.style.height   = TIMELINE_SIZES_FULL_HEIGHT + "px";
+        tlc.style.height   = Timeline.full_height + "px";
         tlc.style.zIndex   = "20";
         tlc.style.backgroundColor=Timeline.color;
         tlc.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
         tlc.style.overflow = "hidden";
         tl.id = "tl";
         tl.width  = Timeline.width;
-        tl.height = TIMELINE_SIZES_FULL_HEIGHT;
+        tl.height = Timeline.full_height;
         tl.style.position = "relative";
         tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
         tlc.appendChild(tl);
@@ -1758,7 +1764,7 @@ Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "I
         
             // Get context
             var g = tl.getContext("2d");
-            g.clearRect(0,0,Timeline.width,TIMELINE_SIZES_FULL_HEIGHT);
+            g.clearRect(0,0,Timeline.width,Timeline.full_height);
             g.save();
                 
             // Draw bar
