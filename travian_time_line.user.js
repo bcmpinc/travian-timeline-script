@@ -161,13 +161,14 @@ Feature.call=function(fn_name, once) {
     if (!this.end) this.end=new Object();
     this.end[fn_name] = new Date().getTime();
 };
-// Executes (using Feature.call) the function
-// specified by fn_name for all Features 
-// created with Feature.create()
-// in the order they have been created.
+// Executes (using Feature.call) the function specified by fn_name for all _enabled_ 
+// Features created with Feature.create() in the order they have been created.
+// A feature is enabled iff it doesn't have an enabled field or its enabled field is not
+// exactly equal to false.
 Feature.forall=function(fn_name, once) {
     for (var n in this.list) {
-        this.list[n].call(fn_name, once);
+        if (this.list[n].enabled!==false)
+            this.list[n].call(fn_name, once);
     }
 };
 
