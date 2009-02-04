@@ -1743,7 +1743,7 @@ Timeline.scroll_offset=0;
                 g.restore();
             }
             g.restore();
-            if (Timeline.keep_updated && !once) {
+            if (Timeline.keep_updated && once) {
                 setTimeout(update_timeline,Timeline.update_interval);
             }
         }
