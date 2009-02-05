@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.23
+// @version        0.24
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -944,8 +944,27 @@ try {
             }
             return e;
         }
+
+        function tl_parse_duration(duration){
+            // This essentially does the same thing as tl_parse_time, but it is only given the length of time *from now*
+            // This should be far simpler and far more robust than depending on tl_parse_time directly (and it provides
+            // better accuracy in most cases!).
+            // Duration must be composed of [str, hours, min, sec].
+
+            debug(d_lowest, 'Parsing a duration! '+duration[0]);
+
+            d = new Date();
+            d.setTime(d.getTime() + TIME_DIFFERENCE*3600000); // Set the time offset
+
+            // This should deal with rollover appropriately...
+            d.setHours(d.getHours() + (duration[1]-0), d.getMinutes() + (duration[2]-0), d.getSeconds() + (duration[3]-0));
+
+            debug(d_low, "tl_parse_duration() returning "+d.getTime());
+
+            return d;
+        }
     
-        function parseTime(time, format, day){
+        function tl_parse_time(time, format, day){
             // time is interpreted as [hours, minutes, seconds (optional)]
             // format is either 'am', 'pm', or '' (optional).
             // day is [day, month, year (optional)]. (all optional)
@@ -986,7 +1005,7 @@ try {
                 }
             }
 
-            debug(d_med, 'parseTime() returning '+d.getTime());
+            debug(d_med, 'tl_parse_time() returning '+d.getTime());
 
             return d;
         }
@@ -1018,7 +1037,7 @@ try {
                         duration = Math.floor(duration);
                         where = x.childNodes[0].childNodes[2].textContent;
                 
-                        t = parseTime(time.slice(1, 4));
+                        t = tl_parse_time(time.slice(1, 4));
                         if (duration > 0){
                             debug(d_low, 'Duration is > 24 hours: '+duration);
                             t.setDate(t.getDate()+duration);
@@ -1053,7 +1072,7 @@ try {
                         time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?).(\\d\\d).(\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
                         where = x.childNodes[0].childNodes[3].innerHTML;
                 
-                        t = parseTime(time.slice(4, 7), '', time.slice(1, 4)).getTime();
+                        t = tl_parse_time(time.slice(4, 7), '', time.slice(1, 4)).getTime();
                         e = getevent(t,where);
                         e[12] = where;
                 
@@ -1108,20 +1127,25 @@ try {
                 y = bouw.childNodes[1].childNodes[0];
                 for (nn in y.childNodes) {
                     x = y.childNodes[nn];
-                    time = x.childNodes[3].textContent; 
-                    time = time.match("(\\d\\d?):(\\d\\d) ?([a-z]*)");
-                    duration = Math.floor(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
+                    time = x.childNodes[3].textContent.match("(\\d\\d?):(\\d\\d) ?([a-z]*)");
+                    /*
+                    duration = x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+                    tl_parse_duration(duration);
+                    duration = Math.floor(duration[1]/24);
                     where = x.childNodes[1].textContent;
                 
-                    t = parseTime(time.slice(1, 3), time[3]);
+                    t = tl_parse_time(time.slice(1, 3), time[3]);
                     if (duration > 0){
                         debug(d_low, 'Duration is > 24 hours: '+duration);
                         t.setDate(t.getDate()+duration);
                     }
                     t = t.getTime();
+                    */
+                    t = tl_parse_duration(x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)')).getTime();
 
                     res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
 
+                    // What's the point of this again??
                     var h = 0;
                     for(var i = 0; i < x.length; i ++) {
                         h*=13;
@@ -1140,65 +1164,94 @@ try {
         }
 
         // Market Deliveries
-        if (location.href.indexOf('build.php')>0 && // If we're on a building page
-            document.forms[0] != undefined &&
-            document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
-            // Then this must be the market! (in a language-insensitive manner :D)
+        if (location.href.indexOf('build.php')>0){ // If we're on a building page
+            if (document.forms[0] != undefined &&
+                document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
+                // Then this must be the market! (in a language-insensitive manner :D)
 
-            var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-            for (var i=0; i < shipment.snapshotLength; i++){
-                x = shipment.snapshotItem(i);
+                var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+                for (var i=0; i < shipment.snapshotLength; i++){
+                    x = shipment.snapshotItem(i);
 
-                // Extract the arrival time
-                time = x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
-                debug(d_low, "Merchant arriving at "+time);
+                    // Extract the arrival time
+                    time = x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
+                    debug(d_low, "Merchant arriving at "+time);
 
-                // Extract the duration of the shipment
-                duration = Math.floor(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
+                    // Extract the duration of the shipment
+                    //duration = Math.floor(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
+                    t = tl_parse_duration(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)')).getTime();
 
-                // Extract the value of the shipment
-                res = x.childNodes[4].childNodes[1].textContent.split(' | ');
-                debug(d_low, "Merchant carrying "+res);
+                    // Extract the value of the shipment
+                    res = x.childNodes[4].childNodes[1].textContent.split(' | ');
+                    debug(d_low, "Merchant carrying "+res);
                 
-                // Check if merchant is returning
-                ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
-                if (ret) debug(d_low, "Merchant is returning");
+                    // Check if merchant is returning
+                    ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
+                    if (ret) debug(d_low, "Merchant is returning");
 
-                // Extract the action type
-                type = x.childNodes[0].childNodes[3].textContent;
+                    // Extract the action type
+                    type = x.childNodes[0].childNodes[3].textContent;
+                    
+                    // Parse time appropriately...
+                    tl_parse_time(time.slice(1, 3), time[3]);
+                    /*
+                    if (duration > 0){
+                        debug(d_low, 'Duration is > 24 hours: '+duration);
+                        t.setDate(t.getDate()+duration);
+                    }
+                    t = t.getTime();
+                    */
 
-                // Parse time appropriately...
-                t = parseTime(time.slice(1, 3), time[3]);
-                if (duration > 0){
-                    debug(d_low, 'Duration is > 24 hours: '+duration);
-                    t.setDate(t.getDate()+duration);
+                    try {
+                        e = getevent(t, type, active_vil);
+                    } catch (er){
+                        if (er == "ERR_EVENT_OVERWRITE") continue;
+                        throw er;
+                    }
+
+                    // Add resource pictures and amounts (if sending)
+                    if (!ret)
+                        for (j=0; j<4; j++)
+                            e[13+j]=res[j];
                 }
-                t = t.getTime();
+            }
+
+            // Party events! Still a building...
+            // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
+            // This should be exclusive for Town Halls.
+            x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
+                                  document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+            if (x.snapshotLength == 1){
+                x = x.snapshotItem(0).parentNode;
+
+                debug(d_med, "Found a party event!");
+
+                // Extract the duration
+                duration = x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+                debug(d_low, "Duration = "+duration);
+
+                msg = x.childNodes[1].textContent;
+                debug(d_low, 'Type = '+msg);
+
+                // Parse the duration
+                t = tl_parse_duration(duration).getTime();
 
                 try {
-                    e = getevent(t, type, active_vil);
+                    e = getevent(t, msg, active_vil);
                 } catch (er){
-                    if (er == "ERR_EVENT_OVERWRITE") continue;
-                    throw er;
+                    if (er != 'ERR_EVENT_OVERWRITE') throw er;
                 }
-
-                // Add resource pictures and amounts (if sending)
-                if (!ret)
-                    for (j=0; j<4; j++)
-                        e[13+j]=res[j];
             }
-        }
-
-        // Research Events
-        // Ok, the idea here is to look for a building with a table of class 'tbg' that has a
-        // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
-        // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
-        if (location.href.indexOf('build.php')>0){ // If we're not on a building page, don't bother with the expensive evaluation
+            
+            // Research Events
+            // Ok, the idea here is to look for a building with a table of class 'tbg' that has its first
+            // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
+            // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
+            // This is still inside the if(building) statement
             try {
                 x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
                                       document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
                 if (x.snapshotLength == 1){
-                    //alert("You must be on an *active* research building");
                     x = x.snapshotItem(0).parentNode;
 
                     // Extract the completion time
@@ -1209,7 +1262,7 @@ try {
                     duration = Math.floor(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
 
                     // And parse it appropriately
-                    t = parseTime(time.slice(1, 3), time[3]);
+                    t = tl_parse_time(time.slice(1, 3), time[3]);
                     if (duration > 0){
                         debug(d_low, 'Duration is > 24 hours: '+duration);
                         t.setDate(t.getDate()+duration);

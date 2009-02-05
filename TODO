@@ -13,6 +13,7 @@ Timeline Events,Look&Feel:
 Other Features:
 - Add method for configuration of 'extra villages'
 - Add names to special locations.
+- Seperate GM_values etc for different accounts on the same server (ie sitters).
 
 New Features:
 - Modify all the links for more robust navigation
