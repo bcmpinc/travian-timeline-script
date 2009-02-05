@@ -1575,7 +1575,7 @@ try {
                 g.restore();
             }
             g.restore();
-            if (KEEP_TIMELINE_UPDATED && once == true) {
+            if (KEEP_TIMELINE_UPDATED && once != false) {
                 setTimeout(update_timeline,TIMELINE_UPDATE_INTERVAL);
             }
         }
