@@ -959,6 +959,10 @@ try {
             // This should deal with rollover appropriately...
             d.setHours(d.getHours() + (duration[1]-0), d.getMinutes() + (duration[2]-0), d.getSeconds() + (duration[3]-0));
 
+            // We don't want higher than 10-second resolution...
+            d.setSeconds(Math.floor(d.getSeconds()/10)*10);
+            d.setMilliseconds(0);
+
             debug(d_low, "tl_parse_duration() returning "+d.getTime());
 
             return d;
@@ -1240,6 +1244,7 @@ try {
                     e = getevent(t, msg, active_vil);
                 } catch (er){
                     if (er != 'ERR_EVENT_OVERWRITE') throw er;
+                    debug(d_med, 'An event already exists at this time!');
                 }
             }
             
