@@ -62,7 +62,7 @@ try {
     // Debug functions...
     var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
     //* d_none is for the final release - don't forget to set it before uploading
-    var d_level=d_none;/*/
+    var d_level=d_highest;/*/
     var d_level=d_all;//*/
 
     /*************************************************
@@ -1132,11 +1132,13 @@ try {
                 for (nn in y.childNodes) {
                     x = y.childNodes[nn];
                     time = x.childNodes[3].textContent.match("(\\d\\d?):(\\d\\d) ?([a-z]*)");
+
+                    where = x.childNodes[1].textContent;
+
                     /*
                     duration = x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
                     tl_parse_duration(duration);
                     duration = Math.floor(duration[1]/24);
-                    where = x.childNodes[1].textContent;
                 
                     t = tl_parse_time(time.slice(1, 3), time[3]);
                     if (duration > 0){
