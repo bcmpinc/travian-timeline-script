@@ -61,7 +61,7 @@ try {
 
     // Debug functions...
     var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-    //* d_none is for the final release - don't forget to set it before uploading
+    /* d_none is for the final release - don't forget to set it before uploading
     var d_level=d_highest;/*/
     var d_level=d_all;//*/
 
@@ -246,7 +246,43 @@ try {
         if (n<=0) return this;
         return this+" ".repeat(n);
     }
-    
+
+    function tl_date(){
+        this.date = new Date();
+        this.date.setTime(this.date.getTime() + TIME_DIFFERENCE*3600000);
+        this.date.setMilliseconds(0);
+
+        this.set_time = function(time){
+            // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
+            debug(d_low, 'Setting the time: '+time);
+
+            if (time[time.length - 1] == 'pm') time[1] -= -12;
+            
+            this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
+
+            return this.date.getTime();
+        }
+
+        this.set_day = function(day){
+            // day is [day, month, year (optional)]. Month is 1-12.
+            debug(d_low, 'Setting the day: '+day);
+
+            this.date.setFullYear(day[2] == undefined ? this.date.getFullYear() : '20'+day[2], day[1] - 1, day[0]);
+
+            return this.date.getTime();
+        }
+
+        this.adjust_day = function(duration){
+            // The idea with this is to compare a duration value with the current day/time, and adjust the day for every 24 hours in duration.
+            // duration is of type [string, hours, ....].
+            debug(d_low, 'Adjusting the day by: '+duration);
+
+            this.date.setDate(this.date.getDate() + Math.floor(duration[1]/24));
+
+            return this.date.getTime();
+        }
+    }
+
     Math.sinh = function(x) { 
         return .5*(Math.exp(x)-Math.exp(-x));
     }
@@ -932,7 +968,7 @@ try {
         // Added a third optional parameter to fix a bug with event overwriting. The event would be encountered,
         // this function wouldn't change it and return right away, and then the code following it would
         // be executed corrupting the event. This is a quick fix, but it really doesn't solve the problem.
-        function getevent(t, msg, name) {
+        function tl_get_event(t, msg, name) {
             if (name == undefined) name = '';
             e = events[t];
             if (e == undefined) {
@@ -943,75 +979,6 @@ try {
                 throw "ERR_EVENT_OVERWRITE";
             }
             return e;
-        }
-
-        function tl_parse_duration(duration){
-            // This essentially does the same thing as tl_parse_time, but it is only given the length of time *from now*
-            // This should be far simpler and far more robust than depending on tl_parse_time directly (and it provides
-            // better accuracy in most cases!).
-            // Duration must be composed of [str, hours, min, sec].
-
-            debug(d_lowest, 'Parsing a duration! '+duration[0]);
-
-            d = new Date();
-            d.setTime(d.getTime() + TIME_DIFFERENCE*3600000); // Set the time offset
-
-            // This should deal with rollover appropriately...
-            d.setHours(d.getHours() + (duration[1]-0), d.getMinutes() + (duration[2]-0), d.getSeconds() + (duration[3]-0));
-
-            // We don't want higher than 10-second resolution...
-            d.setSeconds(Math.floor(d.getSeconds()/10)*10);
-            d.setMilliseconds(0);
-
-            debug(d_low, "tl_parse_duration() returning "+d.getTime());
-
-            return d;
-        }
-    
-        function tl_parse_time(time, format, day){
-            // time is interpreted as [hours, minutes, seconds (optional)]
-            // format is either 'am', 'pm', or '' (optional).
-            // day is [day, month, year (optional)]. (all optional)
-            // TODO: support non-european date/time formats (orderings change...)
-
-            debug(d_med, 'Parsing capture time info!\ntime='+time.join(':')+' '+(format==undefined?'':format)+(day==undefined?'':(' day='+day.join('.'))));
-
-            d = new Date();
-            d.setTime(d.getTime()+TIME_DIFFERENCE*3600000);
-            time_now = d.getTime();
-
-            // If we're given a date as well as a time... as in reports etc
-            if (day != undefined){
-                debug(d_low, 'Given date info to parse');
-                d.setDate(day[0]);
-                d.setMonth(day[1] - 1);
-                if (day[2] != undefined) d.setYear('20'+day[2]);
-
-                // The milliseconds are here so that a report doesn't prevent a build from being listed if they're at the same time.
-                // This is a *bit* of a hack...
-                d.setMilliseconds(0);
-            } else {
-                debug(d_low, 'Not given any date info for parsing');
-                d.setMilliseconds(1);
-            }
-
-            if (format=='pm') time[0] -= -12; // We're potentially dealing with strings here, so we can't use the '+' operator...
-
-            d.setHours(time[0]);
-            d.setMinutes(time[1]);
-            d.setSeconds(time[2] == undefined ? 0 : time[2]);
-
-            if (day == undefined){
-                // If we aren't explicitly given a day, we need to be careful of wrap-around midnights...
-                if (d.getTime() < time_now - 60000){ // 60000 is arbitrary...
-                    debug(d_lowest, 'Date rollover - this event occured too far in the past');
-                    d.setDate(d.getDate()+1);
-                }
-            }
-
-            debug(d_med, 'tl_parse_time() returning '+d.getTime());
-
-            return d;
         }
 
         // Extract the active village
@@ -1036,20 +1003,13 @@ try {
                     // Instead of checking if this is the correct line, just act as if it's correct
                     // If it isn't this will certainly fail.
                     try {
-                        time = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)");
-                        duration = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24;
-                        duration = Math.floor(duration);
+                        d = new tl_date();
+                        d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)"));
+                        t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
                         where = x.childNodes[0].childNodes[2].textContent;
                 
-                        t = tl_parse_time(time.slice(1, 4));
-                        if (duration > 0){
-                            debug(d_low, 'Duration is > 24 hours: '+duration);
-                            t.setDate(t.getDate()+duration);
-                        }
-                        t = t.getTime();
-                
                         try {
-                            e = getevent(t, where, active_vil);
+                            e = tl_get_event(t, where, active_vil);
                         }
                         catch(er){
                             if (er == "ERR_EVENT_OVERWRITE") continue;
@@ -1061,7 +1021,7 @@ try {
                                 e[j] = y.textContent - 0;
                         }
                     } catch (e) {
-                        // So probably it wasn't the correct line.
+                        // So it probably wasn't the correct line.
                     }
                 }
         }
@@ -1073,11 +1033,14 @@ try {
                 x = res.singleNodeValue;
                 if (x != undefined) {
                     if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
-                        time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?).(\\d\\d).(\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
+                        d = new tl_date();
+
+                        time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?)[/.](\\d\\d)[/.](\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
+                        d.set_time(time.slice(3, 7)); // The first element in the array passed is ignored...
+                        t = d.set_day(time.slice(1, 4));
                         where = x.childNodes[0].childNodes[3].innerHTML;
                 
-                        t = tl_parse_time(time.slice(4, 7), '', time.slice(1, 4)).getTime();
-                        e = getevent(t,where);
+                        e = tl_get_event(t,where);
                         e[12] = where;
                 
                         // army composition + losses
@@ -1120,10 +1083,7 @@ try {
             } catch (er){
                 if (er != "ERR_EVENT_OVERWRITE") throw er;
             }
-        }
-
-        // building build task:
-        if (location.href.indexOf("dorf")>0) {
+        } else if (location.href.indexOf("dorf")>0) { // building build task:
             bouw = document.getElementById("lbau1");
             if (bouw == undefined)
                 bouw = document.getElementById("lbau2");
@@ -1131,23 +1091,12 @@ try {
                 y = bouw.childNodes[1].childNodes[0];
                 for (nn in y.childNodes) {
                     x = y.childNodes[nn];
-                    time = x.childNodes[3].textContent.match("(\\d\\d?):(\\d\\d) ?([a-z]*)");
 
                     where = x.childNodes[1].textContent;
 
-                    /*
-                    duration = x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
-                    tl_parse_duration(duration);
-                    duration = Math.floor(duration[1]/24);
-                
-                    t = tl_parse_time(time.slice(1, 3), time[3]);
-                    if (duration > 0){
-                        debug(d_low, 'Duration is > 24 hours: '+duration);
-                        t.setDate(t.getDate()+duration);
-                    }
-                    t = t.getTime();
-                    */
-                    t = tl_parse_duration(x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)')).getTime();
+                    d = new tl_date();
+                    d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+                    t = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
 
                     res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
 
@@ -1160,17 +1109,15 @@ try {
                     }
                     t+=h*2;
                     try {
-                        e = getevent(t, where, active_vil);
+                        e = tl_get_event(t, where, active_vil);
                     } catch (er){
                         if (er == "ERR_EVENT_OVERWRITE") continue;
                         throw er;
                     }
                 }
             }
-        }
-
-        // Market Deliveries
-        if (location.href.indexOf('build.php')>0){ // If we're on a building page
+        } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
+            // Market Deliveries
             if (document.forms[0] != undefined &&
                 document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
                 // Then this must be the market! (in a language-insensitive manner :D)
@@ -1178,14 +1125,13 @@ try {
                 var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
                 for (var i=0; i < shipment.snapshotLength; i++){
                     x = shipment.snapshotItem(i);
+                    d = new tl_date();
 
                     // Extract the arrival time
-                    time = x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
-                    debug(d_low, "Merchant arriving at "+time);
+                    d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
 
-                    // Extract the duration of the shipment
-                    //duration = Math.floor(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
-                    t = tl_parse_duration(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)')).getTime();
+                    // Extract and adjust by the duration of the shipment
+                    t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
 
                     // Extract the value of the shipment
                     res = x.childNodes[4].childNodes[1].textContent.split(' | ');
@@ -1198,18 +1144,8 @@ try {
                     // Extract the action type
                     type = x.childNodes[0].childNodes[3].textContent;
                     
-                    // Parse time appropriately...
-                    tl_parse_time(time.slice(1, 3), time[3]);
-                    /*
-                    if (duration > 0){
-                        debug(d_low, 'Duration is > 24 hours: '+duration);
-                        t.setDate(t.getDate()+duration);
-                    }
-                    t = t.getTime();
-                    */
-
                     try {
-                        e = getevent(t, type, active_vil);
+                        e = tl_get_event(t, type, active_vil);
                     } catch (er){
                         if (er == "ERR_EVENT_OVERWRITE") continue;
                         throw er;
@@ -1229,21 +1165,18 @@ try {
                                   document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
             if (x.snapshotLength == 1){
                 x = x.snapshotItem(0).parentNode;
+                d = new tl_date();
 
                 debug(d_med, "Found a party event!");
 
-                // Extract the duration
-                duration = x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
-                debug(d_low, "Duration = "+duration);
+                d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
+                t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
 
                 msg = x.childNodes[1].textContent;
                 debug(d_low, 'Type = '+msg);
 
-                // Parse the duration
-                t = tl_parse_duration(duration).getTime();
-
                 try {
-                    e = getevent(t, msg, active_vil);
+                    e = tl_get_event(t, msg, active_vil);
                 } catch (er){
                     if (er != 'ERR_EVENT_OVERWRITE') throw er;
                     debug(d_med, 'An event already exists at this time!');
@@ -1260,21 +1193,10 @@ try {
                                       document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
                 if (x.snapshotLength == 1){
                     x = x.snapshotItem(0).parentNode;
+                    d = new tl_date();
 
-                    // Extract the completion time
-                    time = x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
-                    debug(d_low, "Research completing at "+time);
-
-                    // Extract the duration
-                    duration = Math.floor(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
-
-                    // And parse it appropriately
-                    t = tl_parse_time(time.slice(1, 3), time[3]);
-                    if (duration > 0){
-                        debug(d_low, 'Duration is > 24 hours: '+duration);
-                        t.setDate(t.getDate()+duration);
-                    }
-                    t = t.getTime();
+                    d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+                    t = d.adjust_day(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
 
                     // Extract the unit being upgraded
                     type = x.childNodes[3].textContent;
@@ -1301,7 +1223,7 @@ try {
 
                     // And now throw all of this information into an event
                     // Don't throw in the level information if we're  researching a new unit at the acadamy... because there isn't any!
-                    e = getevent(t, building+': '+type+(level ? ' '+level : ''), active_vil);
+                    e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
 
                 } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
             } catch (er){
@@ -1635,7 +1557,7 @@ try {
                 g.restore();
             }
             g.restore();
-            if (KEEP_TIMELINE_UPDATED && once != false) {
+            if (KEEP_TIMELINE_UPDATED && once != true) {
                 setTimeout(update_timeline,TIMELINE_UPDATE_INTERVAL);
             }
         }
