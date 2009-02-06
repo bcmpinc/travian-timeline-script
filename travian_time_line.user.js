@@ -177,6 +177,12 @@ try {
         return gm_prefix+s;
     }
 
+    // I think this is pretty self-explanitory... we can't update the timeline from here, though... :(
+    GM_registerMenuCommand('Travian Timeline: Clear all events', function(e){
+            events = {};
+            GM_setValue(prefix("TIMELINE"), uneval(events));
+        });
+
     window.addEventListener('load', main, false); // Run everything after the DOM loads!
 
     //if (USE_SETTINGS) {
@@ -251,6 +257,7 @@ try {
         this.date = new Date();
         this.date.setTime(this.date.getTime() + TIME_DIFFERENCE*3600000);
         this.date.setMilliseconds(0);
+        this.start_time = this.date.getTime();
 
         this.set_time = function(time){
             // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
@@ -278,6 +285,10 @@ try {
             debug(d_low, 'Adjusting the day by: '+duration);
 
             this.date.setDate(this.date.getDate() + Math.floor(duration[1]/24));
+
+            // Cover the wrap-around cases. If an event has a duration, then it must be in the future. Hence, if the time we've set for it
+            // is in the past, we've done something wrong and it's probably a midnight error.
+            if (this.date.getTime() < this.start_time) this.date.setDate(this.date.getDate() + 1);
 
             return this.date.getTime();
         }
