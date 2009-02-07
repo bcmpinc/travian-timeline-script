@@ -21,6 +21,7 @@ Lines:
 - Repair Ally-lines' ally determination algorithm
 - Fix concurrency bug with special locations.
 - Add names to special locations.
+- Seperate GM_values etc for different accounts on the same server (ie sitters).
 
 Other Features:
 

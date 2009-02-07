@@ -107,6 +107,47 @@ Math.arcosh = function(x) {
     return Math.log(x+Math.sqrt(x*x-1));
 }
 
+function tl_date(){
+    this.date = new Date();
+    this.date.setTime(this.date.getTime() + Timeline.time_differnece*3600000);
+    this.date.setMilliseconds(0);
+    this.start_time = this.date.getTime();
+
+    this.set_time = function(time){
+        // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
+        debug(d_low, 'Setting the time: '+time);
+
+        if (time[time.length - 1] == 'pm') time[1] -= -12;
+        
+        this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
+
+        return this.date.getTime();
+    }
+
+    this.set_day = function(day){
+        // day is [day, month, year (optional)]. Month is 1-12.
+        debug(d_low, 'Setting the day: '+day);
+
+        this.date.setFullYear(day[2] == undefined ? this.date.getFullYear() : '20'+day[2], day[1] - 1, day[0]);
+
+        return this.date.getTime();
+    }
+
+    this.adjust_day = function(duration){
+        // The idea with this is to compare a duration value with the current day/time, and adjust the day for every 24 hours in duration.
+        // duration is of type [string, hours, ....].
+        debug(d_low, 'Adjusting the day by: '+duration);
+
+        this.date.setDate(this.date.getDate() + Math.floor(duration[1]/24));
+
+        // Cover the wrap-around cases. If an event has a duration, then it must be in the future. Hence, if the time we've set for it
+        // is in the past, we've done something wrong and it's probably a midnight error.
+        if (this.date.getTime() < this.start_time) this.date.setDate(this.date.getDate() + 1);
+
+        return this.date.getTime();
+    }
+}
+
 function nothing(){}
 
 /****************************************
@@ -1098,7 +1139,7 @@ Timeline.scroll_offset=0;
         // Added a third optional parameter to fix a bug with event overwriting. The event would be encountered,
         // this function wouldn't change it and return right away, and then the code following it would
         // be executed corrupting the event. This is a quick fix, but it really doesn't solve the problem.
-        function getevent(t, msg, name) {
+        function tl_get_event(t, msg, name) {
             if (name == undefined) name = '';
             e = events[t];
             if (e == undefined) {
@@ -1109,53 +1150,6 @@ Timeline.scroll_offset=0;
                 throw "ERR_EVENT_OVERWRITE";
             }
             return e;
-        }
-    
-        function parseTime(time, format, day){
-            // time is interpreted as [hours, minutes, seconds (optional)]
-            // format is either 'am', 'pm', or '' (optional).
-            // day is [day, month, year (optional)]. (all optional)
-            // TODO: support non-european date/time formats (orderings change...)
-            // TODO: fix the 12pm bug?
-
-            debug(d_med, 'Parsing capture time info!\ntime='+time.join(':')+' '+(format==undefined?'':format)+(day==undefined?'':(' day='+day.join('.'))));
-
-            d = new Date();
-            d.setTime(d.getTime()+Timeline.time_difference*3600000);
-            time_now = d.getTime();
-
-            // If we're given a date as well as a time... as in reports etc
-            if (day != undefined){
-                debug(d_low, 'Given date info to parse');
-                d.setDate(day[0]);
-                d.setMonth(day[1] - 1);
-                if (day[2] != undefined) d.setYear('20'+day[2]);
-
-                // The milliseconds are here so that a report doesn't prevent a build from being listed if they're at the same time.
-                // This is a *bit* of a hack...
-                d.setMilliseconds(0);
-            } else {
-                debug(d_low, 'Not given any date info for parsing');
-                d.setMilliseconds(1);
-            }
-
-            if (format=='pm') time[0] -= -12; // We're potentially dealing with strings here, so we can't use the '+' operator...
-
-            d.setHours(time[0]);
-            d.setMinutes(time[1]);
-            d.setSeconds(time[2] == undefined ? 0 : time[2]);
-
-            if (day == undefined){
-                // If we aren't explicitly given a day, we need to be careful of wrap-around midnights...
-                if (d.getTime() < time_now - 60000){ // 60000 is arbitrary...
-                    debug(d_lowest, 'Date rollover - this event occured too far in the past');
-                    d.setDate(d.getDate()+1);
-                }
-            }
-
-            debug(d_med, 'parseTime() returning '+d.getTime());
-
-            return d;
         }
 
         // Extract the active village
@@ -1180,20 +1174,13 @@ Timeline.scroll_offset=0;
                     // Instead of checking if this is the correct line, just act as if it's correct
                     // If it isn't this will certainly fail.
                     try {
-                        time = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)");
-                        duration = x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24;
-                        duration = Math.floor(duration);
+                        d = new tl_date();
+                        d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)"));
+                        t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
                         where = x.childNodes[0].childNodes[2].textContent;
                 
-                        t = parseTime(time.slice(1, 4));
-                        if (duration > 0){
-                            debug(d_low, 'Duration is > 24 hours: '+duration);
-                            t.setDate(t.getDate()+duration);
-                        }
-                        t = t.getTime();
-                
                         try {
-                            e = getevent(t, where, active_vil);
+                            e = tl_get_event(t, where, active_vil);
                         }
                         catch(er){
                             if (er == "ERR_EVENT_OVERWRITE") continue;
@@ -1205,7 +1192,7 @@ Timeline.scroll_offset=0;
                                 e[j] = y.textContent - 0;
                         }
                     } catch (e) {
-                        // So probably it wasn't the correct line.
+                        // So it probably wasn't the correct line.
                     }
                 }
         }
@@ -1217,11 +1204,14 @@ Timeline.scroll_offset=0;
                 x = res.singleNodeValue;
                 if (x != undefined) {
                     if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
-                        time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?).(\\d\\d).(\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
+                        d = new tl_date();
+
+                        time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?)[/.](\\d\\d)[/.](\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
+                        d.set_time(time.slice(3, 7)); // The first element in the array passed is ignored...
+                        t = d.set_day(time.slice(1, 4));
                         where = x.childNodes[0].childNodes[3].innerHTML;
                 
-                        t = parseTime(time.slice(4, 7), '', time.slice(1, 4)).getTime();
-                        e = getevent(t,where);
+                        e = tl_get_event(t,where);
                         e[12] = where;
                 
                         // army composition + losses
@@ -1264,10 +1254,7 @@ Timeline.scroll_offset=0;
             } catch (er){
                 if (er != "ERR_EVENT_OVERWRITE") throw er;
             }
-        }
-
-        // building build task:
-        if (location.href.indexOf("dorf")>0) {
+        } else if (location.href.indexOf("dorf")>0) { // building build task:
             bouw = document.getElementById("lbau1");
             if (bouw == undefined)
                 bouw = document.getElementById("lbau2");
@@ -1275,20 +1262,16 @@ Timeline.scroll_offset=0;
                 y = bouw.childNodes[1].childNodes[0];
                 for (nn in y.childNodes) {
                     x = y.childNodes[nn];
-                    time = x.childNodes[3].textContent; 
-                    time = time.match("(\\d\\d?):(\\d\\d) ?([a-z]*)");
-                    duration = Math.floor(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
+
                     where = x.childNodes[1].textContent;
-                
-                    t = parseTime(time.slice(1, 3), time[3]);
-                    if (duration > 0){
-                        debug(d_low, 'Duration is > 24 hours: '+duration);
-                        t.setDate(t.getDate()+duration);
-                    }
-                    t = t.getTime();
+
+                    d = new tl_date();
+                    d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+                    t = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
 
                     res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
 
+                    // What's the point of this again??
                     var h = 0;
                     for(var i = 0; i < x.length; i ++) {
                         h*=13;
@@ -1297,91 +1280,94 @@ Timeline.scroll_offset=0;
                     }
                     t+=h*2;
                     try {
-                        e = getevent(t, where, active_vil);
+                        e = tl_get_event(t, where, active_vil);
                     } catch (er){
                         if (er == "ERR_EVENT_OVERWRITE") continue;
                         throw er;
                     }
                 }
             }
-        }
+        } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
+            // Market Deliveries
+            if (document.forms[0] != undefined &&
+                document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
+                // Then this must be the market! (in a language-insensitive manner :D)
 
-        // Market Deliveries
-        if (location.href.indexOf('build.php')>0 && // If we're on a building page
-            document.forms[0] != undefined &&
-            document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
-            // Then this must be the market! (in a language-insensitive manner :D)
+                var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+                for (var i=0; i < shipment.snapshotLength; i++){
+                    x = shipment.snapshotItem(i);
+                    d = new tl_date();
 
-            var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-            for (var i=0; i < shipment.snapshotLength; i++){
-                x = shipment.snapshotItem(i);
+                    // Extract the arrival time
+                    d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
 
-                // Extract the arrival time
-                time = x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
-                debug(d_low, "Merchant arriving at "+time);
+                    // Extract and adjust by the duration of the shipment
+                    t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
 
-                // Extract the duration of the shipment
-                duration = Math.floor(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
-
-                // Extract the value of the shipment
-                res = x.childNodes[4].childNodes[1].textContent.split(' | ');
-                debug(d_low, "Merchant carrying "+res);
+                    // Extract the value of the shipment
+                    res = x.childNodes[4].childNodes[1].textContent.split(' | ');
+                    debug(d_low, "Merchant carrying "+res);
                 
-                // Check if merchant is returning
-                ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
-                if (ret) debug(d_low, "Merchant is returning");
+                    // Check if merchant is returning
+                    ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
+                    if (ret) debug(d_low, "Merchant is returning");
 
-                // Extract the action type
-                type = x.childNodes[0].childNodes[3].textContent;
+                    // Extract the action type
+                    type = x.childNodes[0].childNodes[3].textContent;
+                    
+                    try {
+                        e = tl_get_event(t, type, active_vil);
+                    } catch (er){
+                        if (er == "ERR_EVENT_OVERWRITE") continue;
+                        throw er;
+                    }
 
-                // Parse time appropriately...
-                t = parseTime(time.slice(1, 3), time[3]);
-                if (duration > 0){
-                    debug(d_low, 'Duration is > 24 hours: '+duration);
-                    t.setDate(t.getDate()+duration);
+                    // Add resource pictures and amounts (if sending)
+                    if (!ret)
+                        for (j=0; j<4; j++)
+                            e[13+j]=res[j];
                 }
-                t = t.getTime();
+            }
+
+            // Party events! Still a building...
+            // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
+            // This should be exclusive for Town Halls.
+            x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
+                                  document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+            if (x.snapshotLength == 1){
+                x = x.snapshotItem(0).parentNode;
+                d = new tl_date();
+
+                debug(d_med, "Found a party event!");
+
+                d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
+                t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+
+                msg = x.childNodes[1].textContent;
+                debug(d_low, 'Type = '+msg);
 
                 try {
-                    e = getevent(t, type, active_vil);
+                    e = tl_get_event(t, msg, active_vil);
                 } catch (er){
-                    if (er == "ERR_EVENT_OVERWRITE") continue;
-                    throw er;
+                    if (er != 'ERR_EVENT_OVERWRITE') throw er;
+                    debug(d_med, 'An event already exists at this time!');
                 }
-
-                // Add resource pictures and amounts (if sending)
-                if (!ret)
-                    for (j=0; j<4; j++)
-                        e[13+j]=res[j]-0;
             }
-        }
-
-        // Research Events
-        // Ok, the idea here is to look for a building with a table of class 'tbg' that has a
-        // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
-        // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
-        if (location.href.indexOf('build.php')>0){ // If we're not on a building page, don't bother with the expensive evaluation
+            
+            // Research Events
+            // Ok, the idea here is to look for a building with a table of class 'tbg' that has its first
+            // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
+            // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
+            // This is still inside the if(building) statement
             try {
                 x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
                                       document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
                 if (x.snapshotLength == 1){
-                    //alert("You must be on an *active* research building");
                     x = x.snapshotItem(0).parentNode;
+                    d = new tl_date();
 
-                    // Extract the completion time
-                    time = x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)');
-                    debug(d_low, "Research completing at "+time);
-
-                    // Extract the duration
-                    duration = Math.floor(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')[1]/24);
-
-                    // And parse it appropriately
-                    t = parseTime(time.slice(1, 3), time[3]);
-                    if (duration > 0){
-                        debug(d_low, 'Duration is > 24 hours: '+duration);
-                        t.setDate(t.getDate()+duration);
-                    }
-                    t = t.getTime();
+                    d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+                    t = d.adjust_day(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
 
                     // Extract the unit being upgraded
                     type = x.childNodes[3].textContent;
@@ -1408,7 +1394,7 @@ Timeline.scroll_offset=0;
 
                     // And now throw all of this information into an event
                     // Don't throw in the level information if we're  researching a new unit at the acadamy... because there isn't any!
-                    e = getevent(t, building+': '+type+(level ? ' '+level : ''), active_vil);
+                    e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
 
                 } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
             } catch (er){
