@@ -661,6 +661,46 @@ Feature.create("Market");
 Market.setting("enabled",            true,  Settings.type.bool, undefined, "Color the market offers to quickly determine their value.");
 Market.setting("show_production",    true,  Settings.type.bool, undefined, "Add resource/minute and resources on market information to the resource bar.");
 
+Market.update=true;
+Market.colorify=function() { 
+    setTimeout(Market.colorify,500);
+    if (!Market.update) return;
+    Market.update=false;
+    
+    var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+
+    for ( var i=0 ; i < res.snapshotLength; i++ ) {
+        x = res.snapshotItem(i);
+        if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
+            a = x.childNodes[2].textContent-0;
+            b = x.childNodes[6].textContent-0;
+            r = a/b;
+            if (r>1.5)
+                color="#ddffdd";
+            else if (r>1.001)
+                color = "#eeffdd";
+            else if (r>0.999)
+                color = "#ffffdd";
+            else if (r>0.501)
+                color = "#ffeedd";
+            else
+                color = "#ffdddd";
+
+            x.style.backgroundColor = color;
+        }
+    }
+}
+Market.attribute_changed=function(e) {
+    Market.update=true;
+}
+Market.run=function(){
+    x = document.getElementById("lmid2");
+    if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
+        Market.colorify();
+        document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
+    }
+} 
+
 
 
 /****************************************
@@ -863,45 +903,6 @@ Timeline.scroll_offset=0;
 
         }
     }
-
-    //////////////////////////////////////////
-    //  MARKET COLORS                       //
-    //////////////////////////////////////////
-
-    //if (Market.enabled) {
-    function mkt_main(){
-        function colorify() { 
-            x = document.getElementById("lmid2");
-            if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
-                var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-            
-                for ( var i=0 ; i < res.snapshotLength; i++ )
-                    {
-                        x = res.snapshotItem(i);
-                        if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
-                            a = x.childNodes[2].textContent-0;
-                            b = x.childNodes[6].textContent-0;
-                            r = a/b;
-                            if (r>1.5)
-                                color="#ddffdd";
-                            else if (r>1.001)
-                                color = "#eeffdd";
-                            else if (r>0.999)
-                                color = "#ffffdd";
-                            else if (r>0.501)
-                                color = "#ffeedd";
-                            else
-                                color = "#ffdddd";
-
-                            x.style.backgroundColor = color;
-                        }
-                    }
-            }
-        }
-        for (i=1; i<=10; i++) 
-            setTimeout(colorify,i*1000);
-        colorify();
-    } 
 
     //////////////////////////////////////////
     //  ALLY LINES                          //
@@ -1824,7 +1825,6 @@ Feature.forall('init',true);
 function main(){
     storeInfo();
     if (Market.show_production) res_main();
-    if (Market.enabled) mkt_main();
     if (Lines.update_allies) al_main();
     if (Timeline.enabled) tl_main();
     if (USE_EXTRA_VILLAGE) ev_main();
