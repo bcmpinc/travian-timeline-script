@@ -196,7 +196,7 @@ Feature.call=function(fn_name, once) {
     try {
         this[fn_name]();
     } catch (e) {
-        GM_log(this.name+'.'+fn_name+': '+e)
+        GM_log(this.name+'.'+fn_name+' ('+(e.lineNumber-347)+'): '+e)
     }
     if (once) this[fn_name]=nothing;
     if (!this.end) this.end=new Object();
@@ -227,7 +227,6 @@ Settings.server=function(){
     if (url[1]=='speed2') a='y';
     return url[3]+a;
 }();
-
 // Get the value of this setting.
 // Note that (for example) 
 // "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
@@ -410,6 +409,20 @@ Settings.run=function() {
     var link = div.firstChild;
     link.style.cursor="pointer";
     link.addEventListener("click",Settings.show,false);    
+
+    // Extract the active village
+    // These values below are sufficient to keep things working when only 1 village exists.
+    Settings.village_name = ""; 
+    Settings.village_id   = 0;
+    try {
+        var village_link = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        Settings.village_name = village_link.textContent;
+        Settings.village_id=village_link.href.match("newdid=(\\d+)")[1]-0;
+    } catch (e) {
+        // If this fails, there probably is only 1 village. 
+        // Having the name in the timeline isn't really usefull then.
+    }
+    Debug.debug("The active village is "+Settings.village_id+": "+Settings.village_name);
 };
 Settings.show=function() {
     var w = document.createElement("div");
@@ -658,14 +671,17 @@ Sidebar.run=function() {
  ****************************************/
 
 Feature.create("Market");
-Market.setting("enabled",            true,  Settings.type.bool, undefined, "Color the market offers to quickly determine their value.");
-Market.setting("show_production",    true,  Settings.type.bool, undefined, "Add resource/minute and resources on market information to the resource bar.");
+Market.setting("enabled",            true, Settings.type.bool,   undefined, "Color the market offers to quickly determine their value.");
+Market.setting("show_production",    true, Settings.type.bool,   undefined, "Add resource/minute and resources on market information to the resource bar.");
+Market.setting("resources",            {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
+Market.setting("production",           {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
 
-Market.update=true;
+Market.update_colors=true;
+
 Market.colorify=function() { 
     setTimeout(Market.colorify,500);
-    if (!Market.update) return;
-    Market.update=false;
+    if (!Market.update_colors) return;
+    Market.update_colors=false;
     
     var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
 
@@ -689,17 +705,78 @@ Market.colorify=function() {
             x.style.backgroundColor = color;
         }
     }
-}
+};
 Market.attribute_changed=function(e) {
-    Market.update=true;
-}
+    Market.update_colors=true;
+};
+Market.show_production_rates=function() {
+    var head = document.getElementById("lres0");
+    if (head!=null) {
+        head = head.childNodes[1].childNodes[0];
+    
+        var res  = Market.resources [Settings.village_id];
+        var prod = Market.production[Settings.village_id];
+        res  = (res ==undefined)?[0,0,0,0]:res;
+        prod = (prod==undefined)?[0,0,0,0]:prod;
+        
+        cur = head.textContent.split("\n").filter(function(x) {return x[0]>='0' && x[0]<='9'; });
+    
+        var a="";
+        for (var i=0; i < 4; i++) {
+            var c=(res[i]>0)?("+"+res[i]+" "):("");
+            var p=(prod[i]>0?"+":"")+Math.round(prod[i]/6)/10.0;
+            a+="<td></td><td>"+c+p+"/m</td>";
+        }
+        a+="<td></td><td></td>";
+        
+        var tr = document.createElement("tr");
+        head.appendChild(tr);
+        tr.innerHTML = a;
+    }
+};
+Market.update_resources=function() {
+    // Store info about resources put on the market if availbale
+    var x = document.getElementById("lmid2");
+    if (x!=null && x.innerHTML.indexOf("\"dname\"")>0) {
+        var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+
+        var cnt = new Array(0,0,0,0);
+        for ( var i=0 ; i < res.snapshotLength; i++ ){
+            var c = res.snapshotItem(i).textContent - 0;
+            var t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
+            cnt[t] += c;
+        }
+        Debug.debug("This is on the market: "+cnt);
+        Market.resources[Settings.village_id]=cnt;
+        Market.s.resources.write();
+    }
+
+    // Store info about production rate if available
+    if (location.href.indexOf("dorf1")>0) {
+        var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+        var prod = new Array(0,0,0,0);
+
+        for ( var i=0 ; i < res.snapshotLength; i++ ){
+            var c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
+            var t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
+            prod[t] += c;
+        }
+        Debug.debug("This is produced: "+prod);
+        Market.production[dorp_id]=prod;
+        Market.s.production.write();
+    }
+};
 Market.run=function(){
+    Market.update_resources();
     x = document.getElementById("lmid2");
     if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
         Market.colorify();
         document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
     }
-} 
+    if (Market.show_production) {
+        Market.show_production_rates();
+    }
+};
 
 
 
@@ -748,10 +825,10 @@ Timeline.scroll_offset=0;
         //      id of the current active village. It's 0 when only 1 village is available and does not always accurate.
         // 
         // MARKT (dutch for market):
-        //      an array of length 4 containing the amount of resources currently available for sale on the marketplace. (might often be inaccurate)
+        //      
         //
         // PRODUCTIE (dutch for production):
-        //      an array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)
+        //      
         //
         // ALLIANCE:
         //      dictionary (map) mapping the names of your ally's members to a list of it's villages. 
@@ -861,46 +938,6 @@ Timeline.scroll_offset=0;
                     GM_setValue(prefix("ALLIANCE"), uneval(ally));
                 }
             }
-        }
-    }
-
-    //////////////////////////////////////////
-    //  ENHANCED RESOURCE INFO              //
-    //////////////////////////////////////////
-
-    // Enhance resource info
-    function res_main(){
-        //if (Market.show_production) {
-        head = document.getElementById("lres0");
-        if (head!=null) {
-            a="";
-            head = head.childNodes[1].childNodes[0];
-        
-            cnt  = eval(GM_getValue(prefix("MARKT"),     "{}"))
-                prod = eval(GM_getValue(prefix("PRODUCTIE"), "{}"));
-            if (cnt !=undefined) cnt  = cnt [dorp_id];
-            if (prod!=undefined) prod = prod[dorp_id];
-            if (cnt ==undefined) cnt =[0,0,0,0];
-            if (prod==undefined) prod=[0,0,0,0];
-        
-            cur = head.textContent.split("\n").filter(function(x) {return x[0]>='0' && x[0]<='9'; });
-        
-            for ( var i=0 ; i < 4; i++ )
-                {
-                    if (cnt[i]>0)
-                        c = "+" + cnt[i] + " ";
-                    else
-                        c = ""
-                            p = (prod[i]>0?"+":"") + Math.round(prod[i]/6)/10.0;
-                    a+="<td></td><td>"+c+p+"/m</td>";
-                    cur[i] = cur[i].split("/")[0];
-                }
-            a+="<td></td><td></td>";
-            
-            tr = document.createElement("tr");
-            head.appendChild(tr);
-            tr.innerHTML = a;
-
         }
     }
 
@@ -1153,13 +1190,9 @@ Timeline.scroll_offset=0;
             return e;
         }
 
-        // Extract the active village
-        try {
-            active_vil = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
-        } catch (e) {
-            active_vil = 0;
-        }
-        debug(d_low, "The active village is: "+active_vil);
+        // Get the active village
+        // TODO: replace in code.
+        var active_vil = Settings.village_name;
 
         // Travelling armies (rally point)
         x = document.getElementById("lmid2");
@@ -1824,7 +1857,6 @@ Feature.forall('init',true);
 
 function main(){
     storeInfo();
-    if (Market.show_production) res_main();
     if (Lines.update_allies) al_main();
     if (Timeline.enabled) tl_main();
     if (USE_EXTRA_VILLAGE) ev_main();
