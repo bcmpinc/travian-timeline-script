@@ -265,6 +265,9 @@ try {
             // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
             debug(d_low, 'Setting the time: '+time);
 
+            // Can't understand why people use am/pm, it's so confusing..??
+            if (time[time.length - 1] == 'am' || time[time.length - 1] == 'pm')
+                if (time[1]==12) time[1]=0;
             if (time[time.length - 1] == 'pm') time[1] -= -12;
             
             this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
