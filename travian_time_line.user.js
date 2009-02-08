@@ -117,6 +117,9 @@ function tl_date(){
         // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
         debug(d_low, 'Setting the time: '+time);
 
+        // Can't understand why people use am/pm, it's so confusing..??
+        if (time[time.length - 1] == 'am' || time[time.length - 1] == 'pm')
+            if (time[1]==12) time[1]=0;
         if (time[time.length - 1] == 'pm') time[1] -= -12;
         
         this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
@@ -812,6 +815,8 @@ Timeline.setting("full_height",          0, Settings.type.none,    undefined, "T
 
 Timeline.scroll_offset=0;
 
+TYPE_BUILDING=0; TYPE_ATTACK=1; TYPE_REPORT=2; TYPE_MARKET=3; TYPE_RESEARCH=4; TYPE_PARTY=5; // The types of events
+TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rgb(0,155,0)', 'rgb(0,0,255)', 'rgb(255,155,155)'];
 
 
 /****************************************
@@ -1135,7 +1140,7 @@ Timeline.scroll_offset=0;
             Example: {'1225753710000':[0, 0, 0, 0, 189, 0, 0, 0, 0, 0, 0, 0, "Keert terug van 2. Nador", 0, 0, 0, 0]}
         
             '1225753710000':       ## ~ The time at which this event occure(s|d).      
-            [0,                     0 ~ Unused (used to be the type of event)
+            [0,                     0 ~ Type of event (0=building, 1=attack, 2=report, 3=market, 4=research, 5=party)
             0,                      1 ~ Amount of farm-men involved 
             0,                      2 ~ Amount of defense-men involved
             0,                      3 ~ Amount of attack-men involved 
@@ -1224,6 +1229,8 @@ Timeline.scroll_offset=0;
                             if (y!=undefined)
                                 e[j] = y.textContent - 0;
                         }
+
+                        e[0] = TYPE_ATTACK;
                     } catch (e) {
                         // So it probably wasn't the correct line.
                     }
@@ -1282,6 +1289,7 @@ Timeline.scroll_offset=0;
                                 e[16] = 0-y[0];
                             }
                         }
+                        e[0] = TYPE_REPORT;
                     }
                 }
             } catch (er){
@@ -1318,6 +1326,7 @@ Timeline.scroll_offset=0;
                         if (er == "ERR_EVENT_OVERWRITE") continue;
                         throw er;
                     }
+                    e[0] = TYPE_BUILDING;
                 }
             }
         } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
@@ -1355,6 +1364,8 @@ Timeline.scroll_offset=0;
                         throw er;
                     }
 
+                    e[0] = TYPE_MARKET;
+
                     // Add resource pictures and amounts (if sending)
                     if (!ret)
                         for (j=0; j<4; j++)
@@ -1381,6 +1392,7 @@ Timeline.scroll_offset=0;
 
                 try {
                     e = tl_get_event(t, msg, active_vil);
+                    e[0] = TYPE_PARTY;
                 } catch (er){
                     if (er != 'ERR_EVENT_OVERWRITE') throw er;
                     debug(d_med, 'An event already exists at this time!');
@@ -1428,6 +1440,7 @@ Timeline.scroll_offset=0;
                     // And now throw all of this information into an event
                     // Don't throw in the level information if we're  researching a new unit at the acadamy... because there isn't any!
                     e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
+                    e[0] = TYPE_RESEARCH;
 
                 } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
             } catch (er){
@@ -1678,9 +1691,9 @@ Timeline.scroll_offset=0;
             for (i=1; i<12; i++) {
                 unit[i] = new Image();
                 if (i==11)
-                    unit[i].src = "img/un/u/hero.gif"
-                    else
-                        unit[i].src = "img/un/u/"+(Settings.race*10+i)+".gif";
+                    unit[i].src = "img/un/u/hero.gif";
+                else
+                    unit[i].src = "img/un/u/"+(Settings.race*10+i)+".gif";
             }
 
             for (i=13; i<17; i++) {
@@ -1703,7 +1716,7 @@ Timeline.scroll_offset=0;
                 if (diff<-Timeline.history || diff>Timeline.future) continue;
                 y = tl_warp(diff);
                 y = Math.round(y);
-                g.strokeStyle = "rgb(0,0,0)";
+                g.strokeStyle = TIMELINE_EVENT_COLORS[p[0]];
                 g.beginPath();
                 g.moveTo(-10, y);
                 g.lineTo(-50, y);    
@@ -1799,7 +1812,7 @@ Timeline.scroll_offset=0;
             if (at) {
                 // d = 'top of the timeline time'        
                 var n = new Date();
-                n.setTime(d.getTime() + (tl_unwarp(e.pageY)) *60*1000);
+                n.setTime(d.getTime() + (tl_unwarp(e.pageY - tl_scroll_offset*TIMELINE_SIZES_HEIGHT)) *60*1000);
                 s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
                 at.value=s;
             }
