@@ -61,7 +61,7 @@ try {
 
     // Debug functions...
     var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-    /* d_none is for the final release - don't forget to set it before uploading
+    //* d_none is for the final release - don't forget to set it before uploading
     var d_level=d_highest;/*/
     var d_level=d_all;//*/
 
@@ -1605,7 +1605,7 @@ try {
             if (at) {
                 // d = 'top of the timeline time'        
                 var n = new Date();
-                n.setTime(d.getTime() + (tl_unwarp(e.pageY)) *60*1000);
+                n.setTime(d.getTime() + (tl_unwarp(e.pageY - tl_scroll_offset*TIMELINE_SIZES_HEIGHT)) *60*1000);
                 s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
                 at.value=s;
             }
