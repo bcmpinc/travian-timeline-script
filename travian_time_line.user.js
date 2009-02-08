@@ -309,7 +309,7 @@ Settings.config=function(parent_element) {
     try {
         var s = document.createElement("span");
         var setting = this;
-        var settingsname = this.name.replace("_"," ").pad(20);
+        var settingsname = this.name.replace(/_/g," ").pad(20);
         var hint="";
 
         // Add tooltip with a description (if available)
@@ -524,6 +524,8 @@ dbg=Debug.print;
 /****************************************
  *  LINES
  ****************************************/
+
+// WIP
 
 Feature.create("Lines");
 Lines.setting("enabled",        true, Settings.type.bool, undefined, "Enable the map lines"); 
@@ -783,6 +785,9 @@ Market.run=function(){
 /****************************************
  *  TIMELINE
  ****************************************/
+
+// WIP
+ 
 Feature.create("Timeline");
 Timeline.setting("enabled",          true,  Settings.type.bool, undefined, "Enable the timeline"); 
 Timeline.setting("collapse",         false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
@@ -824,12 +829,6 @@ Timeline.scroll_offset=0;
         // DORP (dutch for village): 
         //      id of the current active village. It's 0 when only 1 village is available and does not always accurate.
         // 
-        // MARKT (dutch for market):
-        //      
-        //
-        // PRODUCTIE (dutch for production):
-        //      
-        //
         // ALLIANCE:
         //      dictionary (map) mapping the names of your ally's members to a list of it's villages. 
 
