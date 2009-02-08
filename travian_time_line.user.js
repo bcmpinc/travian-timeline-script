@@ -113,7 +113,7 @@ try {
     TIMELINE_COLLAPSE_RATE    =   50; // updates of the collapse fade per second.
     TIMELINE_COLOR            = "rgba(255, 255, 204, 0.5)"; // Background color of the timeline
     TYPE_BUILDING=0; TYPE_ATTACK=1; TYPE_REPORT=2; TYPE_MARKET=3; TYPE_RESEARCH=4; TYPE_PARTY=5; // The types of events
-    TIMELINE_EVENT_COLORS     = ['0,0,0', '255,0,0', '155,0,155', '0,155,0', '0,0,255', '255,155,155'];
+    TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rgb(0,155,0)', 'rgb(0,0,255)', 'rgb(255,155,155)'];
 
     KEEP_TIMELINE_UPDATED = false;    // Update the timeline every 'TIMELINE_UPDATE_INTERVAL' msec.
     TIMELINE_UPDATE_INTERVAL = 30000; // Interval between timeline updates in msec.
@@ -1519,7 +1519,7 @@ try {
                 if (diff<-TIMELINE_SIZES_HISTORY || diff>TIMELINE_SIZES_FUTURE) continue;
                 y = tl_warp(diff);
                 y = Math.round(y);
-                g.strokeStyle = "rgb("+TIMELINE_EVENT_COLORS[p[0]]+")";
+                g.strokeStyle = TIMELINE_EVENT_COLORS[p[0]];
                 g.beginPath();
                 g.moveTo(-10, y);
                 g.lineTo(-50, y);    
