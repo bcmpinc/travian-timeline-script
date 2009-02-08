@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.24
+// @version        0.25
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -112,6 +112,8 @@ try {
     TIMELINE_COLLAPSE_SPEED   = 1500; // collapse fade speed in pixels per second.
     TIMELINE_COLLAPSE_RATE    =   50; // updates of the collapse fade per second.
     TIMELINE_COLOR            = "rgba(255, 255, 204, 0.5)"; // Background color of the timeline
+    TYPE_BUILDING=0; TYPE_ATTACK=1; TYPE_REPORT=2; TYPE_MARKET=3; TYPE_RESEARCH=4; TYPE_PARTY=5; // The types of events
+    TIMELINE_EVENT_COLORS     = ['0,0,0', '255,0,0', '155,0,155', '0,155,0', '0,0,255', '255,155,155'];
 
     KEEP_TIMELINE_UPDATED = false;    // Update the timeline every 'TIMELINE_UPDATE_INTERVAL' msec.
     TIMELINE_UPDATE_INTERVAL = 30000; // Interval between timeline updates in msec.
@@ -938,7 +940,7 @@ try {
             Example: {'1225753710000':[0, 0, 0, 0, 189, 0, 0, 0, 0, 0, 0, 0, "Keert terug van 2. Nador", 0, 0, 0, 0]}
         
             '1225753710000':       ## ~ The time at which this event occure(s|d).      
-            [0,                     0 ~ Unused (used to be the type of event)
+            [0,                     0 ~ Type of event (0=building, 1=attack, 2=report, 3=market, 4=research, 5=party)
             0,                      1 ~ Amount of farm-men involved 
             0,                      2 ~ Amount of defense-men involved
             0,                      3 ~ Amount of attack-men involved 
@@ -1031,6 +1033,8 @@ try {
                             if (y!=undefined)
                                 e[j] = y.textContent - 0;
                         }
+
+                        e[0] = TYPE_ATTACK;
                     } catch (e) {
                         // So it probably wasn't the correct line.
                     }
@@ -1089,6 +1093,7 @@ try {
                                 e[16] = 0-y[0];
                             }
                         }
+                        e[0] = TYPE_REPORT;
                     }
                 }
             } catch (er){
@@ -1125,6 +1130,7 @@ try {
                         if (er == "ERR_EVENT_OVERWRITE") continue;
                         throw er;
                     }
+                    e[0] = TYPE_BUILDING;
                 }
             }
         } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
@@ -1162,6 +1168,8 @@ try {
                         throw er;
                     }
 
+                    e[0] = TYPE_MARKET;
+
                     // Add resource pictures and amounts (if sending)
                     if (!ret)
                         for (j=0; j<4; j++)
@@ -1188,6 +1196,7 @@ try {
 
                 try {
                     e = tl_get_event(t, msg, active_vil);
+                    e[0] = TYPE_PARTY;
                 } catch (er){
                     if (er != 'ERR_EVENT_OVERWRITE') throw er;
                     debug(d_med, 'An event already exists at this time!');
@@ -1235,6 +1244,7 @@ try {
                     // And now throw all of this information into an event
                     // Don't throw in the level information if we're  researching a new unit at the acadamy... because there isn't any!
                     e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
+                    e[0] = TYPE_RESEARCH;
 
                 } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
             } catch (er){
@@ -1484,9 +1494,9 @@ try {
             for (i=1; i<12; i++) {
                 unit[i] = new Image();
                 if (i==11)
-                    unit[i].src = "img/un/u/hero.gif"
-                    else
-                        unit[i].src = "img/un/u/"+(RACE*10+i)+".gif";
+                    unit[i].src = "img/un/u/hero.gif";
+                else
+                    unit[i].src = "img/un/u/"+(RACE*10+i)+".gif";
             }
 
             for (i=13; i<17; i++) {
@@ -1509,7 +1519,7 @@ try {
                 if (diff<-TIMELINE_SIZES_HISTORY || diff>TIMELINE_SIZES_FUTURE) continue;
                 y = tl_warp(diff);
                 y = Math.round(y);
-                g.strokeStyle = "rgb(0,0,0)";
+                g.strokeStyle = "rgb("+TIMELINE_EVENT_COLORS[p[0]]+")";
                 g.beginPath();
                 g.moveTo(-10, y);
                 g.lineTo(-50, y);    
