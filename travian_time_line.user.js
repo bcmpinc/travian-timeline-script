@@ -503,16 +503,34 @@ Feature.create("Debug");
 // Using the index is also allowed: Debug[1]("This shouldn't have happend!");
 // has the same effect as the previous example.
 Debug.categories=["none","fatal","error","warning","info","debug","all"];
-Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
+Debug.methods=["console","firebug"];
+Debug.setting("level",  0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
+Debug.setting("output", 0, Settings.type.enumeration, Debug.methods,    "Where should the debug output be send to.");
 Debug.print  =GM_log;
 Debug.init   =function() {
-    for (var i in Debug.categories) {
-        Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
+    switch (Debug.output) {
+    case 0:
+        for (var i in Debug.categories) {
+            Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
+        }
+        break;
+    case 1:
+        var console = unsafeWindow.console;
+        if (!console) {
+            Debug.print("Firebug not found! Changing Debug.output to console!");
+            Debug.output=0;
+            Debug.s.output.write();
+            Debug.init();
+            return;
+        }
+        var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
+        for (var i in Debug.categories) {
+            Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?fns[i]:nothing;
+        }
+        break;
     }
 };
 Debug.run("init",true);
-//if (unsafeWindow.console) unsafeWindow.console.log(msg); // firebug logging
-
 
 
 /****************************************
