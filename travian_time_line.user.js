@@ -59,17 +59,6 @@
 // explicit.
 var global = this;
 
-// Get relative position of a dom element
-// Modified to work in the used situation.
-// TODO consider removal of this function.
-function getPos(obj) { 
-    var w = obj.offsetWidth;
-    var h = obj.offsetHeight;
-    var l = obj.offsetLeft;
-    var t = obj.offsetTop;
-    return [l,t,w,h];
-}
-
 // Remove a DOM element
 function remove(el) {
     el.parentNode.removeChild(el);
@@ -981,7 +970,8 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
         var res = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null );
         x = res.singleNodeValue;
         if (x != null) {
-            pos = getPos(x);
+            pos = [obj.offsetLeft, obj.offsetTop, obj.offsetWidth, obj.offsetHeight];
+
             canvas=document.createElement("canvas");
             canvas.style.position = "absolute";
             canvas.style.left = pos[0]+"px";
