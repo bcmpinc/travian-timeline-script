@@ -680,21 +680,95 @@ Sidebar.run=function() {
     }
 };
         
+
+/****************************************
+ *  RESOURCES
+ ****************************************/
         
+Feature.create("Resources");
+Resources.setting("enabled",            true, Settings.type.bool,   undefined, "Add resource/minute and resources on market information to the resource bar.");
+Resources.setting("market",               {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
+Resources.setting("production",           {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
+
+Resources.show=function() {
+    var head = document.getElementById("lres0");
+    if (head!=null) {
+        head = head.childNodes[1].childNodes[0];
+        
+        Debug.debug(uneval(Resources.production));
+        var mkt  = Resources.market [Settings.village_id];
+        var prod = Resources.production[Settings.village_id];
+        mkt  = (mkt ==undefined)?[0,0,0,0]:mkt;
+        prod = (prod==undefined)?['?','?','?','?']:prod;
+        
+        cur = head.textContent.split("\n").filter(function(x) {return x[0]>='0' && x[0]<='9'; });
+    
+        var a="";
+        for (var i=0; i < 4; i++) {
+            var c=(mkt[i]>0)?("+"+mkt[i]+" "):("");
+            var p=(prod[i]=='?')?'?':((prod[i]>0?"+":"")+Math.round(prod[i]/6)/10.0);
+            a+="<td></td><td>"+c+p+"/m</td>";
+        }
+        a+="<td></td><td></td>";
+        
+        var tr = document.createElement("tr");
+        head.appendChild(tr);
+        tr.innerHTML = a;
+    }
+};
+Resources.update=function() {
+    // Store info about resources put on the market if availbale
+    var x = document.getElementById("lmid2");
+    if (x!=null && x.innerHTML.indexOf("\"dname\"")>0) {
+        var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+
+        var mkt = new Array(0,0,0,0);
+        for ( var i=0 ; i < res.snapshotLength; i++ ){
+            var c = res.snapshotItem(i).textContent - 0;
+            var t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
+            mkt[t] += c;
+        }
+        Debug.debug("This is on the market: "+mkt);
+        Resources.market[Settings.village_id]=mkt;
+        Resources.s.market.write();
+    }
+
+    // Store info about production rate if available
+    if (location.href.indexOf("dorf1")>0) {
+        var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+        var prod = new Array(0,0,0,0);
+
+        for ( var i=0 ; i < res.snapshotLength; i++ ){
+            var c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
+            var t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
+            prod[t] += c;
+        }
+        Debug.debug("This is produced: "+prod);
+        Resources.production[Settings.village_id]=prod;
+        Resources.s.production.write();
+    }
+};
+
+
+Resources.run=function(){
+    Resources.update();
+    Resources.show();
+};
+
+
 /****************************************
  *  MARKET
  ****************************************/
 
 Feature.create("Market");
 Market.setting("enabled",            true, Settings.type.bool,   undefined, "Color the market offers to quickly determine their value.");
-Market.setting("show_production",    true, Settings.type.bool,   undefined, "Add resource/minute and resources on market information to the resource bar.");
-Market.setting("resources",            {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
-Market.setting("production",           {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
 
-Market.update_colors=true;
+Market.update_colors=true;  // tells whether the next call to colorify should recolor the table.
 
 Market.colorify=function() { 
-    setTimeout(Market.colorify,500);
+    // Run this function twice each second.
+    setTimeout(Market.colorify,500); 
+    // But don't do an update when it's not necessary.
     if (!Market.update_colors) return;
     Market.update_colors=false;
     
@@ -722,65 +796,8 @@ Market.colorify=function() {
     }
 };
 Market.attribute_changed=function(e) {
+    // Tell that something changed and that an update might be necessary
     Market.update_colors=true;
-};
-Market.show_resources=function() {
-    var head = document.getElementById("lres0");
-    if (head!=null) {
-        head = head.childNodes[1].childNodes[0];
-        
-        Debug.debug(uneval(Market.production));
-        var res  = Market.resources [Settings.village_id];
-        var prod = Market.production[Settings.village_id];
-        res  = (res ==undefined)?[0,0,0,0]:res;
-        prod = (prod==undefined)?[0,0,0,0]:prod;
-        
-        cur = head.textContent.split("\n").filter(function(x) {return x[0]>='0' && x[0]<='9'; });
-    
-        var a="";
-        for (var i=0; i < 4; i++) {
-            var c=(res[i]>0)?("+"+res[i]+" "):("");
-            var p=(prod[i]>0?"+":"")+Math.round(prod[i]/6)/10.0;
-            a+="<td></td><td>"+c+p+"/m</td>";
-        }
-        a+="<td></td><td></td>";
-        
-        var tr = document.createElement("tr");
-        head.appendChild(tr);
-        tr.innerHTML = a;
-    }
-};
-Market.update_resources=function() {
-    // Store info about resources put on the market if availbale
-    var x = document.getElementById("lmid2");
-    if (x!=null && x.innerHTML.indexOf("\"dname\"")>0) {
-        var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-
-        var cnt = new Array(0,0,0,0);
-        for ( var i=0 ; i < res.snapshotLength; i++ ){
-            var c = res.snapshotItem(i).textContent - 0;
-            var t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
-            cnt[t] += c;
-        }
-        Debug.debug("This is on the market: "+cnt);
-        Market.resources[Settings.village_id]=cnt;
-        Market.s.resources.write();
-    }
-
-    // Store info about production rate if available
-    if (location.href.indexOf("dorf1")>0) {
-        var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-        var prod = new Array(0,0,0,0);
-
-        for ( var i=0 ; i < res.snapshotLength; i++ ){
-            var c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
-            var t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
-            prod[t] += c;
-        }
-        Debug.debug("This is produced: "+prod);
-        Market.production[Settings.village_id]=prod;
-        Market.s.production.write();
-    }
 };
 Market.run=function(){
     x = document.getElementById("lmid2");
@@ -788,10 +805,6 @@ Market.run=function(){
     if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
         Market.colorify();
         document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
-    }
-    if (Market.show_production) {
-        Market.update_resources();
-        Market.show_resources();
     }
 };
 
