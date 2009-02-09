@@ -524,32 +524,39 @@ Debug.call("init",true); // Runs init once.
 Debug.info("Running on server: "+Settings.server);
 
 /****************************************
- *  LINES
+ *  LINES (and circles)
  ****************************************/
 
 // WIP
 
 Feature.create("Lines");
-Lines.setting("enabled",        true, Settings.type.bool, undefined, "Enable the map lines"); 
-Lines.setting("update_allies",  true, Settings.type.bool, undefined, "Automatically create and remove lines to ally members."); 
+Lines.setting("enabled",            true, Settings.type.bool,   undefined, "Enable the map lines"); 
+Lines.setting("update_owned",       true, Settings.type.bool,   undefined, "Automatically create and remove lines to your villages."); 
+Lines.setting("update_ally",        true, Settings.type.bool,   undefined, "Automatically create and remove lines to ally members."); 
+Lines.setting("update_allies",      true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of allied alliances."); 
+Lines.setting("update_naps",        true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of nap-alliances."); 
+Lines.setting("update_enemies",     true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of alliances, with which your ally is at war.");
+Lines.setting("update_crop",        true, Settings.type.bool,   undefined, "Automatically create and remove lines to 9- and 15-croppers.");
+Lines.setting("list_extra_villages",true, Settings.type.bool,   undefined, "Append villages in the 'extra' category to the villages list."); 
+Lines.setting("categories",     { /* <tag>:  [ <color>             , <drawline> ], */ 
+                                    owned:   ["rgba(255,255,0,0.5)",   true],
+                                    ally:    ["rgba(0,0,255,0.5)",     true],
+                                    allies:  ["rgba(0,255,0,0.5)",     true],
+                                    naps:    ["rgba(0,255,255,0.5)",   true],
+                                    enemies: ["rgba(255,0,0,0.5)",     true],
+                                    crop9:   ["rgba(255,128,0.5)",     true],
+                                    crop15:  ["rgba(255,128,1.0)",     true],
+                                    extra:   ["rgba(128,128,128,0.5)", true],
+                                    farms:   ["rgba(255,255,255,0.5)", true],
+                                    ban:     ["rgba(0,0,0,0.5)",       true],
+                                    other:   ["rgba(255,0,255,0.5)",   true]
+                                },    Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
+Lines.setting("locations",      {},   Settings.type.object, undefined, "List of special locations.");
+// A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
+// name is optional.
 
 
 
-// TODO: remove following BWC:
-USE_EXTRA_VILLAGE = true;           // Add additional vilages to the vilage list.
-
-SPECIAL_LOCATIONS = []; // Draws lines to these locations on the map.
-// SPECIAL_LOCATIONS = [[-85,149],[-80,146],[-300,-292],[-301,-292]]; 
-
-// Idea is to add a special category to some category list here. 
-// These will then also be added to the villages.
-
-// These villages are added to the villages list 
-// (without link, but travian beyond will recognize them and add attack and merchant links)
-
-VILLAGES = [];  
-// VILLAGES = [["WW 1", 25, -155],
-//            ["WW 2", -170, 158]];
 
 
 /****************************************
@@ -1884,9 +1891,7 @@ Feature.forall('init',true);
 
 function main(){
     storeInfo();
-    if (Lines.update_allies) al_main();
     if (Timeline.enabled) tl_main();
-    if (USE_EXTRA_VILLAGE) ev_main();
     Feature.forall('run',true);
 }
 
