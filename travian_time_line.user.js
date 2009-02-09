@@ -204,6 +204,7 @@ Feature.call=function(fn_name, once) {
     if (once) this[fn_name]=nothing;
     if (!this.end) this.end=new Object();
     this.end[fn_name] = new Date().getTime();
+    // TODO: make this timing info visible somewhere.
 };
 // Executes (using Feature.call) the function specified by fn_name for all _enabled_ 
 // Features created with Feature.create() in the order they have been created.
@@ -530,8 +531,8 @@ Debug.init   =function() {
         break;
     }
 };
-Debug.run("init",true);
-
+Debug.call("init",true); // Runs init once.
+Debug.info("Running on server: "+Settings.server);
 
 /****************************************
  *  LINES
@@ -588,7 +589,7 @@ Sidebar.setting("remove_home_link",    true, Settings.type.bool, undefined, "Red
 
 // Original sidebar links
 // Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
-
+// TODO: make configureable?
 Sidebar.setting("links",      
             [
                 1,
@@ -723,11 +724,12 @@ Market.colorify=function() {
 Market.attribute_changed=function(e) {
     Market.update_colors=true;
 };
-Market.show_production_rates=function() {
+Market.show_resources=function() {
     var head = document.getElementById("lres0");
     if (head!=null) {
         head = head.childNodes[1].childNodes[0];
-    
+        
+        Debug.debug(uneval(Market.production));
         var res  = Market.resources [Settings.village_id];
         var prod = Market.production[Settings.village_id];
         res  = (res ==undefined)?[0,0,0,0]:res;
@@ -776,19 +778,20 @@ Market.update_resources=function() {
             prod[t] += c;
         }
         Debug.debug("This is produced: "+prod);
-        Market.production[dorp_id]=prod;
+        Market.production[Settings.village_id]=prod;
         Market.s.production.write();
     }
 };
 Market.run=function(){
-    Market.update_resources();
     x = document.getElementById("lmid2");
+    // TODO: find out why this also matches reports.
     if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
         Market.colorify();
         document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
     }
     if (Market.show_production) {
-        Market.show_production_rates();
+        Market.update_resources();
+        Market.show_resources();
     }
 };
 
