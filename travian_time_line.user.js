@@ -115,7 +115,7 @@ function tl_date(){
 
     this.set_time = function(time){
         // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
-        debug(d_low, 'Setting the time: '+time);
+        Debug.debug('Setting the time: '+time);
 
         // Can't understand why people use am/pm, it's so confusing..??
         if (time[time.length - 1] == 'am' || time[time.length - 1] == 'pm')
@@ -129,7 +129,7 @@ function tl_date(){
 
     this.set_day = function(day){
         // day is [day, month, year (optional)]. Month is 1-12.
-        debug(d_low, 'Setting the day: '+day);
+        Debug.debug('Setting the day: '+day);
 
         this.date.setFullYear(day[2] == undefined ? this.date.getFullYear() : '20'+day[2], day[1] - 1, day[0]);
 
@@ -139,7 +139,7 @@ function tl_date(){
     this.adjust_day = function(duration){
         // The idea with this is to compare a duration value with the current day/time, and adjust the day for every 24 hours in duration.
         // duration is of type [string, hours, ....].
-        debug(d_low, 'Adjusting the day by: '+duration);
+        Debug.debug('Adjusting the day by: '+duration);
 
         this.date.setDate(this.date.getDate() + Math.floor(duration[1]/24));
 
@@ -512,15 +512,6 @@ Debug.init   =function() {
 };
 Debug.run("init",true);
 //if (unsafeWindow.console) unsafeWindow.console.log(msg); // firebug logging
-
-
-// TODO: remove following BWC:
-var d_level=d_all;
-var d_none=-1, d_highest=0, d_hi=1, d_med=2, d_low=3, d_lowest=4, d_all=4;
-function debug(lvl, msg){
-    Debug.print(msg);
-}
-dbg=Debug.print;
 
 
 
@@ -1188,7 +1179,7 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
                 e = [0,0,0,0,0,0,0,0,0,0,0,0,msg,0,0,0,0,name];
                 events[t]=e;
             } else {
-                debug(d_low, "An event already exists at this time!");
+                Debug.info("An event already exists at this time!");
                 throw "ERR_EVENT_OVERWRITE";
             }
             return e;
@@ -1348,11 +1339,11 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
 
                     // Extract the value of the shipment
                     res = x.childNodes[4].childNodes[1].textContent.split(' | ');
-                    debug(d_low, "Merchant carrying "+res);
+                    Debug.debug("Merchant carrying "+res);
                 
                     // Check if merchant is returning
                     ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
-                    if (ret) debug(d_low, "Merchant is returning");
+                    if (ret) Debug.debug("Merchant is returning");
 
                     // Extract the action type
                     type = x.childNodes[0].childNodes[3].textContent;
@@ -1382,20 +1373,20 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
                 x = x.snapshotItem(0).parentNode;
                 d = new tl_date();
 
-                debug(d_med, "Found a party event!");
+                Debug.info("Found a party event!");
 
                 d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
                 t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
 
                 msg = x.childNodes[1].textContent;
-                debug(d_low, 'Type = '+msg);
+                Debug.debug('Type = '+msg);
 
                 try {
                     e = tl_get_event(t, msg, active_vil);
                     e[0] = TYPE_PARTY;
                 } catch (er){
                     if (er != 'ERR_EVENT_OVERWRITE') throw er;
-                    debug(d_med, 'An event already exists at this time!');
+                    Debug.info('An event already exists at this time!');
                 }
             }
             
@@ -1416,13 +1407,13 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
 
                     // Extract the unit being upgraded
                     type = x.childNodes[3].textContent;
-                    debug(d_low, "Upgrading "+type);
+                    Debug.debug("Upgrading "+type);
 
                     // Extract the name of the building where the upgrade is occuring
                     // y is the table above the research-in-progress table
                     y = x.parentNode.parentNode.previousSibling.previousSibling.childNodes[1];
                     building = y.childNodes[0].childNodes[1].textContent;
-                    debug(d_low, "Upgrading at the "+building);
+                    Debug.debug("Upgrading at the "+building);
 
                     // Extract the level upgrading to - not for the acadamy!
                     // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
@@ -1432,7 +1423,7 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
                         if (level){
                             level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
                             level = level[1]+level[2]+level[3];
-                            debug(d_low, "Upgrading to "+level);
+                            Debug.debug("Upgrading to "+level);
                             break;
                         }
                     }
