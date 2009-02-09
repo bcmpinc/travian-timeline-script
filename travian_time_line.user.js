@@ -868,58 +868,9 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
 
     function storeInfo(){
         // Meaning of GM Values: (Some of the variable names are in dutch, to stay compatible with older scripts) 
-        //
-        // DORP (dutch for village): 
-        //      id of the current active village. It's 0 when only 1 village is available and does not always accurate.
         // 
         // ALLIANCE:
         //      dictionary (map) mapping the names of your ally's members to a list of it's villages. 
-
-        none = "0,0,0,0";
-
-        // Keep track of current city id
-        x = location.href.match("newdid=(\\d+)");
-        if (x!=null) {
-            dorp_id=x[1]-0;
-            GM_setValue(prefix("DORP"),dorp_id);
-        } else {
-            dorp_id=GM_getValue(prefix("DORP"),0);
-        }
-
-        // Store info about resources put on the market if availbale
-        x = document.getElementById("lmid2");
-        if (x!=null && x.innerHTML.indexOf("\"dname\"")>0) {
-            var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-    
-            var cnt = new Array(0,0,0,0);
-    
-            for ( var i=0 ; i < res.snapshotLength; i++ ){
-                c = res.snapshotItem(i).textContent - 0;
-                t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
-                cnt[t] += c;
-            }
-            markt = eval(GM_getValue(prefix("MARKT"), "{}"));
-            if (markt==undefined) markt={};
-            markt[dorp_id]=cnt;
-            GM_setValue(prefix("MARKT"), uneval(markt));
-        }
-
-        // Store info about production rate if available
-        //function storeProductionRate(){
-        if (location.href.indexOf("dorf1")>0) {
-            var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-            var prod = new Array(0,0,0,0);
-    
-            for ( var i=0 ; i < res.snapshotLength; i++ ){
-                c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
-                t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
-                prod[t] += c;
-            }
-            productie = eval(GM_getValue(prefix("PRODUCTIE"), "{}"));
-            if (productie==undefined) productie={};
-            productie[dorp_id]=prod;
-            GM_setValue(prefix("PRODUCTIE"), uneval(productie));
-        }
 
         // Load ally data
         //function captureAllianceData(){
