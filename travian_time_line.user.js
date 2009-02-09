@@ -113,7 +113,8 @@ try {
     TIMELINE_COLLAPSE_RATE    =   50; // updates of the collapse fade per second.
     TIMELINE_COLOR            = "rgba(255, 255, 204, 0.5)"; // Background color of the timeline
     TYPE_BUILDING=0; TYPE_ATTACK=1; TYPE_REPORT=2; TYPE_MARKET=3; TYPE_RESEARCH=4; TYPE_PARTY=5; // The types of events
-    TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rgb(0,155,0)', 'rgb(0,0,255)', 'rgb(255,155,155)'];
+    BUILDING_COLOR='rgb(0,0,0)'; ATTACK_COLOR='rgb(255,0,0)'; REPORT_COLOR='rgb(155,0,155)';
+    MARKET_COLOR='rgb(0,155,0)'; RESEARCH_COLOR='rgb(0,0,255)'; PARTY_COLOR='rgb(255,155,155)';
 
     KEEP_TIMELINE_UPDATED = false;    // Update the timeline every 'TIMELINE_UPDATE_INTERVAL' msec.
     TIMELINE_UPDATE_INTERVAL = 30000; // Interval between timeline updates in msec.
@@ -201,7 +202,10 @@ try {
                             "TIMELINE_SIZES_HISTORY","TIMELINE_SIZES_FUTURE", "TIMELINE_DISTANCE_HISTORY",
                             "TIMELINE_SIZES_HEIGHT", "TIMELINE_SIZES_WIDTH", "TIME_DIFFERENCE",
                             "TIMELINE_COLLAPSED_WIDTH", "TIMELINE_COLOR", "KEEP_TIMELINE_UPDATED",
-                            "TIMELINE_SCALE_WARP"
+                            "TIMELINE_SCALE_WARP",
+
+                            "BUILDING_COLOR", "ATTACK_COLOR", "REPORT_COLOR",
+                            "MARKET_COLOR", "RESEARCH_COLOR", "PARTY_COLOR"
                             ];
 
         for (i in saved_settings) {
@@ -215,6 +219,7 @@ try {
                 }
             }
         }
+        TIMELINE_EVENT_COLORS = [BUILDING_COLOR, ATTACK_COLOR, REPORT_COLOR, MARKET_COLOR, RESEARCH_COLOR, PARTY_COLOR];
     } /* USE_SETTINGS */
 
     //////////////////////////////////////////
@@ -343,7 +348,7 @@ try {
             div.style.background = "rgba(192,192,192,0.8)";
             div.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
                 '<div style="position: absolute; left: 50%; top: 50%;">'+
-                '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 450px;'+
+                '<pre id="TL_MENU" style="position: absolute; left: -300px; top: -250px; width: 600px; height: 450px;'+
                 ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
                 '</pre></div>';
             document.body.appendChild(div);
@@ -400,35 +405,75 @@ try {
                 'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
                 'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
                 'TIMELINE_COLOR  = <input id="TL_TIMELINE_COLOR" value="'+TIMELINE_COLOR+'"/> (as in css)\n'+
+                '<a href="#" style="color: blue" id="TL_EVENT_COLORS">EVENT COLORS</a>'+'\n'+
                 'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
                 'VILLAGES='+uneval(VILLAGES)+'\n'+
                 '<hr/>'+'script duration: '+script_duration+'ms.\n';
-    
-            var list = box.childNodes[0].childNodes;
-            for (i in list) {    
-                var el = list[i];
-                function toggle(e) {
-                    var el = e.target;
-                    var id = el.id.substr(3);
-                    var b = !eval(id);
-                    eval(id+"="+b);
-                    GM_setValue(prefix(id),b);
-                    el.style.color = b?'green':'red';        
+
+            set_add_listeners(box);
+            function set_add_listeners(box){
+                var list = box.childNodes[0].childNodes;
+                for (i in list) {    
+                    var el = list[i];
+                    function toggle(e) {
+                        var el = e.target;
+                        var id = el.id.substr(3);
+                        var b = !eval(id);
+                        eval(id+"="+b);
+                        GM_setValue(prefix(id),b);
+                        el.style.color = b?'green':'red';        
+                    }
+                    el.addEventListener("click",toggle,false);
                 }
-                el.addEventListener("click",toggle,false);
-            }
     
-            var list = box.childNodes;
-            for (i in list) {
-                var el = list[i];
-                function opt_change(e) {
-                    var el = e.target;
-                    var id = el.id.substr(3);
-                    GM_setValue(prefix(id),eval(id+"='"+e.target.value+"'"));
+                var list = box.childNodes;
+                for (i in list) {
+                    var el = list[i];
+                    function opt_change(e) {
+                        var el = e.target;
+                        var id = el.id.substr(3);
+                        GM_setValue(prefix(id),eval(id+"='"+e.target.value+"'"));
+                    }
+                    el.addEventListener("change",opt_change,false);
                 }
-                el.addEventListener("change",opt_change,false);
+
+                // This replaces the contents of the box with the Colours menu...
+                function set_colors_dialog(){
+                    box = document.getElementById('TL_MENU');
+                    base = box.innerHTML;
+                    clr = '<i>Customize your event colours...</i>\n';
+
+                    function add_color(display, event_name){
+                        clr += display.pad(9)+'= <input id="TL_EVENT_'+event_name+'" value="'+eval(event_name)+'"/>\n';
+                    }
+                    add_color('BUILDING', 'BUILDING_COLOR');
+                    add_color('ATTACK', 'ATTACK_COLOR');
+                    add_color('REPORT', 'REPORT_COLOR');
+                    add_color('MARKET', 'MARKET_COLOR');
+                    add_color('RESEARCH', 'RESEARCH_COLOR');
+                    add_color('PARTY', 'PARTY_COLOR');
+
+                    clr += '\n<a href="#" style="color: blue" id="TL_MENU_BACK">BACK</a>\n';
+
+                    box.innerHTML = clr;
+
+                    document.getElementById('TL_MENU_BACK').addEventListener('click', function(e){
+                            box.innerHTML = base;
+                            set_add_listeners(box);
+                        }, false);
+                    colors = box.childNodes;
+                    for (i in colors){
+                        if (colors[i] == undefined) continue;
+                        colors[i].addEventListener('change', function(e){
+                                id = e.target.id.substr(9);
+                                GM_setValue(prefix(id), eval(id+'="'+e.target.value+'"'));
+                            }, false);
+                    }
+                }
+                document.getElementById('TL_EVENT_COLORS').addEventListener('click', set_colors_dialog, false);
             }
-        
+
+            // We don't want to add this event listener multiple times... so don't include it in set_add_listeners().
             function remove_settings_dialog() {
                 remove(div);
             }    
@@ -1199,7 +1244,6 @@ try {
                     e[0] = TYPE_PARTY;
                 } catch (er){
                     if (er != 'ERR_EVENT_OVERWRITE') throw er;
-                    debug(d_med, 'An event already exists at this time!');
                 }
             }
             
