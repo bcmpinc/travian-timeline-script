@@ -527,8 +527,6 @@ Debug.info("Running on server: "+Settings.server);
  *  LINES (and circles)
  ****************************************/
 
-// WIP
-
 Feature.create("Lines");
 Lines.setting("enabled",            true, Settings.type.bool,   undefined, "Enable the map lines"); 
 Lines.setting("update_owned",       true, Settings.type.bool,   undefined, "Automatically create and remove lines to your villages."); 
@@ -555,8 +553,27 @@ Lines.setting("locations",      {},   Settings.type.object, undefined, "List of 
 // A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
 // name is optional.
 
+Lines.new_table_cell=function(innerhtml) {
+    cell = document.createElement("td");
+    cell.innerHTML = innerhtml;
+    cell.className = "nbr";
+    return cell;
+};
+// Adds the location to the villages list.
+Lines.add_village=function(location){
+    if (!Lines.village_list) return;
+    var row = document.createElement("tr");
+    row.appendChild(newcell("<span>• </span> "+location[3]));
+    row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+location[0]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+location[1]+")</td>\n</tr>\n</tbody></table>"));
+    tab.appendChild(row);
+};
+Lines.run=function() {
+    Lines.village_list = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+    if (!Lines.village_list) {
+        Debug.warning("Could not find village list.");
+    }
 
-
+};
 
 
 /****************************************
@@ -1861,27 +1878,6 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
         tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
     
     } /* Timeline.enabled */
-
-    function ev_main(){
-        res = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-    
-        function newcell(innerhtml) {
-            cell = document.createElement("td");
-            cell.innerHTML = innerhtml;
-            cell.className = "nbr";
-            return cell;
-        }
-    
-        if (tab = res.singleNodeValue) {
-            for (i = 0; i < VILLAGES.length; i++) {
-                x = VILLAGES[i];
-                row = document.createElement("tr");
-                row.appendChild(newcell("<span>• </span> "+x[0]));
-                row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+x[1]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+x[2]+")</td>\n</tr>\n</tbody></table>"));
-                tab.appendChild(row);
-            }
-        }
-    } /* USE_EXTRA_VILLAGE */
 
     script_duration = 0;
 
