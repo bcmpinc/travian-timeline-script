@@ -523,9 +523,8 @@ Debug.init   =function() {
     case 1:
         var console = unsafeWindow.console;
         if (!console) {
-            Debug.print("Firebug not found! Changing Debug.output to console!");
+            Debug.print("Firebug not found! Using console for this page!");
             Debug.output=0;
-            Debug.s.output.write();
             Debug.init();
             return;
         }
