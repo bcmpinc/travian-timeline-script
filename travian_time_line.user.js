@@ -558,7 +558,7 @@ Lines.setting("analyze_neighbourhood", true, Settings.type.bool,   undefined, "A
 Lines.setting("scale",                 .05,  Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
 Lines.setting("categories",     { /* <tag>:  [ <color>             , <drawline> ], */ 
                                     none:    ["",false], // ie. remove from 'locations'.
-                                    owned:   ["rgba(255,255,0,0.5)",   true],
+                                    owned:   ["rgba(192,128,0,1.0)",   true],
                                     ally:    ["rgba(0,0,255,0.5)",     true],
                                     allies:  ["rgba(0,255,0,0.5)",     true],
                                     naps:    ["rgba(0,255,255,0.5)",   false],
@@ -663,8 +663,7 @@ Lines.touch=function(location) {
 };
 Lines.delayed_update=function() {
     // Lines.update is so kind to check whether an update is really necessary.
-    setTimeout(Lines.update,250);
-    setTimeout(Lines.update,750);
+    setTimeout(Lines.update,10);
 }
 Lines.update=function() {
     // But don't do an update when it's not necessary.
