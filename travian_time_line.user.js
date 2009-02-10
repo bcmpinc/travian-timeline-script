@@ -852,7 +852,7 @@ Sidebar.run=function() {
     if (!navi_table) return;
     
     if (Sidebar.remove_home_link)
-        navi_table.parentNode.childNodes[1].href="?";
+        navi_table.parentNode.childNodes[1].href=location.href;
             
     Sidebar.navi = navi_table.childNodes[1].childNodes[0].childNodes[1];
         
