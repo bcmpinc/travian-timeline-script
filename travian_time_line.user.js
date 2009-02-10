@@ -716,7 +716,7 @@ Lines.tag_change=function(e) {
     var cat = e.target.value;
     var l = Lines.posx+","+Lines.posy;
     if (cat=="none") {
-        Lines.locations[l]=undefined;
+        delete Lines.locations[l];
     } else {
         Lines.locations[l]=[Lines.posx,Lines.posy,cat];
     }
