@@ -557,6 +557,7 @@ Lines.setting("list_extra_villages",   true, Settings.type.bool,   undefined, "A
 Lines.setting("analyze_neighbourhood", true, Settings.type.bool,   undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
 Lines.setting("scale",                 .05,  Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
 Lines.setting("categories",     { /* <tag>:  [ <color>             , <drawline> ], */ 
+                                    none:    ["",false], // ie. remove from 'locations'.
                                     owned:   ["rgba(255,255,0,0.5)",   true],
                                     ally:    ["rgba(0,0,255,0.5)",     true],
                                     allies:  ["rgba(0,255,0,0.5)",     true],
@@ -645,7 +646,7 @@ Lines.touch=function(location) {
         g.lineTo(px,py);
         g.stroke();
         if (x!=0 || y!=0) 
-            g.fillRect(px-2,py-2,4,4);
+            g.fillRect(px2-2,py2-2,4,4);
     }
     
     // Always draw circle (when on map)
@@ -660,6 +661,11 @@ Lines.touch=function(location) {
             g.lineWidth = 1;
     }
 };
+Lines.delayed_update=function() {
+    // Lines.update is so kind to check whether an update is really necessary.
+    setTimeout(Lines.update,250);
+    setTimeout(Lines.update,750);
+}
 Lines.update=function() {
     // But don't do an update when it's not necessary.
     try {
@@ -687,14 +693,13 @@ Lines.update=function() {
 
     // Draw lines                                    
     for (var l in Lines.locations) {
-        touch(Lines.locations[l]);
+        Lines.touch(Lines.locations[l]);
     }
 
     // Reset render context
     g.restore();
 
     // Update the travian analyzer links:
-        Debug.debug("lolz!1");
     if (Lines.analyzer_links) {
         var linkstart = "<a href=\"http://travian.ws/analyser.pl?s="+Settings.server+"&q="+Lines.posx+","+Lines.posy;
         Lines.analyzer_links.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
@@ -705,55 +710,41 @@ Lines.update=function() {
             linkstart+",25\">25</a>";
     }
 }
-
+// The event listener (used by tag_tool)
+Lines.tag_change=function(e) {
+    Lines.s.locations.read();
+    var cat = e.target.value;
+    var l = Lines.posx+","+Lines.posy;
+    if (cat=="none") {
+        Lines.locations[l]=undefined;
+    } else {
+        Lines.locations[l]=[Lines.posx,Lines.posy,cat];
+    }
+    Lines.s.locations.write();
+};
 // add a "this location is special!" button to the map's village view. (if applicable)
 Lines.tag_tool=function() {  
-
-// TODO: convert stuff.
     if (location.href.indexOf("karte.php?d=")<=0) return;
-    res = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-    x = res.singleNodeValue;
+    var x = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
     if (!x) return;
-    l = x.textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
-    insl = false;
-    for (v in SPECIAL_LOCATIONS) {
-        if (SPECIAL_LOCATIONS[v][0]==l[1] &&
-            SPECIAL_LOCATIONS[v][1]==l[2]) {
-            insl=true;
-            break;
-        }
-    }
-    addspecial = document.createElement("a");
-    addspecial.innerHTML = "s";
-    addspecial.title = "[timeline] Toggle ("+l[1]+"|"+l[2]+") as special location.";
-    addspecial.href="#";
-    addspecial.style.color = insl?"#0f0":"#f00";
-    addspecial.className=l[1]+","+l[2]+","+(insl?1:0);
-    function addsl(e){
-        var el = e.target;
-        var l = el.className.split(",");
-        if (l[2]>0) {
-            last = SPECIAL_LOCATIONS.pop();
-            for (v in SPECIAL_LOCATIONS) {
-                if (SPECIAL_LOCATIONS[v][0]==l[2] &&
-                    SPECIAL_LOCATIONS[v][1]==l[3]) {
-                    SPECIAL_LOCATIONS[v]=last;
-                    break;
-                }
-            }
-        } else {
-            SPECIAL_LOCATIONS.push([l[0]-0,l[1]-0]);
-        }
-        GM_setValue(prefix("SPECIAL_LOCATIONS"), uneval(SPECIAL_LOCATIONS));
-        el.style.color = l[2]<1?"#0f0":"#f00";
-        el.className=l[0]+","+l[1]+","+(1-l[2]);
-    }
-    addspecial.addEventListener('click',addsl,true);
-    
-    x.appendChild(addspecial);
-    x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
-}
+    var loc = x.textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
+    var cat=Lines.locations[loc[1]+","+loc[2]];
+    cat=(cat==undefined)?cat="none":cat[2];
 
+    var select=document.createElement("select");
+    for (var c in Lines.categories) {
+        var opt=document.createElement("option");
+        opt.value=c;        
+        if (c==cat) opt.selected=true;
+        opt.innerHTML=c;
+        select.appendChild(opt);
+    }
+    Lines.posx=loc[1]-0;
+    Lines.posy=loc[2]-0;
+    select.addEventListener('change',Lines.tag_change,false);
+    x.appendChild(select);
+    x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
+};
 Lines.run=function() {
     if (Lines.list_extra_villages) {
         Lines.village_list = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
@@ -770,9 +761,9 @@ Lines.run=function() {
             Lines.create_analyzer_links();
         Lines.create_canvas(x);
         Lines.update();
-        document.addEventListener('click',Lines.update,true);
-        document.addEventListener('keydown',Lines.update,true);
-        document.addEventListener('keyup',Lines.update,true);
+        document.addEventListener('click',  Lines.delayed_update,true);
+        document.addEventListener('keydown',Lines.delayed_update,true);
+        document.addEventListener('keyup',  Lines.delayed_update,true);
     }
 
     Lines.tag_tool();
