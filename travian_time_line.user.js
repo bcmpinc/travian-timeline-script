@@ -188,7 +188,7 @@ Feature.call=function(fn_name, once) {
     try {
         this[fn_name]();
     } catch (e) {
-        GM_log(this.name+'.'+fn_name+' ('+(e.lineNumber-347)+'): '+e)
+        Debug.exception("call "+this.name+'.'+fn_name, e);
     }
     if (once) this[fn_name]=nothing;
     if (!this.end) this.end=new Object();
@@ -269,7 +269,10 @@ Settings.read=function() {
             break;
         }
     } catch (e) {
-        GM_log(e);
+        if (Debug&&Debug.exception)
+            Debug.exception("Settings.read", e);
+        else 
+            GM_log("FATAL:"+e);
     }
 };
 
@@ -293,7 +296,10 @@ Settings.write=function() {
             break;
         }
     } catch (e) {
-        GM_log(e);
+        if (Debug&&Debug.exception)
+            Debug.exception("Settings.read", e);
+        else 
+            GM_log("FATAL:"+e);
     }
 };
 
@@ -302,7 +308,7 @@ Settings.config=function(parent_element) {
     try {
         var s = document.createElement("span");
         var setting = this;
-        var settingsname = this.name.replace(/_/g," ").pad(20);
+        var settingsname = this.name.replace(/_/g," ").pad(22);
         var hint="";
 
         // Add tooltip with a description (if available)
@@ -356,6 +362,7 @@ Settings.config=function(parent_element) {
             }
             
             case Settings.type.object: {
+                // TODO: have some more info for this object in some special cases.
                 s.innerHTML = settingsname+": (Object)"+hint+"\n";
                 break;
             }
@@ -467,7 +474,7 @@ Settings.show=function() {
         notice.style.color="lightgray";
         notice.style.fontStyle="italic";
     } catch (e) {
-        GM_log(e.lineNumber-347+': '+e);
+        Debug.exception("Settings.show", e);
     }    
     w.firstChild.addEventListener("click",Settings.close,false);
 };
@@ -497,6 +504,15 @@ Debug.methods=["console","firebug"];
 Debug.setting("level",  0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods,    "Where should the debug output be send to.");
 Debug.print  =GM_log;
+Debug.exception=function(fn_name, e) {
+    // The 347 is to correct the linenumber shift caused by greasemonkey.
+    var msg = fn_name+' ('+(e.lineNumber-347)+'): '+e;
+    try {
+        Debug.error(msg);
+    } catch (ee) {
+        GM_log(msg);
+    }
+};
 Debug.init   =function() {
     switch (Debug.output) {
     case 0:
@@ -523,30 +539,34 @@ Debug.init   =function() {
 Debug.call("init",true); // Runs init once.
 Debug.info("Running on server: "+Settings.server);
 
+
+
 /****************************************
  *  LINES (and circles)
  ****************************************/
 
 Feature.create("Lines");
-Lines.setting("enabled",            true, Settings.type.bool,   undefined, "Enable the map lines"); 
-Lines.setting("update_owned",       true, Settings.type.bool,   undefined, "Automatically create and remove lines to your villages."); 
-Lines.setting("update_ally",        true, Settings.type.bool,   undefined, "Automatically create and remove lines to ally members."); 
-Lines.setting("update_allies",      true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of allied alliances."); 
-Lines.setting("update_naps",        true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of nap-alliances."); 
-Lines.setting("update_enemies",     true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of alliances, with which your ally is at war.");
-Lines.setting("update_crop",        true, Settings.type.bool,   undefined, "Automatically create and remove lines to 9- and 15-croppers.");
-Lines.setting("list_extra_villages",true, Settings.type.bool,   undefined, "Append villages in the 'extra' category to the villages list."); 
+Lines.setting("enabled",               true, Settings.type.bool,   undefined, "Enable the map lines"); 
+Lines.setting("update_owned",          true, Settings.type.bool,   undefined, "Automatically create and remove lines to your villages."); 
+Lines.setting("update_ally",           true, Settings.type.bool,   undefined, "Automatically create and remove lines to ally members."); 
+Lines.setting("update_allies",         true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of allied alliances."); 
+Lines.setting("update_naps",           true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of nap-alliances."); 
+Lines.setting("update_enemies",        true, Settings.type.bool,   undefined, "Automatically create and remove lines to members of alliances, with which your ally is at war.");
+Lines.setting("update_crop",           true, Settings.type.bool,   undefined, "Automatically create and remove lines to 9- and 15-croppers.");
+Lines.setting("list_extra_villages",   true, Settings.type.bool,   undefined, "Append villages in the 'extra' category to the villages list."); 
+Lines.setting("analyze_neighbourhood", true, Settings.type.bool,   undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
+Lines.setting("scale",                 .05,  Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
 Lines.setting("categories",     { /* <tag>:  [ <color>             , <drawline> ], */ 
                                     owned:   ["rgba(255,255,0,0.5)",   true],
                                     ally:    ["rgba(0,0,255,0.5)",     true],
                                     allies:  ["rgba(0,255,0,0.5)",     true],
-                                    naps:    ["rgba(0,255,255,0.5)",   true],
+                                    naps:    ["rgba(0,255,255,0.5)",   false],
                                     enemies: ["rgba(255,0,0,0.5)",     true],
                                     crop9:   ["rgba(255,128,0.5)",     true],
                                     crop15:  ["rgba(255,128,1.0)",     true],
                                     extra:   ["rgba(128,128,128,0.5)", true],
                                     farms:   ["rgba(255,255,255,0.5)", true],
-                                    ban:     ["rgba(0,0,0,0.5)",       true],
+                                    ban:     ["rgba(0,0,0,0.5)",       false],
                                     other:   ["rgba(255,0,255,0.5)",   true]
                                 },    Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
 Lines.setting("locations",      {},   Settings.type.object, undefined, "List of special locations.");
@@ -560,19 +580,202 @@ Lines.new_table_cell=function(innerhtml) {
     return cell;
 };
 // Adds the location to the villages list.
-Lines.add_village=function(location){
-    if (!Lines.village_list) return;
-    var row = document.createElement("tr");
-    row.appendChild(newcell("<span>• </span> "+location[3]));
-    row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+location[0]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+location[1]+")</td>\n</tr>\n</tbody></table>"));
-    tab.appendChild(row);
+Lines.append_villages=function(){
+    for (var l in Lines.locations) {
+        var location = Lines.locations[l];
+        if (location[2]=="extra") {
+            var row = document.createElement("tr");
+            row.appendChild(newcell("<span>• </span> "+location[3]));
+            row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+location[0]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+location[1]+")</td>\n</tr>\n</tbody></table>"));
+            tab.appendChild(row);
+        }
+    }
 };
-Lines.run=function() {
-    Lines.village_list = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
-    if (!Lines.village_list) {
-        Debug.warning("Could not find village list.");
+Lines.create_analyzer_links=function(){
+    var rdiv=document.createElement("div");
+    rdiv.style.position = "absolute";
+    rdiv.style.left = "315px";
+    rdiv.style.top  = "500px";
+    rdiv.style.border = "solid 1px #000";
+    rdiv.style.background = "#ffc";
+    rdiv.style.zIndex = 16;
+    rdiv.style.padding = "3px";
+    rdiv.style.MozBorderRadius = "6px";
+    document.body.appendChild(rdiv);
+    Lines.analyzer_links = rdiv;
+};
+Lines.create_canvas=function(x){
+    var pos = [x.offsetLeft, x.offsetTop, x.offsetWidth, x.offsetHeight];
+
+    var canvas=document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.left = pos[0]+"px";
+    canvas.style.top  = pos[1]+"px";
+    canvas.style.zIndex = 14;
+    canvas.width  = pos[2];
+    canvas.height = pos[3];
+        
+    x.parentNode.insertBefore(canvas, x.nextSibling);
+
+    var g = canvas.getContext("2d");
+    Lines.context = g;
+    Lines.pos = pos;
+};
+Lines.touch=function(location) {
+    var x = location[0]-Lines.posx;
+    var y = location[1]-Lines.posy;
+    if (x<-400) x+=800;
+    if (x> 400) x-=800;
+    if (y<-400) y+=800;
+    if (y> 400) y-=800;
+    var px = 1.83*(x+y)*20;
+    var py = 1.00*(x-y)*20;
+    px += py/50;
+
+    // Get the location's category
+    var category=Lines.categories[location[2]];
+    // Get the drawing context
+    var g = Lines.context;
+    g.strokeStyle=category[0];
+    if (category[1]) { // Draw lines only if enabled for category.
+        g.beginPath();
+        var px2 = px * Lines.scale;
+        var py2 = py * Lines.scale;
+        g.moveTo(px2,py2);
+        g.lineTo(px,py);
+        g.stroke();
+        if (x!=0 || y!=0) 
+            g.fillRect(px-2,py-2,4,4);
+    }
+    
+    // Always draw circle (when on map)
+    if (x>=-3 && x<=3 && y>=-3 && y<=3) {
+        if (x==0 && y==0) 
+            g.lineWidth = 2.5;
+        g.beginPath();
+        g.moveTo(px+20,py);
+        g.arc(px,py,20,0,Math.PI*2,true);
+        g.stroke();
+        if (x==0 && y==0) 
+            g.lineWidth = 1;
+    }
+};
+Lines.update=function() {
+    // But don't do an update when it's not necessary.
+    try {
+        z = unsafeWindow.m_c.z;
+        if (z == null) return;
+        if (Lines.posx == z.x && Lines.posy == z.y) return;
+        Lines.posx = z.x - 0;
+        Lines.posy = z.y - 0;
+    } catch (e) {
+        Debug.exception("Lines.update", e);
+    }
+    // Make sure the locations variable is up to date
+    Lines.s.locations.read();
+
+    // Get the drawing context
+    var g = Lines.context;
+
+    // Clear map
+    g.clearRect(0,0,Lines.pos[2],Lines.pos[3]);
+    g.save()
+
+    // Initialize render context    
+    g.translate(Lines.pos[2]/2-1,Lines.pos[3]/2 + 5.5);
+    g.fillStyle   = "rgba(128,128,128,0.8)";
+
+    // Draw lines                                    
+    for (var l in Lines.locations) {
+        touch(Lines.locations[l]);
     }
 
+    // Reset render context
+    g.restore();
+
+    // Update the travian analyzer links:
+        Debug.debug("lolz!1");
+    if (Lines.analyzer_links) {
+        var linkstart = "<a href=\"http://travian.ws/analyser.pl?s="+Settings.server+"&q="+Lines.posx+","+Lines.posy;
+        Lines.analyzer_links.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
+            linkstart+",5\" > 5</a>, "+
+            linkstart+",10\">10</a>, "+
+            linkstart+",15\">15</a>, "+
+            linkstart+",20\">20</a>, "+
+            linkstart+",25\">25</a>";
+    }
+}
+
+// add a "this location is special!" button to the map's village view. (if applicable)
+Lines.tag_tool=function() {  
+
+// TODO: convert stuff.
+    if (location.href.indexOf("karte.php?d=")<=0) return;
+    res = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
+    x = res.singleNodeValue;
+    if (!x) return;
+    l = x.textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
+    insl = false;
+    for (v in SPECIAL_LOCATIONS) {
+        if (SPECIAL_LOCATIONS[v][0]==l[1] &&
+            SPECIAL_LOCATIONS[v][1]==l[2]) {
+            insl=true;
+            break;
+        }
+    }
+    addspecial = document.createElement("a");
+    addspecial.innerHTML = "s";
+    addspecial.title = "[timeline] Toggle ("+l[1]+"|"+l[2]+") as special location.";
+    addspecial.href="#";
+    addspecial.style.color = insl?"#0f0":"#f00";
+    addspecial.className=l[1]+","+l[2]+","+(insl?1:0);
+    function addsl(e){
+        var el = e.target;
+        var l = el.className.split(",");
+        if (l[2]>0) {
+            last = SPECIAL_LOCATIONS.pop();
+            for (v in SPECIAL_LOCATIONS) {
+                if (SPECIAL_LOCATIONS[v][0]==l[2] &&
+                    SPECIAL_LOCATIONS[v][1]==l[3]) {
+                    SPECIAL_LOCATIONS[v]=last;
+                    break;
+                }
+            }
+        } else {
+            SPECIAL_LOCATIONS.push([l[0]-0,l[1]-0]);
+        }
+        GM_setValue(prefix("SPECIAL_LOCATIONS"), uneval(SPECIAL_LOCATIONS));
+        el.style.color = l[2]<1?"#0f0":"#f00";
+        el.className=l[0]+","+l[1]+","+(1-l[2]);
+    }
+    addspecial.addEventListener('click',addsl,true);
+    
+    x.appendChild(addspecial);
+    x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
+}
+
+Lines.run=function() {
+    if (Lines.list_extra_villages) {
+        Lines.village_list = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+        if (Lines.village_list) {
+            Lines.append_villages();
+        } else {
+            Debug.warning("Could not find village list.");
+        }
+    }
+    
+    var x = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+    if (x != null) { // If this page has a map ...
+        if (Lines.analyze_neighbourhood) 
+            Lines.create_analyzer_links();
+        Lines.create_canvas(x);
+        Lines.update();
+        document.addEventListener('click',Lines.update,true);
+        document.addEventListener('keydown',Lines.update,true);
+        document.addEventListener('keyup',Lines.update,true);
+    }
+
+    Lines.tag_tool();
 };
 
 
@@ -708,7 +911,6 @@ Resources.show=function() {
     if (head!=null) {
         head = head.childNodes[1].childNodes[0];
         
-        Debug.debug(uneval(Resources.production));
         var mkt  = Resources.market [Settings.village_id];
         var prod = Resources.production[Settings.village_id];
         mkt  = (mkt ==undefined)?[0,0,0,0]:mkt;
@@ -930,190 +1132,6 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
                     ally[who][2] = cities;
                     GM_setValue(prefix("ALLIANCE"), uneval(ally));
                 }
-            }
-        }
-    }
-
-    //////////////////////////////////////////
-    //  ALLY LINES                          //
-    //////////////////////////////////////////
-
-    // Show lines to allies and yourself
-    //if (Lines.update_allies) {
-    function al_main(){
-        // <canvas width=200 height=200 style="position: absolute; left: 80px; top: 100px; z-index: 15;"/>
-        var res = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null );
-        x = res.singleNodeValue;
-        if (x != null) {
-            pos = [obj.offsetLeft, obj.offsetTop, obj.offsetWidth, obj.offsetHeight];
-
-            canvas=document.createElement("canvas");
-            canvas.style.position = "absolute";
-            canvas.style.left = pos[0]+"px";
-            canvas.style.top  = pos[1]+"px";
-            canvas.style.zIndex = 14;
-            canvas.width  = pos[2];
-            canvas.height = pos[3];
-        
-            rdiv=document.createElement("div");
-            rdiv.style.position = "absolute";
-            rdiv.style.left = "315px";
-            rdiv.style.top  = "500px";
-            rdiv.style.border = "solid 1px #000";
-            rdiv.style.background = "#ffc";
-            rdiv.style.zIndex = 16;
-            rdiv.style.padding = "3px";
-            rdiv.style.MozBorderRadius = "6px";
-
-            x.parentNode.insertBefore(canvas, x.nextSibling);
-            document.body.appendChild(rdiv);
-        
-            var rx = document.evaluate( "//input[@name='xp']", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );   
-            var ry = document.evaluate( "//input[@name='yp']", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );   
-
-            posx = rx.singleNodeValue.value - 0;
-            posy = ry.singleNodeValue.value - 0;
-
-            function update() {
-                x = GM_getValue(prefix("SPECIAL_LOCATIONS"));    
-                if (x!==undefined && x!=="") {
-                    SPECIAL_LOCATIONS = eval(x);
-                }
-
-                var g = canvas.getContext("2d");
-                g.clearRect(0,0,pos[2],pos[3]);
-                g.save()
-                    g.translate(pos[2]/2-1,pos[3]/2 + 5.5);
-                        
-                function touch(x, y) {
-                    x -= posx;
-                    y -= posy;
-                    if (x<-400) x+=800;
-                    if (x> 400) x-=800;
-                    if (y<-400) y+=800;
-                    if (y> 400) y-=800;
-                    g.beginPath();
-                    px = 1.83*(x+y);
-                    py = 1.00*(x-y);
-                    px += py/50;
-                    px2 = px * 20;
-                    py2 = py * 20;
-                    g.moveTo(px,py);
-                    g.lineTo(px2,py2);
-                    if (x!=0 || y!=0) 
-                        g.fillRect(px-2,py-2,4,4);
-                    g.stroke();
-
-                    if (x>=-3 && x<=3 && y>=-3 && y<=3) {
-                        if (x==0 && y==0) 
-                            g.lineWidth = 2.5;
-                        g.beginPath();
-                        g.moveTo(px2+20,py2);
-                        g.arc(px2,py2,20,0,Math.PI*2,true);
-                        g.stroke();
-                        if (x==0 && y==0) 
-                            g.lineWidth = 1;
-                    }
-                }
-            
-                g.fillStyle   = "rgba(128,128,128,0.8)";
-                for (a in ally) {
-                    b = ally[a][2];
-                    if (a == Settings.username) {
-                        g.strokeStyle = "rgba(128,64,0,1.0)";
-                    } else {
-                        g.strokeStyle = "rgba(0,128,255,0.4)";
-                    }
-                
-                    for (c in b) {
-                        touch(b[c][1],b[c][2]);
-                    }
-                }
-
-                g.strokeStyle = "rgba(255,0,128,0.8)";
-                for (i=0; i<SPECIAL_LOCATIONS.length; i++) {
-                    p=SPECIAL_LOCATIONS[i];
-                    touch(p[0],p[1]);
-                }                
-                g.restore();
-            
-                wasc = Settings.server;
-                rdiv.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
-                    "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",5\" > 5</a>, "+
-                    "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",10\">10</a>, "+
-                    "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",15\">15</a>, "+
-                    "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",20\">20</a>, "+
-                    "<a href=\"http://travian.ws/analyser.pl?s="+wasc+"&q="+posx+","+posy+",25\">25</a>";
-            }
-        
-            update();
-        
-            function upd() {
-                setTimeout(upd2,50);
-            }
-        
-            function upd2(){
-                z = unsafeWindow.m_c.z;
-                try {
-                    if (z != null) {
-                        if (posx != z.x || posy != z.y) {
-                            posx  = z.x - 0;
-                            posy  = z.y - 0;
-                            update();
-                        }
-                    }
-                } catch (e) {
-                    alert(e);
-                }
-            }            
-
-            document.addEventListener('click',upd,true);
-            document.addEventListener('keydown',upd,true);
-            document.addEventListener('keyup',upd,true);
-        }
-    
-        // add a "this location is special!" button to the map's village view.
-        if (location.href.indexOf("karte.php?d=")>0) {
-            res = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-            x = res.singleNodeValue;
-            if (x) {
-                l = x.textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
-                insl = false;
-                for (v in SPECIAL_LOCATIONS) {
-                    if (SPECIAL_LOCATIONS[v][0]==l[1] &&
-                        SPECIAL_LOCATIONS[v][1]==l[2]) {
-                        insl=true;
-                        break;
-                    }
-                }
-                addspecial = document.createElement("a");
-                addspecial.innerHTML = "s";
-                addspecial.title = "[timeline] Toggle ("+l[1]+"|"+l[2]+") as special location.";
-                addspecial.href="#";
-                addspecial.style.color = insl?"#0f0":"#f00";
-                addspecial.className=l[1]+","+l[2]+","+(insl?1:0);
-                function addsl(e){
-                    var el = e.target;
-                    var l = el.className.split(",");
-                    if (l[2]>0) {
-                        last = SPECIAL_LOCATIONS.pop();
-                        for (v in SPECIAL_LOCATIONS) {
-                            if (SPECIAL_LOCATIONS[v][0]==l[2] &&
-                                SPECIAL_LOCATIONS[v][1]==l[3]) {
-                                SPECIAL_LOCATIONS[v]=last;
-                                break;
-                            }
-                        }
-                    } else {
-                        SPECIAL_LOCATIONS.push([l[0]-0,l[1]-0]);
-                    }
-                    GM_setValue(prefix("SPECIAL_LOCATIONS"), uneval(SPECIAL_LOCATIONS));
-                    el.style.color = l[2]<1?"#0f0":"#f00";
-                    el.className=l[0]+","+l[1]+","+(1-l[2]);
-                }
-                addspecial.addEventListener('click',addsl,true);
-                x.appendChild(addspecial); 
-                x.parentNode.style.zIndex=5;
             }
         }
     }
