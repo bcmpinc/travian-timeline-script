@@ -1415,6 +1415,7 @@ try {
                     d.setDate(d.getDate()+1);
             }
 
+            // This is for the hilighting...
             n = new Date();
             n.setTime(d.getTime());
         
@@ -1516,26 +1517,29 @@ try {
             }
 
             // Draw current time
-            g.strokeStyle = "rgb(0,0,255)";
-            g.beginPath();
             diff = (n.getTime() - d.getTime()) / 1000 / 60;
-            y = tl_warp(diff + tl_scroll_offset);
-            g.moveTo(-8, y);
-            g.lineTo( 4, y);    
-            g.lineTo( 6, y-2);    
-            g.lineTo( 8, y);    
-            g.lineTo( 6, y+2);    
-            g.lineTo( 4, y);    
-            g.stroke();
+            if (diff+tl_scroll_offset >= -TIMELINE_SIZES_HISTORY && diff+tl_scroll_offset <= TIMELINE_SIZES_FUTURE){
+                y = tl_warp(diff + tl_scroll_offset);
 
-            g.fillStyle = "rgb(0,0,255)";
-            drawtime(diff, n);
+                g.strokeStyle = "rgb(0,0,255)";
+                g.beginPath();
+                g.moveTo(-8, y);
+                g.lineTo( 4, y);
+                g.lineTo( 6, y-2);
+                g.lineTo( 8, y);
+                g.lineTo( 6, y+2);
+                g.lineTo( 4, y);
+                g.stroke();
 
-            // Highlight the 'elapsed time since last refresh'
-            diff2 = (script_start_time - d.getTime()) / 1000 / 60;
-            y2 = tl_warp(diff2 + tl_scroll_offset);
-            g.fillStyle = "rgba(0,128,255,0.1)";
-            g.fillRect(9-TIMELINE_SIZES_WIDTH, y,TIMELINE_SIZES_WIDTH+1, y2-y);
+                g.fillStyle = "rgb(0,0,255)";
+                drawtime(diff, n);
+
+                // Highlight the 'elapsed time since last refresh'
+                diff2 = (script_start_time - d.getTime()) / 1000 / 60;
+                y2 = tl_warp(diff2 + tl_scroll_offset);
+                g.fillStyle = "rgba(0,128,255,0.1)";
+                g.fillRect(9-TIMELINE_SIZES_WIDTH, y,TIMELINE_SIZES_WIDTH+1, y2-y);
+            }
 
             unit = new Array(17);
             for (i=1; i<12; i++) {
