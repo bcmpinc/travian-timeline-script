@@ -90,6 +90,7 @@ try {
     USE_ENHANCED_RESOURCE_INFO = true;  // Add resource/minute and resources on market to the resource bar.
     USE_EXTRA_VILLAGE = true;           // Add additional vilages to the vilage list.
     USE_SETTINGS = true;                // Enable settings menu and use settinge stored by GM_setValue.
+    USE_VILLAGE_TITLE_TEXT = true;      // List future events for a village in its title-text
 
     USE_SERVER_TIME = false;            // Use the server time instead of the local clock. Requires a 24 hours clock.
     USE_DEBUG_MODE = false;             // Makes the script throw an alert when something bad happened.
@@ -158,15 +159,12 @@ try {
                       ];//*/
 
     SPECIAL_LOCATIONS = []; // Draws lines to these locations on the map.
-    // SPECIAL_LOCATIONS = [[-85,149],[-80,146],[-300,-292],[-301,-292]]; 
 
     DEBUG_SIDEBAR = false;       // Append original sidebar links, with index numbers
 
     // These villages are added to the villages list 
     // (without link, but travian beyond will recognize them and add attack and merchant links)
     VILLAGES = [];  
-    // VILLAGES = [["WW 1", 25, -155],
-    //            ["WW 2", -170, 158]];
 
     //////////////////////////////////////////
     //  LOAD IN-GAME SETTINGS               //
@@ -188,10 +186,7 @@ try {
 
     window.addEventListener('load', main, false); // Run everything after the DOM loads!
 
-    //if (USE_SETTINGS) {
     function set_basic_settings(){  
-        //TIMELINE_COLOR
-
         var saved_settings=["USERNAME", "RACE",
                       
                             "SPECIAL_LOCATIONS","VILLAGES","USE_TIMELINE","USE_ALLY_LINES",
@@ -320,8 +315,6 @@ try {
     //////////////////////////////////////////
     //  OPTIONS SCREEN                      //
     //////////////////////////////////////////
-
-    //if (USE_SETTINGS) {
     function set_options_screen(){
         var div = document.createElement("div");
         div.style.position = "absolute";
@@ -491,7 +484,6 @@ try {
     //////////////////////////////////////////
     //  COLLECT SOME INFO                   //
     //////////////////////////////////////////
-
     function storeInfo(){
         // Meaning of GM Values: (Some of the variable names are in dutch, to stay compatible with older scripts) 
         //
@@ -618,10 +610,7 @@ try {
     //////////////////////////////////////////
     //  ENHANCED RESOURCE INFO              //
     //////////////////////////////////////////
-
-    // Enhance resource info
     function res_main(){
-        //if (USE_ENHANCED_RESOURCE_INFO) {
         head = document.getElementById("lres0");
         if (head!=null) {
             a="";
@@ -658,8 +647,6 @@ try {
     //////////////////////////////////////////
     //  MARKET COLORS                       //
     //////////////////////////////////////////
-
-    //if (USE_MARKET_COLORS) {
     function mkt_main(){
         function colorify() { 
             x = document.getElementById("lmid2");
@@ -697,11 +684,8 @@ try {
     //////////////////////////////////////////
     //  ALLY LINES                          //
     //////////////////////////////////////////
-
     // Show lines to allies and yourself
-    //if (USE_ALLY_LINES) {
     function al_main(){
-        // <canvas width=200 height=200 style="position: absolute; left: 80px; top: 100px; z-index: 15;"/>
         var res = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null );
         x = res.singleNodeValue;
         if (x != null) {
@@ -880,8 +864,6 @@ try {
     //////////////////////////////////////////
     //  REMOVE PLUS BUTTON                  //
     //////////////////////////////////////////
-
-    //if (REMOVE_PLUS_BUTTON) {
     function remove_plus_button(){
         plus = document.getElementById("lplus1");
         if (plus) {
@@ -892,9 +874,7 @@ try {
     //////////////////////////////////////////
     //  CUSTOM SIDEBAR                      //
     //////////////////////////////////////////
-
     // Modifies Navigation menu (sidebar)
-    //if (USE_CUSTOM_SIDEBAR) {
     function csb_main(){
         navi = document.getElementById("navi_table");
         if (navi) {
@@ -979,7 +959,6 @@ try {
     //////////////////////////////////////////
     //  TIMELINE                            //
     //////////////////////////////////////////
-
     function tl_main(){
         tp1 = document.getElementById("tp1");
         if (!tp1) return;
@@ -1060,7 +1039,6 @@ try {
                 {
                     x = res.snapshotItem(i);
                     what = x.childNodes[3].childNodes[0].innerHTML;
-                    // if (what == "Aankomst") {
                     // Instead of checking if this is the correct line, just act as if it's correct
                     // If it isn't this will certainly fail.
                     try {
@@ -1674,10 +1652,6 @@ try {
     
         tlc.addEventListener("click",setAt,false);
 
-        // TODO: This might be useful for displaying only the events from *some* villages, not all at once
-        // Could maybe have the basic canvas with just the timeline and no events, and then layer
-        // canvases on top with events from just one village? That way can turn them on/off at will.
-        // It would also be best to save the point of rotation as a GM_value...
         // Mouse Scroll Wheel
         function tl_mouse_wheel(e){
             if (tl_scroll_offset - e.detail * TIMELINE_SIZES_HEIGHT >= TIMELINE_DISTANCE_HISTORY - TIMELINE_SIZES_HISTORY) return;
@@ -1688,8 +1662,6 @@ try {
             update_timeline(true); // We don't want this call to start its own series of display updates...
         }
 
-        // Could scroll backwards and forwards on the timeline
-        // We also probably want to stop the mouse scrolling from propegating in this case...
         tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
     
     } /* USE_TIMELINE */
@@ -1715,6 +1687,31 @@ try {
         }
     } /* USE_EXTRA_VILLAGE */
 
+    //////////////////////////////////////////
+    //  VILLAGE TITLE TEXT                  //
+    //////////////////////////////////////////
+    // This could cause problems with single-village accounts at the moment...
+    function vtt_main(){
+        // Get the village list first
+        x = document.getElementById('lright1').childNodes[1].childNodes[0].childNodes;
+
+        for (e in events){
+            if (e < new Date().getTime() + TIME_DIFFERENCE*3600000) continue; // If this event is in the past
+
+            for (i in x){
+                y = x[i].childNodes[0].childNodes[2];
+                if (events[e][17] == y.textContent){
+                    d = new Date();
+                    d.setTime(e);
+                    // This format works *very* poorly. We can't set page breaks, and the text only hangs around for a few seconds
+                    // We should create a mouseover and a tooltip for this, really...
+                    if (!y.title) y.title = d.getHours() + ':' + d.getMinutes() + ' ' + events[e][12]+'   ';
+                    else y.title += d.getHours() + ':' + d.getMinutes() + ' ' + events[e][12]+'   ';
+                }
+            }
+        }
+    }
+
     script_duration = new Date().getTime() - script_start_time;
 } catch (e) {
     if (USE_DEBUG_MODE) 
@@ -1738,4 +1735,5 @@ function main(){
     if (USE_CUSTOM_SIDEBAR) csb_main();
     if (USE_TIMELINE) tl_main();
     if (USE_EXTRA_VILLAGE) ev_main();
+    if (USE_VILLAGE_TITLE_TEXT) vtt_main();
 }
