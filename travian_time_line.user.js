@@ -1699,7 +1699,7 @@ try {
             div = document.createElement('div');
             div.setAttribute('id', id);
             
-            div.setAttribute('style', 'position:absolute; width:200px; top:120px; left:720px; padding:1px; z-index:200; border:solid 1px #000000; background-color:#FFFFFF; visibility:hidden;');
+            div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:1px; z-index:200; border:solid 1px #000000; background-color:#FFFFFF; visibility:hidden;');
             div.innerHTML = contents.join('<br>');
             document.getElementById('ltop1').parentNode.appendChild(div);
             var timer;
