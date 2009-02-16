@@ -1688,27 +1688,62 @@ try {
     } /* USE_EXTRA_VILLAGE */
 
     //////////////////////////////////////////
-    //  VILLAGE TITLE TEXT                  //
+    //  VILLAGE TOOL TIP                    //
     //////////////////////////////////////////
     // This could cause problems with single-village accounts at the moment...
     function vtt_main(){
+
+        // This creates a tooltip. Each element of list e is a new line
+        function vtt_tooltip(e, id, contents){
+            id = "TTL_TTP_"+id;
+            div = document.createElement('div');
+            div.setAttribute('id', id);
+            
+            div.setAttribute('style', 'position:absolute; width:200px; top:120px; left:720px; padding:1px; z-index:200; border:solid 1px #000000; background-color:#FFFFFF; visibility:hidden;');
+            div.innerHTML = contents.join('<br>');
+            document.getElementById('ltop1').parentNode.appendChild(div);
+            var timer;
+
+            delay_mouseover = function (e){
+                if (timer != undefined) window.clearTimeout(timer);
+                timer = window.setTimeout(function(){
+                        x = document.getElementById(id);
+                        x.style.visibility = 'visible';
+                        x.style.left = (e.pageX+1)+'px';
+                        x.style.top = (e.pageY+1)+'px';
+                    }, 1000);
+            }
+            delay_mouseout = function (){
+                if (timer != undefined) window.clearTimeout(timer);
+                timer = window.setTimeout(function(){
+                        document.getElementById(id).style.visibility = 'hidden';
+                    }, 500);
+            }
+
+            e.addEventListener('mouseover', delay_mouseover, false);
+            e.addEventListener('mouseout', delay_mouseout, false);
+        }
+
         // Get the village list first
         x = document.getElementById('lright1').childNodes[1].childNodes[0].childNodes;
+        village_event_list = new Array(); // This holds the events still to be done in the future, for each village
 
         for (e in events){
-            if (e < new Date().getTime() + TIME_DIFFERENCE*3600000) continue; // If this event is in the past
+            if (e < new Date().getTime() + TIME_DIFFERENCE*3600000) continue; // If this event is in the past, ignore it
 
             for (i in x){
                 y = x[i].childNodes[0].childNodes[2];
                 if (events[e][17] == y.textContent){
                     d = new Date();
                     d.setTime(e);
-                    // This format works *very* poorly. We can't set page breaks, and the text only hangs around for a few seconds
-                    // We should create a mouseover and a tooltip for this, really...
-                    if (!y.title) y.title = d.getHours() + ':' + d.getMinutes() + ' ' + events[e][12]+'   ';
-                    else y.title += d.getHours() + ':' + d.getMinutes() + ' ' + events[e][12]+'   ';
+                    if (village_event_list[i] == undefined) village_event_list[i] = [];
+                    village_event_list[i].push(d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+' '+events[e][12]);
                 }
             }
+        }
+
+        for (i in x){
+            if (village_event_list[i] != undefined) vtt_tooltip(x[i], i, village_event_list[i]);
         }
     }
 
