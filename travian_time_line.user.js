@@ -1742,8 +1742,9 @@ try {
                 // village_event_list[i] stores an array of [time, string message]. Thus the format parsing must be done here.
                 // It must be stored with the time in the first index so that array.sort() works properly.
                 if (village_event_list[i] == undefined) village_event_list[i] = [];
-                txt = '<span style="font-size:11px">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); // Precede every event by the time
-                txt += ' <span style="font-size:11px; color:'+TIMELINE_EVENT_COLORS[events[e][0]]+'">';
+                //txt = '<span style="font-size:11px">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); // Precede every event by the time
+                txt = '<td vAlign="bottom">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+'</td>'; // Precede every event by the time
+                txt += '<td style="color:'+TIMELINE_EVENT_COLORS[events[e][0]]+'">';
 
                 // If this is an *internal* *trade* market event, we sort based on destination...
                 if (events[e][0] == 3 && events[e][12].indexOf(y.textContent) >= 0){
@@ -1762,7 +1763,7 @@ try {
                         }
                     }
                 } else continue;
-                txt += '</span></span>';
+                txt += '</td>';
                 village_event_list[i].push([e, txt]);
             }
         }
@@ -1773,7 +1774,7 @@ try {
                 village_event_list[i].sort();
                 txt = [];
                 for (j in village_event_list[i]) txt.push(village_event_list[i][j][1]);
-                vtt_tooltip(x[i], i, txt.join('<br>'));
+                vtt_tooltip(x[i], i, '<table class="f10" style="font-size:11px"><tbody><tr>'+txt.join('</tr><tr>')+'</tr></tbody></table>');
             }
         }
     }
