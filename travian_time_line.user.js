@@ -1376,45 +1376,47 @@ try {
         function determine_now() {
             // d = time corresponding to the top of the timeline
             // n = current time. (with time difference applied)
+            // tl_t_time = time corresponding to the top of the timeline (want to conserve 'd' for local variables)
+            // tl_c_time = current time with time difference
         
             // get server time
             server_time = tp1.textContent.split(":");
             
             // determine 'now'
-            d = new Date();
-            d.setTime(d.getTime()+TIME_DIFFERENCE*3600000); // Adjust local time to server time.
+            tl_t_time = new Date();
+            tl_t_time.setTime(tl_t_time.getTime()+TIME_DIFFERENCE*3600000); // Adjust local time to server time.
             if (USE_SERVER_TIME) {
-                t = d.getTime();
-                d.setHours(server_time[0]);
-                d.setMinutes(server_time[1]);
-                d.setSeconds(server_time[2]);
-                d.setMilliseconds(0);
-                if (d.getTime()<t-60000)
-                    d.setDate(d.getDate()+1);
+                t = tl_t_time.getTime();
+                tl_t_time.setHours(server_time[0]);
+                tl_t_time.setMinutes(server_time[1]);
+                tl_t_time.setSeconds(server_time[2]);
+                tl_t_time.setMilliseconds(0);
+                if (tl_t_time.getTime()<t-60000)
+                    tl_t_time.setDate(tl_t_time.getDate()+1);
             }
 
             // This is for the hilighting...
-            n = new Date();
-            n.setTime(d.getTime());
+            tl_c_time = new Date();
+            tl_c_time.setTime(tl_t_time.getTime());
         
-            d.setMilliseconds(0);
-            d.setSeconds(0);
-            if (d.getMinutes()<15) {
-                d.setMinutes(0);
-            } else if (d.getMinutes()<45) {
-                d.setMinutes(30);
+            tl_t_time.setMilliseconds(0);
+            tl_t_time.setSeconds(0);
+            if (tl_t_time.getMinutes()<15) {
+                tl_t_time.setMinutes(0);
+            } else if (tl_t_time.getMinutes()<45) {
+                tl_t_time.setMinutes(30);
             } else {
-                d.setMinutes(60);    
+                tl_t_time.setMinutes(60);    
             }
         
-            tl_warp_now = (n.getTime() - d.getTime())/1000/60 + TIMELINE_SIZES_HISTORY;
+            tl_warp_now = (tl_c_time.getTime() - tl_t_time.getTime())/1000/60 + TIMELINE_SIZES_HISTORY;
             tl_warp_now/=TIMELINE_SIZES_HISTORY+TIMELINE_SIZES_FUTURE;
         }
 
         // Delete events older than TIMELINE_DISTANCE_HISTORY
         determine_now();
         list = { };
-        old = d.getTime()-TIMELINE_DISTANCE_HISTORY*60000;
+        old = tl_t_time.getTime()-TIMELINE_DISTANCE_HISTORY*60000;
         for (e in events) {
             if (e>old) {
                 list[e] = events[e];            
@@ -1467,7 +1469,7 @@ try {
                 ll = 0;
                 if (i%5 == 0) l-=2;
                 if (i%15 == 0) l-=2;
-                if ((i + d.getMinutes())%60 == 0) ll+=8;
+                if ((i + tl_t_time.getMinutes())%60 == 0) ll+=8;
                 g.moveTo(l, tl_warp(i + tl_scroll_offset));
                 g.lineTo(ll,  tl_warp(i + tl_scroll_offset));    
                 g.stroke();
@@ -1489,13 +1491,13 @@ try {
             }
             for (var i=round15(-TIMELINE_SIZES_HISTORY - tl_scroll_offset);
                  i <= round15(TIMELINE_SIZES_FUTURE - tl_scroll_offset); i+=15) {
-                t = new Date(d);
+                t = new Date(tl_t_time);
                 t.setMinutes(t.getMinutes() + i);
                 drawtime(i, t);
             }
 
             // Draw current time
-            diff = (n.getTime() - d.getTime()) / 1000 / 60;
+            diff = (tl_c_time.getTime() - tl_t_time.getTime()) / 1000 / 60;
             if (diff+tl_scroll_offset >= -TIMELINE_SIZES_HISTORY && diff+tl_scroll_offset <= TIMELINE_SIZES_FUTURE){
                 y = tl_warp(diff + tl_scroll_offset);
 
@@ -1510,10 +1512,10 @@ try {
                 g.stroke();
 
                 g.fillStyle = "rgb(0,0,255)";
-                drawtime(diff, n);
+                drawtime(diff, tl_c_time);
 
                 // Highlight the 'elapsed time since last refresh'
-                diff2 = (script_start_time - d.getTime()) / 1000 / 60;
+                diff2 = (script_start_time - tl_t_time.getTime()) / 1000 / 60;
                 y2 = tl_warp(diff2 + tl_scroll_offset);
                 g.fillStyle = "rgba(0,128,255,0.1)";
                 g.fillRect(9-TIMELINE_SIZES_WIDTH, y,TIMELINE_SIZES_WIDTH+1, y2-y);
@@ -1544,7 +1546,7 @@ try {
             // Draw data
             for (e in events) {
                 p = events[e];
-                diff = (e - d.getTime()) / 1000 / 60 + tl_scroll_offset;
+                diff = (e - tl_t_time.getTime()) / 1000 / 60 + tl_scroll_offset;
                 if (diff<-TIMELINE_SIZES_HISTORY || diff>TIMELINE_SIZES_FUTURE) continue;
                 y = tl_warp(diff);
                 y = Math.round(y);
@@ -1644,7 +1646,7 @@ try {
             if (at) {
                 // d = 'top of the timeline time'        
                 var n = new Date();
-                n.setTime(d.getTime() + (tl_unwarp(e.pageY - tl_scroll_offset*TIMELINE_SIZES_HEIGHT)) *60*1000);
+                n.setTime(tl_t_time.getTime() + (tl_unwarp(e.pageY) - tl_scroll_offset) *60*1000);
                 s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
                 at.value=s;
             }
@@ -1698,7 +1700,6 @@ try {
             id = "TTL_TTP_"+id;
             div = document.createElement('div');
             div.setAttribute('id', id);
-            
             div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:1px; z-index:200; border:solid 1px #000000; background-color:#FFFFFF; visibility:hidden;');
             div.innerHTML = contents.join('<br>');
             document.getElementById('ltop1').parentNode.appendChild(div);
@@ -1709,7 +1710,7 @@ try {
                 timer = window.setTimeout(function(){
                         x = document.getElementById(id);
                         x.style.visibility = 'visible';
-                        x.style.left = (e.pageX+1)+'px';
+                        x.style.left = (e.pageX+10)+'px';
                         x.style.top = (e.pageY+1)+'px';
                     }, 1000);
             }
