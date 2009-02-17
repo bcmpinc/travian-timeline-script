@@ -1700,8 +1700,8 @@ try {
             id = "TTL_TTP_"+id;
             div = document.createElement('div');
             div.setAttribute('id', id);
-            div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:1px; z-index:200; border:solid 1px #000000; background-color:#FFFFFF; visibility:hidden;');
-            div.innerHTML = contents.join('<br>');
+            div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px #000000; background-color:#FFFFFF; visibility:hidden;');
+            div.innerHTML = contents;
             document.getElementById('ltop1').parentNode.appendChild(div);
             var timer;
 
@@ -1710,15 +1710,15 @@ try {
                 timer = window.setTimeout(function(){
                         x = document.getElementById(id);
                         x.style.visibility = 'visible';
-                        x.style.left = (e.pageX+10)+'px';
+                        x.style.left = (e.pageX+12)+'px';
                         x.style.top = (e.pageY+1)+'px';
-                    }, 1000);
+                    }, 500);
             }
             delay_mouseout = function (){
                 if (timer != undefined) window.clearTimeout(timer);
                 timer = window.setTimeout(function(){
                         document.getElementById(id).style.visibility = 'hidden';
-                    }, 500);
+                    }, 300);
             }
 
             e.addEventListener('mouseover', delay_mouseover, false);
@@ -1726,29 +1726,58 @@ try {
         }
 
         // Get the village list first
-        x = document.getElementById('lright1').childNodes[1].childNodes[0].childNodes;
+        x = document.evaluate('//div[@id="lright1"]/table/tbody', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.childNodes;
         village_event_list = new Array(); // This holds the events still to be done in the future, for each village
 
+        // 'events' is quite logically based on time. To sort and display events by village, we have to recreate the entire structure...
         for (e in events){
-            if (e < new Date().getTime() + TIME_DIFFERENCE*3600000) continue; // If this event is in the past, ignore it
+            if (e < tl_c_time.getTime()) continue; // If this event is in the past, ignore it
 
+            // Match them up to the villages... this isn't the best sorting algorithm but c'est la vie
             for (i in x){
                 y = x[i].childNodes[0].childNodes[2];
-                if (events[e][17] == y.textContent){
-                    d = new Date();
-                    d.setTime(e);
-                    if (village_event_list[i] == undefined) village_event_list[i] = [];
-                    village_event_list[i].push(d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+' '+events[e][12]);
+
+                d = new Date();
+                d.setTime(e);
+                // village_event_list[i] stores an array of [time, string message]. Thus the format parsing must be done here.
+                // It must be stored with the time in the first index so that array.sort() works properly.
+                if (village_event_list[i] == undefined) village_event_list[i] = [];
+                txt = '<a style="font-size:11px">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); // Precede every event by the time
+                txt += ' <a style="font-size:11px; color:'+TIMELINE_EVENT_COLORS[events[e][0]]+'">';
+
+                // If this is an *internal* *trade* market event, we sort based on destination...
+                if (events[e][0] == 3 && events[e][12].indexOf(y.textContent) >= 0){
+                    txt += events[e][17];
+                    for (j=1; j <= 4; j++) txt += ' <img src="img/un/r/'+j+'.gif"/> '+events[e][j+12]; // Add images and amounts
                 }
+                else if (events[e][17] == y.textContent){ // This is for generic events
+                        txt += events[e][12];
+                    if (events[e][0] == 3){ // If a market event
+                        for (j=1; j <= 4; j++) txt += ' <img src="img/un/r/'+j+'.gif"/> '+events[e][j+12]; // Add images and amounts
+                    }
+                    else if (events[e][0] == 1){ // If a attack event
+                        for (j=1; j <= 11; j++){
+                            if (events[e][j] == 0) continue;
+                            txt += ' <img src="img/un/u/'+(j==11?'hero':RACE*10+j)+'.gif"/> '+events[e][j]; // Add unit images & quantities
+                        }
+                    }
+                } else continue;
+                txt += '</a></a>';
+                village_event_list[i].push([e, txt]);
             }
         }
 
         for (i in x){
-            if (village_event_list[i] != undefined) vtt_tooltip(x[i], i, village_event_list[i]);
+            if (village_event_list[i].length == 0) vtt_tooltip(x[i], i, 'IDLE!');
+            else {
+                village_event_list[i].sort();
+                txt = [];
+                for (j in village_event_list[i]) txt.push(village_event_list[i][j][1]);
+                vtt_tooltip(x[i], i, txt.join('<br>'));
+            }
         }
     }
 
-    script_duration = new Date().getTime() - script_start_time;
 } catch (e) {
     if (USE_DEBUG_MODE) 
         alert("Timeline caught an error: \n"+
@@ -1772,4 +1801,6 @@ function main(){
     if (USE_TIMELINE) tl_main();
     if (USE_EXTRA_VILLAGE) ev_main();
     if (USE_VILLAGE_TITLE_TEXT) vtt_main();
+
+    script_duration = new Date().getTime() - script_start_time;
 }
