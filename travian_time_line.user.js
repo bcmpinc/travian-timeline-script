@@ -1742,8 +1742,8 @@ try {
                 // village_event_list[i] stores an array of [time, string message]. Thus the format parsing must be done here.
                 // It must be stored with the time in the first index so that array.sort() works properly.
                 if (village_event_list[i] == undefined) village_event_list[i] = [];
-                txt = '<a style="font-size:11px">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); // Precede every event by the time
-                txt += ' <a style="font-size:11px; color:'+TIMELINE_EVENT_COLORS[events[e][0]]+'">';
+                txt = '<span style="font-size:11px">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); // Precede every event by the time
+                txt += ' <span style="font-size:11px; color:'+TIMELINE_EVENT_COLORS[events[e][0]]+'">';
 
                 // If this is an *internal* *trade* market event, we sort based on destination...
                 if (events[e][0] == 3 && events[e][12].indexOf(y.textContent) >= 0){
@@ -1762,7 +1762,7 @@ try {
                         }
                     }
                 } else continue;
-                txt += '</a></a>';
+                txt += '</span></span>';
                 village_event_list[i].push([e, txt]);
             }
         }
