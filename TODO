@@ -7,6 +7,7 @@ Timeline Events,Look&Feel:
   - and/or add a way of disabling the capture of certain event types
 - Capture warehouse/granary full events
 - Add the colour of events to the options menu (might need to rework the options menu somewhat, it's getting kinda big...)
+- Figure out a way to catch two different events occuring simultaneously (right now we just assume any simultaneous events are the *same* event)
 
 Other Features:
 - Add method for configuration of 'extra villages'
@@ -16,4 +17,3 @@ Other Features:
 New Features:
 - Modify all the links for more robust navigation
 - Add latest warehouse info to the village tool tips?
-
