@@ -1751,8 +1751,8 @@ try {
                     for (j=1; j <= 4; j++) txt += ' <img src="img/un/r/'+j+'.gif"/> '+events[e][j+12]; // Add images and amounts
                 }
                 else if (events[e][17] == y.textContent){ // This is for generic events
-                        txt += events[e][12];
-                    if (events[e][0] == 3){ // If a market event
+                    txt += events[e][12];
+                    if (events[e][0] == 3 && events[e][13]+events[e][14]+events[e][15]+events[e][16] > 0){ // If a market event
                         for (j=1; j <= 4; j++) txt += ' <img src="img/un/r/'+j+'.gif"/> '+events[e][j+12]; // Add images and amounts
                     }
                     else if (events[e][0] == 1){ // If a attack event
