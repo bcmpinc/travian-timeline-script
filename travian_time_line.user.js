@@ -293,7 +293,8 @@ try {
 
             // Cover the wrap-around cases. If an event has a duration, then it must be in the future. Hence, if the time we've set for it
             // is in the past, we've done something wrong and it's probably a midnight error.
-            if (this.date.getTime() < this.start_time) this.date.setDate(this.date.getDate() + 1);
+            // This check needs to be done carefully as otherwise some events will get pushed 24 hours father into the future than they should be.
+            if (this.date.getTime() < this.start_time-600000) this.date.setDate(this.date.getDate() + 1);
 
             return this.date.getTime();
         }
@@ -1731,6 +1732,7 @@ try {
 
         // 'events' is quite logically based on time. To sort and display events by village, we have to recreate the entire structure...
         for (e in events){
+            ev = events[e];
             if (e < tl_c_time.getTime()) continue; // If this event is in the past, ignore it
 
             // Match them up to the villages... this isn't the best sorting algorithm but c'est la vie
@@ -1742,24 +1744,25 @@ try {
                 // village_event_list[i] stores an array of [time, string message]. Thus the format parsing must be done here.
                 // It must be stored with the time in the first index so that array.sort() works properly.
                 if (village_event_list[i] == undefined) village_event_list[i] = [];
-                //txt = '<span style="font-size:11px">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); // Precede every event by the time
                 txt = '<td vAlign="bottom">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+'</td>'; // Precede every event by the time
-                txt += '<td style="color:'+TIMELINE_EVENT_COLORS[events[e][0]]+'">';
+                txt += '<td style="color:'+TIMELINE_EVENT_COLORS[ev[0]]+'">';
 
                 // If this is an *internal* *trade* market event, we sort based on destination...
-                if (events[e][0] == 3 && events[e][12].indexOf(y.textContent) >= 0){
-                    txt += events[e][17];
-                    for (j=1; j <= 4; j++) txt += ' <img src="img/un/r/'+j+'.gif"/> '+events[e][j+12]; // Add images and amounts
+                // Also, returning merchants have no cargo, and should only appear to the sending village
+                if (ev[0] == 3 && ev[12].indexOf(y.textContent) >= 0 && ev[13]+ev[14]+ev[15]+ev[16] > 0){
+                    txt += ev[17];
+                    for (j=1; j <= 4; j++) txt += ' <img src="img/un/r/'+j+'.gif"/> '+ev[j+12]; // Add images and amounts
+                    
                 }
-                else if (events[e][17] == y.textContent){ // This is for generic events
-                    txt += events[e][12];
-                    if (events[e][0] == 3 && events[e][13]+events[e][14]+events[e][15]+events[e][16] > 0){ // If a market event
-                        for (j=1; j <= 4; j++) txt += ' <img src="img/un/r/'+j+'.gif"/> '+events[e][j+12]; // Add images and amounts
+                else if (ev[17] == y.textContent){ // This is for generic events
+                    txt += ev[12];
+                    if (ev[0] == 3 && ev[13]+ev[14]+ev[15]+ev[16] > 0){ // If a market event, but don't show if there's no cargo
+                        for (j=1; j <= 4; j++) txt += ' <img src="img/un/r/'+j+'.gif"/> '+ev[j+12]; // Add images and amounts
                     }
-                    else if (events[e][0] == 1){ // If a attack event
+                    else if (ev[0] == 1){ // If a attack event
                         for (j=1; j <= 11; j++){
-                            if (events[e][j] == 0) continue;
-                            txt += ' <img src="img/un/u/'+(j==11?'hero':RACE*10+j)+'.gif"/> '+events[e][j]; // Add unit images & quantities
+                            if (ev[j] == 0) continue;
+                            txt += ' <img src="img/un/u/'+(j==11?'hero':RACE*10+j)+'.gif"/> '+ev[j]; // Add unit images & quantities
                         }
                     }
                 } else continue;

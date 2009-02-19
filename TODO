@@ -19,8 +19,3 @@ New Features:
 - Add latest warehouse info to the village tool tips?
 
 UNSQUASHED BUGS:
-- event times sometimes get placed a day ahead of themselves.
-  Frequency   - Very low
-  Impact      - Low
-  Description - Happened with a building construction, time was 22:10. Also registered the event normally. Duration could not have exceeded 0:14:30.
-                Unfortunately only noticed it after the fact, so didn't get a log of any errors/debug records from the bug itself.
