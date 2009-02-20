@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.25
+// @version        0.27
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
 
 // @include        http://*.travian*.*/*.php*
@@ -401,10 +401,9 @@ try {
                 'RACE     = '+race+'\n'+
                 'TIMELINE_SIZES:\n'+sizeoptions+'\n'+
                 'TIME_DIFFERENCE = <input id="TL_TIME_DIFFERENCE" value="'+TIME_DIFFERENCE+'"/> hours (server time - local time)\n'+
-                'TIMELINE_COLOR  = <input id="TL_TIMELINE_COLOR" value="'+TIMELINE_COLOR+'"/> (as in css)\n'+
-                '<a href="#" style="color: blue" id="TL_EVENT_COLORS">EVENT COLORS</a>'+'\n'+
                 'SPECIAL_LOCATIONS='+uneval(SPECIAL_LOCATIONS)+'\n'+
-                'VILLAGES='+uneval(VILLAGES)+'\n'+
+                'VILLAGES='+uneval(VILLAGES)+'\n<hr>'+
+                '<a href="#" style="color: blue" id="TL_EVENT_COLORS">EVENT COLORS</a>\n'+
                 '<hr/>'+'script duration: '+script_duration+'ms.\n';
 
             set_add_listeners(box);
@@ -438,19 +437,24 @@ try {
                 function set_colors_dialog(){
                     box = document.getElementById('TL_MENU');
                     base = box.innerHTML;
-                    clr = '<i>Customize your event colours...</i>\n';
+                    clr = '<div><table><tbody><tr><td>TIMELINE COLOR = <td><input id="TL_TIMELINE_COLOR" value="'+TIMELINE_COLOR+'"/>';
+                    clr += '<td style="border-style: solid; border-color: black; border-width: 1px; background-color:'+TIMELINE_COLOR+'">&nbsp;&nbsp;';
+                    clr += '</tr></tbody></table><hr><i>Customize your event colours...</i>\n</div><div>';
 
                     function add_color(display, event_name){
-                        clr += display.pad(9)+'= <input id="TL_EVENT_'+event_name+'" value="'+eval(event_name)+'"/>\n';
+                        clr += '<tr><td>'+display+'<td> = <input id="TL_EVENT_'+event_name+'" value="'+eval(event_name)+'"/>';
+                        clr += '<td style="border-style: solid; border-color: black; border-width: 1px; background-color:'+eval(event_name)+'">&nbsp;&nbsp;</tr>';
                     }
+                    clr += '<table><tbody>';
                     add_color('BUILDING', 'BUILDING_COLOR');
                     add_color('ATTACK', 'ATTACK_COLOR');
                     add_color('REPORT', 'REPORT_COLOR');
                     add_color('MARKET', 'MARKET_COLOR');
                     add_color('RESEARCH', 'RESEARCH_COLOR');
                     add_color('PARTY', 'PARTY_COLOR');
+                    clr += '</tbody></table>';
 
-                    clr += '\n<a href="#" style="color: blue" id="TL_MENU_BACK">BACK</a>\n';
+                    clr += '<hr><a href="#" style="color: blue" id="TL_MENU_BACK">BACK</a></div>';
 
                     box.innerHTML = clr;
 
@@ -458,12 +462,21 @@ try {
                             box.innerHTML = base;
                             set_add_listeners(box);
                         }, false);
-                    colors = box.childNodes;
+
+                    // This is for inputs in the first div
+                    document.getElementById('TL_TIMELINE_COLOR').addEventListener('change', function(e){
+                            opt_change(e);
+                            e.target.parentNode.parentNode.childNodes[2].style.backgroundColor = e.target.value;
+                        }, false);
+
+                    // and this is for inputs in the second one
+                    colors = box.childNodes[1].childNodes;
                     for (i in colors){
                         if (colors[i] == undefined) continue;
                         colors[i].addEventListener('change', function(e){
                                 id = e.target.id.substr(9);
                                 GM_setValue(prefix(id), eval(id+'="'+e.target.value+'"'));
+                                e.target.parentNode.parentNode.childNodes[2].style.backgroundColor = e.target.value;
                             }, false);
                     }
                 }
