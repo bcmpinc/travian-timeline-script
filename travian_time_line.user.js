@@ -1740,8 +1740,10 @@ try {
         }
 
         // Get the village list first
-        x = document.evaluate('//div[@id="lright1"]/table/tbody', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.childNodes;
-        village_event_list = new Array(); // This holds the events still to be done in the future, for each village
+        x = document.evaluate('//div[@id="lright1"]/table/tbody', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        if (x == undefined) return;
+        x = x.childNodes;
+        village_event_list = []; // This holds the events still to be done in the future, for each village
 
         // 'events' is quite logically based on time. To sort and display events by village, we have to recreate the entire structure...
         for (e in events){
