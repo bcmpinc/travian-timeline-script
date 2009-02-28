@@ -75,30 +75,25 @@ String.prototype.repeat = function(n) {
 
 // Add spaces (or s) to make the string have a length of at least n
 // s must have length 1.
-String.prototype.pad = function(n,s) {
+String.prototype.pad = function(n,s,rev) {
     if (s==undefined) s=" ";
     n = n-this.length;
     if (n<=0) return this;
-    return this+s.repeat(n);
+    if (rev)
+        return s.repeat(n)+this;
+    else
+        return this+s.repeat(n);
 }
 
 // Functions missing in Math
-Math.sinh = function(x) { 
-    return .5*(Math.exp(x)-Math.exp(-x));
-}
-Math.cosh = function(x) { 
-    return .5*(Math.exp(x)+Math.exp(-x));
-}
-Math.arsinh = function(x) { 
-    return Math.log(x+Math.sqrt(x*x+1));
-}
-Math.arcosh = function(x) { 
-    return Math.log(x+Math.sqrt(x*x-1));
-}
+Math.sinh     = function(x) { return .5*(Math.exp(x)-Math.exp(-x)); }
+Math.cosh     = function(x) { return .5*(Math.exp(x)+Math.exp(-x)); }
+Math.arsinh   = function(x) { return Math.log(x+Math.sqrt(x*x+1)); }
+Math.arcosh   = function(x) { return Math.log(x+Math.sqrt(x*x-1)); }
 
 function tl_date(){
     this.date = new Date();
-    this.date.setTime(this.date.getTime() + Timeline.time_differnece*3600000);
+    this.date.setTime(this.date.getTime());
     this.date.setMilliseconds(0);
     this.start_time = this.date.getTime();
 
@@ -113,6 +108,8 @@ function tl_date(){
         
         this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
 
+        Debug.debug('time is: '+this.date);
+
         return this.date.getTime();
     }
 
@@ -121,6 +118,8 @@ function tl_date(){
         Debug.debug('Setting the day: '+day);
 
         this.date.setFullYear(day[2] == undefined ? this.date.getFullYear() : '20'+day[2], day[1] - 1, day[0]);
+
+        Debug.debug('time is: '+this.date);
 
         return this.date.getTime();
     }
@@ -135,6 +134,8 @@ function tl_date(){
         // Cover the wrap-around cases. If an event has a duration, then it must be in the future. Hence, if the time we've set for it
         // is in the past, we've done something wrong and it's probably a midnight error.
         if (this.date.getTime() < this.start_time) this.date.setDate(this.date.getDate() + 1);
+
+        Debug.debug('time is: '+this.date);
 
         return this.date.getTime();
     }
@@ -163,6 +164,7 @@ Feature.setting=function(name, def_val, type, typedata, description) {
     s.type        = type;
     s.typedata    = typedata;
     s.description = description;
+    s.def_val     = def_val;
     s.read();
     this.s[name]  = s;
     return s;
@@ -215,6 +217,7 @@ Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool
 Settings.server=function(){
     // This should give the server id as used by travian analyzer.
     var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
+    if (!url) return "unknown";
     var a=url[2];
     if (url[1]=='speed')  a='x';
     if (url[1]=='speed2') a='y';
@@ -334,7 +337,10 @@ Settings.config=function(parent_element) {
                 }
                 s.childNodes[1].addEventListener("change",function (e) {
                     var val=e.target.value;
-                    if (setting.type==Settings.type.integer) val-=0;
+                    if (setting.type==Settings.type.integer) {
+                      if (val=="") val = setting.def_val;
+                      else val-=0;
+                    }
                     setting.set(val);
                     setting.write();
                 },false);
@@ -504,9 +510,12 @@ Debug.methods=["console","firebug"];
 Debug.setting("level",  0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods,    "Where should the debug output be send to.");
 Debug.print  =GM_log;
+Debug.lineshift = function(){
+  try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-510; } // Keep the number in this line equal to it's line number. Don't modify otherwise.
+}();
 Debug.exception=function(fn_name, e) {
-    // The 347 is to correct the linenumber shift caused by greasemonkey.
-    var msg = fn_name+' ('+(e.lineNumber-347)+'): '+e;
+    // The lineshift is to correct the linenumber shift caused by greasemonkey.
+    var msg = fn_name+' ('+(e.lineNumber-Debug.lineshift)+'): '+e;
     try {
         Debug.error(msg);
     } catch (ee) {
@@ -591,6 +600,8 @@ Lines.append_villages=function(){
         }
     }
 };
+// Adds a diff to the page below the map that can contain links to 
+// travian analyzer.
 Lines.create_analyzer_links=function(){
     var rdiv=document.createElement("div");
     rdiv.style.position = "absolute";
@@ -604,6 +615,7 @@ Lines.create_analyzer_links=function(){
     document.body.appendChild(rdiv);
     Lines.analyzer_links = rdiv;
 };
+// Creates the canvas for drawing the lines.
 Lines.create_canvas=function(x){
     var pos = [x.offsetLeft, x.offsetTop, x.offsetWidth, x.offsetHeight];
 
@@ -621,6 +633,7 @@ Lines.create_canvas=function(x){
     Lines.context = g;
     Lines.pos = pos;
 };
+// Draws a line to the specified location
 Lines.touch=function(location) {
     var x = location[0]-Lines.posx;
     var y = location[1]-Lines.posy;
@@ -661,7 +674,6 @@ Lines.touch=function(location) {
     }
 };
 Lines.delayed_update=function() {
-    // Lines.update is so kind to check whether an update is really necessary.
     setTimeout(Lines.update,10);
 }
 Lines.update=function() {
@@ -866,7 +878,7 @@ Sidebar.run=function() {
         Sidebar.navi.removeChild(Sidebar.navi.childNodes[i]);
         
     // Add new links
-    for (var i = 0; i < Sidebar.links.length; i++) {
+    for (var i = 0; i < Sidebar.links.length; i++) {'rgb(0,0,0)'
         var x = Sidebar.links[i];
         if (x.constructor == Array) {
             Sidebar.add(x[0], x[1]);
@@ -923,7 +935,7 @@ Resources.show=function() {
 Resources.update=function() {
     // Store info about resources put on the market if availbale
     var x = document.getElementById("lmid2");
-    if (x!=null && x.innerHTML.indexOf("\"dname\"")>0) {
+    if (x!=null && x.innerHTML.indexOf("name=\"t\" value=\"2\"")>0) {
         var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
 
         var mkt = new Array(0,0,0,0);
@@ -1022,30 +1034,748 @@ Market.run=function(){
  
 Feature.create("Timeline");
 Timeline.setting("enabled",          true,  Settings.type.bool, undefined, "Enable the timeline"); 
+Timeline.setting("visible",          true,  Settings.type.bool, undefined, "Is the timeline visible on pageload. This setting can also be changed with the timeline-button.");
 Timeline.setting("collapse",         false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
 Timeline.setting("report_info",      true,  Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
 Timeline.setting("position_fixed",   false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
 Timeline.setting("keep_updated",     true,  Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
-Timeline.setting("scale_warp",       false, Settings.type.bool, undefined, "Use cubic transformation on the timeline to make events close to 'now' have more space than events far away.");
-Timeline.setting("use_server_time",  false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
 
 Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
+
 Timeline.setting("width",              400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
-Timeline.setting("height",               5, Settings.type.integer, undefined, "Height of one minute (in pixels)");
-Timeline.setting("history",             90, Settings.type.integer, undefined, "The length of the history, that's visible (in minutes)");
-Timeline.setting("future",              90, Settings.type.integer, undefined, "The length of the future, that's visible (in minutes)");
+Timeline.setting("height",             800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
+Timeline.setting("history",           1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
+Timeline.setting("duration",           300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
+Timeline.setting("marker_seperation",   10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
+
 Timeline.setting("collapse_width",      60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
 Timeline.setting("collapse_speed",    1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
 Timeline.setting("collapse_rate",       50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
-Timeline.setting("distance_history",   270, Settings.type.integer, undefined, "The distance that can be scrolled backwards in history (from 0). (in minutes)");
 Timeline.setting("update_interval",  30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
-Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
-Timeline.setting("full_height",          0, Settings.type.none,    undefined, "The calculated height of the timeline. (in pixels)");
 
-Timeline.scroll_offset=0;
+//Timeline.setting("use_server_time",  false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
+//Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
 
-TYPE_BUILDING=0; TYPE_ATTACK=1; TYPE_REPORT=2; TYPE_MARKET=3; TYPE_RESEARCH=4; TYPE_PARTY=5; // The types of events
-TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rgb(0,155,0)', 'rgb(0,0,255)', 'rgb(255,155,155)'];
+Timeline.setting("scale_warp",           0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
+
+Timeline.scroll_offset=0; // the current 'center' of the timeline.
+
+if (Timeline.scale_warp==0) {
+    Timeline.warp   = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
+    Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+} else {
+    Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
+    Timeline.warp   = function(x) { return (Math.arsinh(
+                                                         ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
+                                                       )/Timeline.scale_warp +1)/2*Timeline.height; };
+    Timeline.unwarp = function(y) { return Math.sinh(
+                                                      (2*y/Timeline.height-1)*Timeline.scale_warp
+                                                    )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+}
+
+Timeline.setting("type", {/* <tag>  : [<color>        <visible>] */
+                            building: ['rgb(0,0,0)',       true],
+                            attack  : ['rgb(255,0,0)',     true],
+                            market  : ['rgb(0,128,0)',     true], 
+                            research: ['rgb(0,0,255)',     true], 
+                            party   : ['rgb(255,128,128)', true], 
+                            recruit : ['rgb(128,128,128)', true]
+                         }, Settings.type.object, undefined, "List of event types");
+Timeline.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
+
+// report should be part of the respective main type.
+
+/*  A timeline-data-packet torn apart:
+    Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
+    
+    129390:              #### ~ The village id
+    'b9930712':          #### ~ Some identifier that is both unqiue and consistent between page loads.
+    ["building",         0    ~ Type of event
+    1225753710000,       1    ~ Estimated time at which this event occure(s|d).
+    "Granary (level 6)", 2    ~ Event message.
+    
+                         3    ~ For events that might include armies (can be 'undefined')
+    [0,                  3. 0 ~ Amount of farm-men involved 
+     0,                  3. 1 ~ Amount of defense-men involved
+     0,                  3. 2 ~ Amount of attack-men involved 
+     0,                  3. 3 ~ Amount of scouts  involved 
+     0,                  3. 4 ~ Amount of defense-horses involved 
+     0,                  3. 5 ~ Amount of attack-horses involved 
+     0,                  3. 6 ~ Amount of rams involved 
+     0,                  3. 7 ~ Amount of trebuchets involved 
+     0,                  3. 8 ~ Amount of leaders involved 
+     0,                  3. 9 ~ Amount of settlers involved 
+     0],                 3.10 ~ Amount of heros involved 
+     
+                         4    ~ For events that might include resources (can be 'undefined')
+    [0,                  4. 0 ~ Amount of wood involved
+     0,                  4. 1 ~ Amount of clay involved
+     0,                  4. 2 ~ Amount of iron involved
+     0]]                 4. 3 ~ Amount of grain involved
+     
+    Instead of a number, the fields in field 4 and 5 are also allowed to be a tuple (list).
+    In this case the first field is the original amount and the second field is the amount by which the amount has decreased.             
+*/
+
+// village = id of the village.
+// id      = The consistent unique event identifier.
+Timeline.get_event=function(village, id) {
+    var e = Timeline.events[village];
+    if (e == undefined) {
+        e = {};
+        Timeline.events[village]=e;
+        Debug.debug("Added village: "+village);
+    }
+    e = Timeline.events[village][id];
+    if (e == undefined) {
+        e = [];
+        Timeline.events[village][id]=e;
+        Debug.debug("Created element: "+id);
+    }
+    return e;
+};
+
+// Collectors
+// ----------
+
+Timeline.collector={};
+Timeline.collector.building=function(){
+    // Checking if data is available
+    if (location.href.indexOf("dorf")<=0) return;
+    var build = document.getElementById("lbau1");
+    if (build == undefined)
+        build = document.getElementById("lbau2");
+    if (build == undefined) return;
+
+    // Collecting
+    build = build.childNodes[1].childNodes[0];
+    for (var nn in build.childNodes) {
+        var x    = build.childNodes[nn];
+        var id   = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
+        var e = Timeline.get_event(Settings.village_id, id);
+        //if (e[0]) continue; 
+        e[0]="building";
+        
+        // TODO: get timing more accurate.
+        var d = new tl_date();
+        d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+        e[1] = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+        e[2] = x.childNodes[1].textContent;
+
+        Debug.debug("Time set to "+e[1]);
+    }
+};
+
+// ======================================================================
+
+Timeline.update_data=function() {
+    Timeline.s.events.read(); // Make sure the variable data is up to date.
+    // Collect new stuff
+    for (var c in Timeline.collector) {
+        try {
+            Timeline.collector[c]();
+        } catch (e) {
+            Debug.exception("Timeline.collector."+c,e);
+        }
+    }
+
+    // Remove old stuff
+    Timeline.old = Timeline.pageload-Timeline.history*60000;
+    for (var v in Timeline.events) {
+        for (var e in Timeline.events[v]) {
+            if (Timeline.events[v][e][1]<Timeline.old) {
+                delete Timeline.events[v][e];
+            }
+            // room for updates: (for migration to new versions of this script)
+        }
+    }
+    Timeline.s.events.write();
+};
+
+Timeline.create_canvas=function() {
+    // Create timeline canvas + container
+    var tl  = document.createElement("canvas");
+    var tlc = document.createElement("div");
+    tlc.style.position = (Timeline.position_fixed?"fixed":"absolute");
+    tlc.style.top      = "0px";
+    tlc.style.right    = "0px";
+    tlc.style.width    = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
+    tlc.style.height   = Timeline.height + "px";
+    tlc.style.zIndex   = "20";
+    tlc.style.backgroundColor=Timeline.color;
+    tlc.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
+    tlc.style.overflow = "hidden";
+
+    tl.id = "tl";
+    tl.width  = Timeline.width;
+    tl.height = Timeline.height;
+    tl.style.position = "relative";
+    tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
+    tlc.appendChild(tl);
+    document.body.appendChild(tlc);
+
+    // Code for expanding/collapsing the timeline.
+    // TODO: Move to seperate function(s)?
+    if (Timeline.collapse) {
+        var tl_col_cur = Timeline.collapse_width;
+        var tl_col_tar = Timeline.collapse_width;
+        var tl_col_run = false;
+        var tl_col_prev = 0;
+        function tlc_fade() {
+            var tl_col_next = new Date().getTime();
+            var diff = (tl_col_next - tl_col_prev) / 1000.0;
+            tl_col_prev = tl_col_next;
+            tl_col_run = true;
+            if (tl_col_cur==tl_col_tar) {
+                tl_col_run = false;
+                return;
+            }
+            if (tl_col_cur<tl_col_tar) {
+                tl_col_cur+=Timeline.collapse_speed*diff;
+                if (tl_col_cur>tl_col_tar)
+                    tl_col_cur=tl_col_tar;
+            }
+            if (tl_col_cur>tl_col_tar) {
+                tl_col_cur-=Timeline.collapse_speed*diff;
+                if (tl_col_cur<tl_col_tar)
+                    tl_col_cur=tl_col_tar;
+            }
+            tlc.style.width = tl_col_cur + "px";
+            tlc.firstChild.style.left = (tl_col_cur-Timeline.width)+"px";
+            setTimeout(tlc_fade, 1000/Timeline.collapse_rate);
+        }
+        function tlc_expand(e) {
+            tl_col_tar = Timeline.width;
+            tl_col_prev = new Date().getTime();
+            if (!tl_col_run) tlc_fade();
+        }
+        function tlc_collapse(e) {
+            tl_col_tar = Timeline.collapse_width;
+            tl_col_prev = new Date().getTime();
+            if (!tl_col_run) tlc_fade();
+        }
+        tlc.addEventListener('mouseover',tlc_expand,false);
+        tlc.addEventListener('mouseout',tlc_collapse,false);
+    }
+    
+    // Mouse Scroll Wheel
+    function tl_mouse_wheel(e){
+        Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
+
+        e.stopPropagation(); // Kill the event to the standard window...
+        e.preventDefault();
+        Timeline.draw(true);
+    }
+
+    // Could scroll backwards and forwards on the timeline
+    // We also probably want to stop the mouse scrolling from propegating in this case...
+    tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
+    
+    Timeline.element=tlc;
+    Timeline.context=tl.getContext("2d");
+    Timeline.context.mozTextStyle = "8pt Monospace";
+};
+
+Timeline.toggle=function() {
+    Timeline.visible=!Timeline.visible;
+    Timeline.element.style.visibility=Timeline.visible?'visible':'hidden';
+    Timeline.s.visible.write();
+};
+
+Timeline.create_button=function() {
+    button = document.createElement("div");
+    button.style.position = Timeline.element.style.position;
+    button.style.backgroundColor = "rgba(0,0,128,0.5)";
+    button.style.right = "0px";
+    button.style.top = "-2px";
+    button.style.width  = "60px";
+    button.style.height = "21px";
+    button.style.zIndex = "20";
+    button.style.textAlign = "center";
+    button.style.color = "#fff";
+    button.style.fontWeight = "bold";
+    button.style.MozBorderRadiusBottomleft = "6px";    
+    button.style.cursor = "pointer";
+    button.addEventListener('click',Timeline.toggle,false);
+    button.innerHTML = "timeline";
+    document.body.appendChild(button);
+};
+
+Timeline.load_images=function() {
+    // TODO: A special images feature?
+    Timeline.img_unit = new Array(12);
+    for (i=1; i<11; i++) {
+        Timeline.img_unit[i] = new Image();
+        Timeline.img_unit[i].src = "img/un/u/"+(Settings.race*10+i)+".gif";
+    }
+    Timeline.img_unit[11] = new Image();
+    Timeline.img_unit[11].src = "img/un/u/hero.gif";
+
+    Timeline.img_res = new Array(5);
+    for (i=1; i<4; i++) {
+        Timeline.img_res[i] = new Image();
+        Timeline.img_res[i].src = "img/un/r/"+(i)+".gif";
+    }
+};
+
+Timeline.draw=function() {
+    // Update the event data
+    Timeline.s.events.read();
+    Timeline.now=new Date().getTime();
+
+    // Get context
+    var g = Timeline.context;
+    g.clearRect(0,0,Timeline.width,Timeline.height);
+    g.save();
+        
+    // Draw bar
+    g.translate(Timeline.width - 9.5, 0);
+
+    g.strokeStyle = "rgb(0,0,0)";
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.lineTo(0, Timeline.height);
+    g.stroke();
+    
+    // draw scale lines
+    var lastmark = 0;
+    for (var i=Timeline.marker_seperation/2; i<Timeline.height; i+=Timeline.marker_seperation) {
+        
+        // determine local scale
+        var z = Timeline.unwarp(i+Timeline.marker_seperation/2) - Timeline.unwarp(i-Timeline.marker_seperation/2);
+        /**/ if (z<    1000) z=    1000; //  1 sec.
+        else if (z<    5000) z=    5000; //  5 sec.
+        else if (z<   15000) z=   15000; // 15 sec.
+        else if (z<   60000) z=   60000; //  1 min.
+        else if (z<  300000) z=  300000; //  5 min.
+        else if (z<  900000) z=  900000; // 15 min.
+        else if (z< 3600000) z= 3600000; //  1 hr.
+        else if (z<21600000) z=21600000; //  6 hr.
+        else if (z<86400000) z=86400000; //  1 day.
+        else continue;        
+
+        // determine the time and location
+        var x = Timeline.unwarp(i);
+        x = Math.round(x/z)*z;
+        var y = Timeline.warp(x);
+        if (x<=lastmark) continue;
+        lastmark=x;
+        
+        var a=-8;
+        var b= 0;
+        var m="";
+        var d = new Date();
+        d.setTime(x);
+        var t=d.getHours()+":"+(""+d.getMinutes()).pad(2,"0",true);
+        
+        /**/ if ((x% 3600000)==0 && d.getHours()==0
+                                ) {      b=8;m=
+                            ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+
+                            d.getDate()+" "+
+                            ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" - 0:00";} //  1 day.
+        else if ((x% 3600000)==0 && d.getHours()%6==0
+                                ) {      b=8; if (z<21600000) m=t;} //  6 hr.
+        else if ((x% 3600000)==0) {      b=4; if (z< 3600000) m=t;} //  1 hr.
+        else if ((x%  900000)==0) {a=-6;      if (z<  900000) m=t;} // 15 min.
+        else if ((x%  300000)==0) {a=-4;      if (z<  300000) m=t;} //  5 min.
+        else if ((x%   60000)==0) {a=-2;      if (z<   60000) m=t;} //  1 min.
+        else if ((x%   15000)==0) {a=-1;                          } // 15 sec.
+        else if ((x%    5000)==0) {a= 0; b=1;                     } //  5 sec.
+        else if ((x%    1000)==0) {a= 0; b=2;                     } //  1 sec.
+        
+        g.beginPath();
+        g.moveTo(a, y);
+        g.lineTo(b, y);
+        g.stroke();
+        if (m) {
+            g.save();
+            g.translate(-g.mozMeasureText(m)-10, 4+y);
+            g.mozDrawText(m);    
+            g.restore();    
+        }
+    }
+
+    // Draw current time
+    g.strokeStyle = "rgb(0,0,255)";
+    g.beginPath();
+    var y = Timeline.warp(Timeline.now);
+    g.moveTo(-8, y);
+    g.lineTo( 4, y);    
+    g.lineTo( 6, y-2);    
+    g.lineTo( 8, y);    
+    g.lineTo( 6, y+2);    
+    g.lineTo( 4, y);    
+    g.stroke();
+
+    g.fillStyle = "rgb(0,0,255)";
+    var d=new Date();
+    d.setTime(Timeline.now);
+    var m=d.getHours()+":"+(""+d.getMinutes()).pad(2,"0",true);
+    g.save();
+    g.translate(-g.mozMeasureText(m)-10, 4+y);
+    g.mozDrawText(m);    
+    g.restore();    
+
+    // Highlight the 'elapsed time since last refresh'
+    var y2 = Timeline.warp(Timeline.pageload);
+    g.fillStyle = "rgba(0,128,255,0.1)";
+    g.fillRect(9-Timeline.width, y,Timeline.width+1, y2-y);
+    
+    // Darken forgotten history
+    var y3 = Timeline.warp(Timeline.old);
+    g.fillStyle = "rgba(0,0,0,0.5)";
+    if (y3>0) 
+        g.fillRect(9-Timeline.width, 0,Timeline.width+1, y3);
+
+    function left(q) {
+        if (q.constructor == Array)
+            return q[0]-q[1];
+        else
+            return q-0;
+    }
+
+    // Draw data
+    for (v in Timeline.events) {
+        for (e in Timeline.events[v]) {
+            var p = Timeline.events[v][e];
+            var t = Timeline.type[p[0]];
+            var y = Timeline.warp(p[1]);
+            
+            // Check if this type of event is visible
+            if (!(t[1])) continue;
+            if (isNaN(y)) continue;
+            
+            // Draw the line
+            g.strokeStyle = t[0];
+            g.beginPath();
+            g.moveTo(-10, y);
+            g.lineTo(-50, y);    
+            g.stroke();
+        
+            // Draw the village id.
+            // TODO: convert to human readable village name.
+            g.fillStyle = "rgb(0,0,128)";
+            g.save();
+            g.translate(20 - Timeline.width, y-5);
+            g.mozDrawText(v);
+            g.restore();
+
+            // Draw the event text
+            g.fillStyle = "rgb(0,128,0)";
+            // TODO: prepend an * when an attack has 100% efficiency.
+            //var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
+            //cap = (cap<=0)?"*":"";
+            g.save();
+            //g.translate(20 - Timeline.width - g.mozMeasureText(cap), y+4);
+            //g.mozDrawText(cap + p[2]);
+            g.translate(20 - Timeline.width, y+4);
+            g.mozDrawText(p[2]);
+            g.restore();
+
+            // Draw the resources info.
+            if (false && Timeline.report_info) {
+                g.fillStyle = "rgb(64,192,64)";
+                g.save();
+                g.translate(-40, y+4+12); // Move this below the message.
+                for (i = 16; i>0; i--) {
+                    if (i==12)
+                        g.fillStyle = "rgb(0,0,255)";
+                    else if (p[i]) {
+                        try {
+                            g.translate(-unit[i].width - 8, 0);
+                            g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
+                        } catch (e) {
+                            // This might fail if the image is not yet or can't be loaded.
+                            // Ignoring this exception prevents the script from terminating to early.
+                            var fs = g.fillStyle;
+                            g.fillStyle = "rgb(128,128,128)";
+                            g.translate(-24,0);
+                            g.mozDrawText("??");
+                            g.fillStyle = fs;
+                        }
+                        if (p[i].constructor == Array) {
+                            g.fillStyle = "rgb(192,0,0)";
+                            g.translate(-g.mozMeasureText(-p[i][1]) - 2, 0);
+                            g.mozDrawText(-p[i][1]);
+                            g.fillStyle = "rgb(0,0,255)";
+                            g.translate(-g.mozMeasureText(p[i][0]), 0);
+                            g.mozDrawText(p[i][0]);
+                        } else {
+                            g.translate(-g.mozMeasureText(p[i]) - 2, 0);
+                            g.mozDrawText(p[i]);
+                        }
+                    }
+                }
+                g.restore();
+            }
+        }
+    }
+    g.restore();
+
+};
+
+Timeline.run=function() {
+    // TODO: use tl_date()? Do something with server time?
+    Timeline.pageload=new Date().getTime();
+    Timeline.update_data();
+    Timeline.create_canvas();
+    Timeline.create_button();
+    Timeline.draw();
+};
+
+//////////////////////////////////////////
+//  TIMELINE                            //
+//////////////////////////////////////////
+
+function tl_main(){
+    tp1 = document.getElementById("tp1");
+    if (!tp1) return;
+
+    // Get the active village
+    // TODO: replace in code.
+    var active_vil = Settings.village_name;
+
+    // Travelling armies (rally point)
+    x = document.getElementById("lmid2");
+    if (x!=null && x.innerHTML.indexOf("warsim.php")>0) {
+
+        var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+    
+        for ( var i=0 ; i < res.snapshotLength; i++ )
+            {
+                x = res.snapshotItem(i);
+                what = x.childNodes[3].childNodes[0].innerHTML;
+                // if (what == "Aankomst") {
+                // Instead of checking if this is the correct line, just act as if it's correct
+                // If it isn't this will certainly fail.
+                try {
+                    d = new tl_date();
+                    d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)"));
+                    t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+                    where = x.childNodes[0].childNodes[2].textContent;
+            
+                    try {
+                        e = tl_get_event(t, where, active_vil);
+                    }
+                    catch(er){
+                        if (er == "ERR_EVENT_OVERWRITE") continue;
+                        throw er;
+                    }
+                    for (var j = 1; j<12; j++) {
+                        y = x.childNodes[2].childNodes[j];
+                        if (y!=undefined)
+                            e[j] = y.textContent - 0;
+                    }
+
+                    e[0] = TYPE_ATTACK;
+                } catch (e) {
+                    // So it probably wasn't the correct line.
+                }
+            }
+    }
+
+    // Reports 
+    if (location.href.indexOf("berichte.php?id")>0) {
+        try {
+            res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
+            x = res.singleNodeValue;
+            if (x != undefined) {
+                if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
+                    d = new tl_date();
+
+                    time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?)[/.](\\d\\d)[/.](\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
+                    d.set_time(time.slice(3, 7)); // The first element in the array passed is ignored...
+                    t = d.set_day(time.slice(1, 4));
+                    where = x.childNodes[0].childNodes[3].innerHTML;
+            
+                    e = tl_get_event(t,where);
+                    e[12] = where;
+            
+                    // army composition + losses
+                    x = x.childNodes[6].childNodes[1];
+                    dualrow=false;
+                    if (x.childNodes[2]==undefined) {
+                        x = x.childNodes[1].childNodes[1]; 
+                    } else {
+                        x = x.childNodes[2].childNodes[1]; 
+                        dualrow=true;
+                    }
+
+                    for (var j = 1; j<12; j++) {
+                        y1 = x.childNodes[3].childNodes[j];
+                        if (dualrow) y2 = x.childNodes[4].childNodes[j];
+                        if (y1!=undefined) {
+                            if (dualrow && y2.textContent>0)
+                                e[j] = [y1.textContent - 0, y2.textContent - 0];
+                            else
+                                e[j] = y1.textContent - 0;
+                        }
+                    }
+            
+                    // profit
+                    if (dualrow) {
+                        if (x.childNodes[5].childNodes[3] != undefined) {
+                            y = x.childNodes[5].childNodes[3].textContent.split(" ");                
+                            for (var j = 1; j<5; j++) {
+                                e[j + 12] = y[j - 1] - 0;
+                            }
+                        }
+                    } else {
+                        if (x.childNodes[4].childNodes[3] != undefined) {
+                            y = x.childNodes[4].childNodes[3].textContent.split(" ");                
+                            e[16] = 0-y[0];
+                        }
+                    }
+                    e[0] = TYPE_REPORT;
+                }
+            }
+        } catch (er){
+            if (er != "ERR_EVENT_OVERWRITE") throw er;
+        }
+    } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
+        // Market Deliveries
+        if (document.forms[0] != undefined &&
+            document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
+            // Then this must be the market! (in a language-insensitive manner :D)
+
+            var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+            for (var i=0; i < shipment.snapshotLength; i++){
+                x = shipment.snapshotItem(i);
+                d = new tl_date();
+
+                // Extract the arrival time
+                d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+
+                // Extract and adjust by the duration of the shipment
+                t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
+
+                // Extract the value of the shipment
+                res = x.childNodes[4].childNodes[1].textContent.split(' | ');
+                Debug.debug("Merchant carrying "+res);
+            
+                // Check if merchant is returning
+                ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
+                if (ret) Debug.debug("Merchant is returning");
+
+                // Extract the action type
+                type = x.childNodes[0].childNodes[3].textContent;
+                
+                try {
+                    e = tl_get_event(t, type, active_vil);
+                } catch (er){
+                    if (er == "ERR_EVENT_OVERWRITE") continue;
+                    throw er;
+                }
+
+                e[0] = TYPE_MARKET;
+
+                // Add resource pictures and amounts (if sending)
+                if (!ret)
+                    for (j=0; j<4; j++)
+                        e[13+j]=res[j];
+            }
+        }
+
+        // Party events! Still a building...
+        // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
+        // This should be exclusive for Town Halls.
+        x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
+                              document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        if (x.snapshotLength == 1){
+            x = x.snapshotItem(0).parentNode;
+            d = new tl_date();
+
+            Debug.info("Found a party event!");
+
+            d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
+            t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+
+            msg = x.childNodes[1].textContent;
+            Debug.debug('Type = '+msg);
+
+            try {
+                e = tl_get_event(t, msg, active_vil);
+                e[0] = TYPE_PARTY;
+            } catch (er){
+                if (er != 'ERR_EVENT_OVERWRITE') throw er;
+                Debug.info('An event already exists at this time!');
+            }
+        }
+        
+        // Research Events
+        // Ok, the idea here is to look for a building with a table of class 'tbg' that has its first
+        // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
+        // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
+        // This is still inside the if(building) statement
+        try {
+            x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
+                                  document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+            if (x.snapshotLength == 1){
+                x = x.snapshotItem(0).parentNode;
+                d = new tl_date();
+
+                d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+                t = d.adjust_day(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+
+                // Extract the unit being upgraded
+                type = x.childNodes[3].textContent;
+                Debug.debug("Upgrading "+type);
+
+                // Extract the name of the building where the upgrade is occuring
+                // y is the table above the research-in-progress table
+                y = x.parentNode.parentNode.previousSibling.previousSibling.childNodes[1];
+                building = y.childNodes[0].childNodes[1].textContent;
+                Debug.debug("Upgrading at the "+building);
+
+                // Extract the level upgrading to - not for the acadamy!
+                // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
+                // in there could create compatibility problems... so keep it remote with textContent.
+                for (var i=0; i < y.childNodes.length; i++){
+                    level = y.childNodes[i].childNodes[1].textContent.match(type+' ([(][A-Z][a-z]* )(\\d\\d?)([)])');
+                    if (level){
+                        level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
+                        level = level[1]+level[2]+level[3];
+                        Debug.debug("Upgrading to "+level);
+                        break;
+                    }
+                }
+
+                // And now throw all of this information into an event
+                // Don't throw in the level information if we're  researching a new unit at the acadamy... because there isn't any!
+                e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
+                e[0] = TYPE_RESEARCH;
+
+            } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
+        } catch (er){
+            if (er != "ERR_EVENT_OVERWRITE") throw er;
+        }
+    }
+
+    /////////////////////////////////
+    // End Timeline Data collector //
+    /////////////////////////////////
+
+    // The click event listener for the link  with the 'travian task queue'-script.
+    function setAt(e) {
+        var at = document.getElementById("at");
+        if (at) {
+            // d = 'top of the timeline time'        
+            var n = new Date();
+            n.setTime(d.getTime() + (tl_unwarp(e.pageY - tl_scroll_offset*TIMELINE_SIZES_HEIGHT)) *60*1000);
+            s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
+            at.value=s;
+        }
+    }
+
+    tlc.addEventListener("click",setAt,false);
+
+    // TODO: This might be useful for displaying only the events from *some* villages, not all at once
+    // Could maybe have the basic canvas with just the timeline and no events, and then layer
+    // canvases on top with events from just one village? That way can turn them on/off at will.
+    // It would also be best to save the point of rotation as a GM_value...
+
+} /* Timeline.enabled */
+
 
 
 /****************************************
@@ -1125,729 +1855,16 @@ TIMELINE_EVENT_COLORS     = ['rgb(0,0,0)', 'rgb(255,0,0)', 'rgb(155,0,155)', 'rg
         }
     }
 
-    //////////////////////////////////////////
-    //  TIMELINE                            //
-    //////////////////////////////////////////
-
-    function tl_main(){
-        tp1 = document.getElementById("tp1");
-        if (!tp1) return;
-        //if (Timeline.enabled && tp1) {
-        /*  A timeline-data-packet torn apart:
-            Example: {'1225753710000':[0, 0, 0, 0, 189, 0, 0, 0, 0, 0, 0, 0, "Keert terug van 2. Nador", 0, 0, 0, 0]}
-        
-            '1225753710000':       ## ~ The time at which this event occure(s|d).      
-            [0,                     0 ~ Type of event (0=building, 1=attack, 2=report, 3=market, 4=research, 5=party)
-            0,                      1 ~ Amount of farm-men involved 
-            0,                      2 ~ Amount of defense-men involved
-            0,                      3 ~ Amount of attack-men involved 
-            189,                    4 ~ Amount of scouts  involved 
-            0,                      5 ~ Amount of defense-horses involved 
-            0,                      6 ~ Amount of attack-horses involved 
-            0,                      7 ~ Amount of rams involved 
-            0,                      8 ~ Amount of trebuchets involved 
-            0,                      9 ~ Amount of leaders involved 
-            0,                     10 ~ Amount of settlers involved 
-            0,                     11 ~ Amount of heros involved 
-            "Keert terug van 2. ", 12 ~ Event message.
-            0,                     13 ~ Amount of wood involved
-            0,                     14 ~ Amount of clay involved
-            0,                     15 ~ Amount of iron involved
-            0,                     16 ~ Amount of grain involved
-            "1."]                  17 ~ Issuing city
-             
-            Instead of a number, the fields 1 to 11 and 13 to 16 are also allowed to be a tuple (list).
-            In this case the first field is the original amount and the second field is the amount by which the amount has decreased.             
-        */
-
-        ///////////////////////////////////
-        // Start Timeline Data collector //
-        ///////////////////////////////////
-    
-        function tl_update_data() {
-            try {
-                events = eval(GM_getValue(prefix("TIMELINE"),"{}"));
-                if (events==undefined) events = {};
-            } catch (e) {
-                alert(e);
-                events = { };
-            }
-        }
-        tl_update_data();
-    
-        // Added a third optional parameter to fix a bug with event overwriting. The event would be encountered,
-        // this function wouldn't change it and return right away, and then the code following it would
-        // be executed corrupting the event. This is a quick fix, but it really doesn't solve the problem.
-        function tl_get_event(t, msg, name) {
-            if (name == undefined) name = '';
-            e = events[t];
-            if (e == undefined) {
-                e = [0,0,0,0,0,0,0,0,0,0,0,0,msg,0,0,0,0,name];
-                events[t]=e;
-            } else {
-                Debug.info("An event already exists at this time!");
-                throw "ERR_EVENT_OVERWRITE";
-            }
-            return e;
-        }
-
-        // Get the active village
-        // TODO: replace in code.
-        var active_vil = Settings.village_name;
-
-        // Travelling armies (rally point)
-        x = document.getElementById("lmid2");
-        if (x!=null && x.innerHTML.indexOf("warsim.php")>0) {
-    
-            var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-        
-            for ( var i=0 ; i < res.snapshotLength; i++ )
-                {
-                    x = res.snapshotItem(i);
-                    what = x.childNodes[3].childNodes[0].innerHTML;
-                    // if (what == "Aankomst") {
-                    // Instead of checking if this is the correct line, just act as if it's correct
-                    // If it isn't this will certainly fail.
-                    try {
-                        d = new tl_date();
-                        d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)"));
-                        t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-                        where = x.childNodes[0].childNodes[2].textContent;
-                
-                        try {
-                            e = tl_get_event(t, where, active_vil);
-                        }
-                        catch(er){
-                            if (er == "ERR_EVENT_OVERWRITE") continue;
-                            throw er;
-                        }
-                        for (var j = 1; j<12; j++) {
-                            y = x.childNodes[2].childNodes[j];
-                            if (y!=undefined)
-                                e[j] = y.textContent - 0;
-                        }
-
-                        e[0] = TYPE_ATTACK;
-                    } catch (e) {
-                        // So it probably wasn't the correct line.
-                    }
-                }
-        }
-    
-        // Reports 
-        if (location.href.indexOf("berichte.php?id")>0) {
-            try {
-                res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-                x = res.singleNodeValue;
-                if (x != undefined) {
-                    if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
-                        d = new tl_date();
-
-                        time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?)[/.](\\d\\d)[/.](\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
-                        d.set_time(time.slice(3, 7)); // The first element in the array passed is ignored...
-                        t = d.set_day(time.slice(1, 4));
-                        where = x.childNodes[0].childNodes[3].innerHTML;
-                
-                        e = tl_get_event(t,where);
-                        e[12] = where;
-                
-                        // army composition + losses
-                        x = x.childNodes[6].childNodes[1];
-                        dualrow=false;
-                        if (x.childNodes[2]==undefined) {
-                            x = x.childNodes[1].childNodes[1]; 
-                        } else {
-                            x = x.childNodes[2].childNodes[1]; 
-                            dualrow=true;
-                        }
-
-                        for (var j = 1; j<12; j++) {
-                            y1 = x.childNodes[3].childNodes[j];
-                            if (dualrow) y2 = x.childNodes[4].childNodes[j];
-                            if (y1!=undefined) {
-                                if (dualrow && y2.textContent>0)
-                                    e[j] = [y1.textContent - 0, y2.textContent - 0];
-                                else
-                                    e[j] = y1.textContent - 0;
-                            }
-                        }
-                
-                        // profit
-                        if (dualrow) {
-                            if (x.childNodes[5].childNodes[3] != undefined) {
-                                y = x.childNodes[5].childNodes[3].textContent.split(" ");                
-                                for (var j = 1; j<5; j++) {
-                                    e[j + 12] = y[j - 1] - 0;
-                                }
-                            }
-                        } else {
-                            if (x.childNodes[4].childNodes[3] != undefined) {
-                                y = x.childNodes[4].childNodes[3].textContent.split(" ");                
-                                e[16] = 0-y[0];
-                            }
-                        }
-                        e[0] = TYPE_REPORT;
-                    }
-                }
-            } catch (er){
-                if (er != "ERR_EVENT_OVERWRITE") throw er;
-            }
-        } else if (location.href.indexOf("dorf")>0) { // building build task:
-            bouw = document.getElementById("lbau1");
-            if (bouw == undefined)
-                bouw = document.getElementById("lbau2");
-            if (bouw != undefined) {
-                y = bouw.childNodes[1].childNodes[0];
-                for (nn in y.childNodes) {
-                    x = y.childNodes[nn];
-
-                    where = x.childNodes[1].textContent;
-
-                    d = new tl_date();
-                    d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-                    t = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-
-                    res = document.evaluate( "//div[@class='dname']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-
-                    // What's the point of this again??
-                    var h = 0;
-                    for(var i = 0; i < x.length; i ++) {
-                        h*=13;
-                        h+=i;
-                        h%=127;
-                    }
-                    t+=h*2;
-                    try {
-                        e = tl_get_event(t, where, active_vil);
-                    } catch (er){
-                        if (er == "ERR_EVENT_OVERWRITE") continue;
-                        throw er;
-                    }
-                    e[0] = TYPE_BUILDING;
-                }
-            }
-        } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
-            // Market Deliveries
-            if (document.forms[0] != undefined &&
-                document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
-                // Then this must be the market! (in a language-insensitive manner :D)
-
-                var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-                for (var i=0; i < shipment.snapshotLength; i++){
-                    x = shipment.snapshotItem(i);
-                    d = new tl_date();
-
-                    // Extract the arrival time
-                    d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-
-                    // Extract and adjust by the duration of the shipment
-                    t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
-
-                    // Extract the value of the shipment
-                    res = x.childNodes[4].childNodes[1].textContent.split(' | ');
-                    Debug.debug("Merchant carrying "+res);
-                
-                    // Check if merchant is returning
-                    ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
-                    if (ret) Debug.debug("Merchant is returning");
-
-                    // Extract the action type
-                    type = x.childNodes[0].childNodes[3].textContent;
-                    
-                    try {
-                        e = tl_get_event(t, type, active_vil);
-                    } catch (er){
-                        if (er == "ERR_EVENT_OVERWRITE") continue;
-                        throw er;
-                    }
-
-                    e[0] = TYPE_MARKET;
-
-                    // Add resource pictures and amounts (if sending)
-                    if (!ret)
-                        for (j=0; j<4; j++)
-                            e[13+j]=res[j];
-                }
-            }
-
-            // Party events! Still a building...
-            // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
-            // This should be exclusive for Town Halls.
-            x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
-                                  document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-            if (x.snapshotLength == 1){
-                x = x.snapshotItem(0).parentNode;
-                d = new tl_date();
-
-                Debug.info("Found a party event!");
-
-                d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
-                t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-
-                msg = x.childNodes[1].textContent;
-                Debug.debug('Type = '+msg);
-
-                try {
-                    e = tl_get_event(t, msg, active_vil);
-                    e[0] = TYPE_PARTY;
-                } catch (er){
-                    if (er != 'ERR_EVENT_OVERWRITE') throw er;
-                    Debug.info('An event already exists at this time!');
-                }
-            }
-            
-            // Research Events
-            // Ok, the idea here is to look for a building with a table of class 'tbg' that has its first
-            // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
-            // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
-            // This is still inside the if(building) statement
-            try {
-                x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
-                                      document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-                if (x.snapshotLength == 1){
-                    x = x.snapshotItem(0).parentNode;
-                    d = new tl_date();
-
-                    d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-                    t = d.adjust_day(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-
-                    // Extract the unit being upgraded
-                    type = x.childNodes[3].textContent;
-                    Debug.debug("Upgrading "+type);
-
-                    // Extract the name of the building where the upgrade is occuring
-                    // y is the table above the research-in-progress table
-                    y = x.parentNode.parentNode.previousSibling.previousSibling.childNodes[1];
-                    building = y.childNodes[0].childNodes[1].textContent;
-                    Debug.debug("Upgrading at the "+building);
-
-                    // Extract the level upgrading to - not for the acadamy!
-                    // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
-                    // in there could create compatibility problems... so keep it remote with textContent.
-                    for (var i=0; i < y.childNodes.length; i++){
-                        level = y.childNodes[i].childNodes[1].textContent.match(type+' ([(][A-Z][a-z]* )(\\d\\d?)([)])');
-                        if (level){
-                            level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
-                            level = level[1]+level[2]+level[3];
-                            Debug.debug("Upgrading to "+level);
-                            break;
-                        }
-                    }
-
-                    // And now throw all of this information into an event
-                    // Don't throw in the level information if we're  researching a new unit at the acadamy... because there isn't any!
-                    e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
-                    e[0] = TYPE_RESEARCH;
-
-                } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
-            } catch (er){
-                if (er != "ERR_EVENT_OVERWRITE") throw er;
-            }
-        }
-
-        /////////////////////////////////
-        // End Timeline Data collector //
-        /////////////////////////////////
 
 
-        Timeline.full_height  = (Timeline.history+Timeline.future)*Timeline.height; // pixels
 
-        // Create timeline canvas + container
-        tl = document.createElement("canvas");
-        tlc = document.createElement("div");
-        if (Timeline.position_fixed)
-            tlc.style.position = "fixed";
-        else
-            tlc.style.position = "absolute";
-        tlc.style.top      = "0px";
-        tlc.style.right    = "0px";
-        tlc.style.width    = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
-        tlc.style.height   = Timeline.full_height + "px";
-        tlc.style.zIndex   = "20";
-        tlc.style.backgroundColor=Timeline.color;
-        tlc.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
-        tlc.style.overflow = "hidden";
-        tl.id = "tl";
-        tl.width  = Timeline.width;
-        tl.height = Timeline.full_height;
-        tl.style.position = "relative";
-        tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
-        tlc.appendChild(tl);
-        document.body.appendChild(tlc);
-    
-        // Code for expanding/collapsing the timeline.
-        if (Timeline.collapse) {
-            tl_col_cur = Timeline.collapse_width;
-            tl_col_tar = Timeline.collapse_width;
-            tl_col_run = false;
-            tl_col_prev = 0;
-            function tlc_fade() {
-                tl_col_next = new Date().getTime();
-                diff = (tl_col_next - tl_col_prev) / 1000.0;
-                tl_col_prev = tl_col_next;
-                tl_col_run = true;
-                if (tl_col_cur==tl_col_tar) {
-                    tl_col_run = false;
-                    return;
-                }
-                if (tl_col_cur<tl_col_tar) {
-                    tl_col_cur+=Timeline.collapse_speed*diff;
-                    if (tl_col_cur>tl_col_tar)
-                        tl_col_cur=tl_col_tar;
-                }
-                if (tl_col_cur>tl_col_tar) {
-                    tl_col_cur-=Timeline.collapse_speed*diff;
-                    if (tl_col_cur<tl_col_tar)
-                        tl_col_cur=tl_col_tar;
-                }
-                tlc.style.width = tl_col_cur + "px";
-                tlc.firstChild.style.left = (tl_col_cur-Timeline.width)+"px";
-                setTimeout(tlc_fade, 1000/Timeline.collapse_rate);
-            }
-            function tlc_expand(e) {
-                tl_col_tar = Timeline.width;
-                tl_col_prev = new Date().getTime();
-                if (!tl_col_run) tlc_fade();
-            }
-            function tlc_collapse(e) {
-                tl_col_tar = Timeline.collapse_width;
-                tl_col_prev = new Date().getTime();
-                if (!tl_col_run) tlc_fade();
-            }
-            tlc.addEventListener('mouseover',tlc_expand,false);
-            tlc.addEventListener('mouseout',tlc_collapse,false);
-        }
-    
-        // Show/hide timeline (click-event listener)
-        function toggle_tl(e) {
-            tlc.style.visibility=tlc.style.visibility!='hidden'?'hidden':'visible';
-            GM_setValue(prefix("TL_VISIBLE"), tlc.style.visibility);
-        }
-    
-        button = document.createElement("div");
-        button.style.position = tlc.style.position;
-        button.style.backgroundColor = "rgba(0,0,128,0.5)";
-        button.style.right = "0px";
-        button.style.top = "-2px";
-        button.style.width  = "60px";
-        button.style.height = "21px";
-        button.style.zIndex = "20";
-        button.style.textAlign = "center";
-        button.style.color = "#fff";
-        button.style.fontWeight = "bold";
-        button.style.MozBorderRadiusBottomleft = "6px";    
-        button.style.cursor = "pointer";
-        button.addEventListener('click',toggle_tl,true);
-        button.innerHTML = "timeline";
-        document.body.appendChild(button);
-
-        function determine_now() {
-            // d = time corresponding to the top of the timeline
-            // n = current time. (with time difference applied)
-        
-            // get server time
-            server_time = tp1.textContent.split(":");
-            
-            // determine 'now'
-            d = new Date();
-            d.setTime(d.getTime()+Timeline.time_difference*3600000); // Adjust local time to server time.
-            if (Timeline.use_server_time) {
-                t = d.getTime();
-                d.setHours(server_time[0]);
-                d.setMinutes(server_time[1]);
-                d.setSeconds(server_time[2]);
-                d.setMilliseconds(0);
-                if (d.getTime()<t-60000)
-                    d.setDate(d.getDate()+1);
-            }
-
-            n = new Date();
-            n.setTime(d.getTime());
-        
-            d.setMilliseconds(0);
-            d.setSeconds(0);
-            if (d.getMinutes()<15) {
-                d.setMinutes(0);
-            } else if (d.getMinutes()<45) {
-                d.setMinutes(30);
-            } else {
-                d.setMinutes(60);    
-            }
-        
-            tl_warp_now = (n.getTime() - d.getTime())/1000/60 + Timeline.history;
-            tl_warp_now/=Timeline.history+Timeline.future;
-        }
-
-        // Delete events older than Timeline.distance_history
-        determine_now();
-        list = { };
-        old = d.getTime()-Timeline.distance_history*60000;
-        for (e in events) {
-            if (e>old) {
-                list[e] = events[e];            
-                // room for updates: (for migration to new versions of this script)
-            }
-        }
-        events=list;
-        GM_setValue(prefix("TIMELINE"),uneval(events));
-
-        // warp helper function
-        function tl_warp_deform(y) {
-            return y - y*(y-tl_warp_now)*(y-1);
-        }
-    
-        // transforms the y coordinate if Timeline.scale_warp is in use.
-        function tl_warp(y) {
-            if (!Timeline.scale_warp) return y*Timeline.height;
-            y+=Timeline.history;
-            y/=Timeline.history+Timeline.future;
-        
-            y = tl_warp_deform(tl_warp_deform(y));
-        
-            y*=Timeline.history+Timeline.future;
-            y-=Timeline.history;
-            return y*Timeline.height;
-        }
-
-        // Wrapped timeline drawing code in a function such that it can be called once every minute.
-        function update_timeline(once) {
-            if (once == undefined) once = false;
-            determine_now();
-            tl_update_data();
-        
-            // Get context
-            var g = tl.getContext("2d");
-            g.clearRect(0,0,Timeline.width,Timeline.full_height);
-            g.save();
-                
-            // Draw bar
-            g.translate(Timeline.width - 9.5, Timeline.history * Timeline.height + .5);
-        
-            g.strokeStyle = "rgb(0,0,0)";
-            g.beginPath();
-            g.moveTo(0,-Timeline.history * Timeline.height);
-            g.lineTo(0, Timeline.future  * Timeline.height);
-            g.stroke();
-            for (var i=-Timeline.history - Timeline.scroll_offset; i<=Timeline.future - Timeline.scroll_offset; i+=1) {
-                g.beginPath();
-                l = -2;
-                ll = 0;
-                if (i%5 == 0) l-=2;
-                if (i%15 == 0) l-=2;
-                if ((i + d.getMinutes())%60 == 0) ll+=8;
-                g.moveTo(l, tl_warp(i + Timeline.scroll_offset));
-                g.lineTo(ll,  tl_warp(i + Timeline.scroll_offset));    
-                g.stroke();
-            }
-
-            // Draw times
-            g.mozTextStyle = "8pt Monospace";
-            function round15(i){ return Math.floor(i/15)*15;}
-            function drawtime(i, t) {
-                h = t.getHours()+"";
-                m = t.getMinutes()+"";
-                if (m.length==1) m = "0" + m;
-                x = h+":"+m;
-
-                g.save();
-                g.translate(-g.mozMeasureText(x) - 10, 4 + tl_warp(i + Timeline.scroll_offset));
-                g.mozDrawText(x);    
-                g.restore();    
-            }
-            for (var i=round15(-Timeline.history - Timeline.scroll_offset);
-                 i <= round15(Timeline.future - Timeline.scroll_offset); i+=15) {
-                t = new Date(d);
-                t.setMinutes(t.getMinutes() + i);
-                drawtime(i, t);
-            }
-
-            // Draw current time
-            g.strokeStyle = "rgb(0,0,255)";
-            g.beginPath();
-            diff = (n.getTime() - d.getTime()) / 1000 / 60;
-            y = tl_warp(diff + Timeline.scroll_offset);
-            g.moveTo(-8, y);
-            g.lineTo( 4, y);    
-            g.lineTo( 6, y-2);    
-            g.lineTo( 8, y);    
-            g.lineTo( 6, y+2);    
-            g.lineTo( 4, y);    
-            g.stroke();
-
-            g.fillStyle = "rgb(0,0,255)";
-            drawtime(diff, n);
-
-            // Highlight the 'elapsed time since last refresh'
-            if (global.script_start==undefined) global.script_start = new Date().getTime();
-            diff2 = (global.script_start - d.getTime()) / 1000 / 60;
-            y2 = tl_warp(diff2 + Timeline.scroll_offset);
-            g.fillStyle = "rgba(0,128,255,0.1)";
-            g.fillRect(9-Timeline.width, y,Timeline.width+1, y2-y);
-
-            unit = new Array(17);
-            for (i=1; i<12; i++) {
-                unit[i] = new Image();
-                if (i==11)
-                    unit[i].src = "img/un/u/hero.gif";
-                else
-                    unit[i].src = "img/un/u/"+(Settings.race*10+i)+".gif";
-            }
-
-            for (i=13; i<17; i++) {
-                unit[i] = new Image();
-                unit[i].src = "img/un/r/"+(i-12)+".gif";
-            }
-
-
-            function left(q) {
-                if (q.constructor == Array)
-                    return q[0]-q[1];
-                else
-                    return q-0;
-            }
-
-            // Draw data
-            for (e in events) {
-                p = events[e];
-                diff = (e - d.getTime()) / 1000 / 60 + Timeline.scroll_offset;
-                if (diff<-Timeline.history || diff>Timeline.future) continue;
-                y = tl_warp(diff);
-                y = Math.round(y);
-                g.strokeStyle = TIMELINE_EVENT_COLORS[p[0]];
-                g.beginPath();
-                g.moveTo(-10, y);
-                g.lineTo(-50, y);    
-                g.stroke();
-            
-                g.fillStyle = "rgb(0,128,0)";
-                var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
-                cap = (cap<=0)?"*":"";
-                g.save();
-                g.translate(20 - Timeline.width - g.mozMeasureText(cap), y+4);
-                g.mozDrawText(cap + p[12]);
-                g.restore();
-
-                if (p[17]) {
-                    g.fillStyle = "rgb(0,0,128)";
-                    g.save();
-                    g.translate(20 - Timeline.width, y-5);
-                    g.mozDrawText(p[17]);
-                    g.restore();
-                }
-
-                if (Timeline.report_info) {
-                    g.fillStyle = "rgb(64,192,64)";
-                    g.save();
-                    g.translate(-40, y+4+12); // Move this below the message.
-                    for (i = 16; i>0; i--) {
-                        if (i==12)
-                            g.fillStyle = "rgb(0,0,255)";
-                        else if (p[i]) {
-                            try {
-                                g.translate(-unit[i].width - 8, 0);
-                                g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
-                            } catch (e) {
-                                // This might fail if the image is not yet or can't be loaded.
-                                // Ignoring this exception prevents the script from terminating to early.
-                                var fs = g.fillStyle;
-                                g.fillStyle = "rgb(128,128,128)";
-                                g.translate(-24,0);
-                                g.mozDrawText("??");
-                                g.fillStyle = fs;
-                            }
-                            if (p[i].constructor == Array) {
-                                g.fillStyle = "rgb(192,0,0)";
-                                g.translate(-g.mozMeasureText(-p[i][1]) - 2, 0);
-                                g.mozDrawText(-p[i][1]);
-                                g.fillStyle = "rgb(0,0,255)";
-                                g.translate(-g.mozMeasureText(p[i][0]), 0);
-                                g.mozDrawText(p[i][0]);
-                            } else {
-                                g.translate(-g.mozMeasureText(p[i]) - 2, 0);
-                                g.mozDrawText(p[i]);
-                            }
-                        }
-                    }
-                }
-                g.restore();
-            }
-            g.restore();
-            if (Timeline.keep_updated && once) {
-                setTimeout(update_timeline,Timeline.update_interval);
-            }
-        }
-    
-        update_timeline();
-        
-        // For displaying time properly.
-        function pad2(x) {
-            if (x<10) return "0"+x;
-            else return x;
-        }
-    
-        // To keep the link with the 'travian task queue'-script working properly, we also need to be able 
-        // to undo the warping. I'm using a simple binairy search for that.
-        function tl_unwarp(y) {
-            y-=Timeline.history*Timeline.height;
-            if (!Timeline.scale_warp) return y/Timeline.height;
-            var b_l = -Timeline.history;
-            var b_h =  Timeline.future;
-            for (i=0; i<32; i++) {
-                b_m = (b_l+b_h)/2;
-                if (y<tl_warp(b_m)) {
-                    b_h=b_m;
-                } else {
-                    b_l=b_m;
-                }
-            }
-            return (b_l+b_h)/2;
-        }
-    
-        // The click event listener for the link  with the 'travian task queue'-script.
-        function setAt(e) {
-            var at = document.getElementById("at");
-            if (at) {
-                // d = 'top of the timeline time'        
-                var n = new Date();
-                n.setTime(d.getTime() + (tl_unwarp(e.pageY - tl_scroll_offset*TIMELINE_SIZES_HEIGHT)) *60*1000);
-                s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
-                at.value=s;
-            }
-        }
-    
-        tlc.addEventListener("click",setAt,false);
-
-        // TODO: This might be useful for displaying only the events from *some* villages, not all at once
-        // Could maybe have the basic canvas with just the timeline and no events, and then layer
-        // canvases on top with events from just one village? That way can turn them on/off at will.
-        // It would also be best to save the point of rotation as a GM_value...
-        // Mouse Scroll Wheel
-        function tl_mouse_wheel(e){
-            if (Timeline.scroll_offset - e.detail * Timeline.height >= Timeline.distance_history - Timeline.history) return;
-
-            e.stopPropagation(); // Kill the event to the standard window...
-            e.preventDefault();
-            Timeline.scroll_offset -= e.detail * Timeline.height; // Timeline.scroll_offset is in minutes...
-            update_timeline(true); // We don't want this call to start its own series of display updates...
-        }
-
-        // Could scroll backwards and forwards on the timeline
-        // We also probably want to stop the mouse scrolling from propegating in this case...
-        tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
-    
-    } /* Timeline.enabled */
-
-    script_duration = 0;
-
-}catch(e){alert(e);}
-
-Feature.forall('init',true);
-
-function main(){
-    storeInfo();
-    if (Timeline.enabled) tl_main();
-    Feature.forall('run',true);
+}catch(e){
+    try{Debug.exception(e);}
+    catch(ee) {
+        alert(e.lineNumber+":"+e);
+    }
 }
 
-window.addEventListener('load', main, false); // Run everything after the DOM loads!
-//main();
+Feature.forall('init',true);
+window.addEventListener('load', function() { Feature.forall('run',true); }, false); // Run everything after the DOM loads!
+
