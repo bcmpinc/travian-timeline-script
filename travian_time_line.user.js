@@ -1169,43 +1169,91 @@ Events.collector.building=function(){
 // Travelling armies (rally point)
 Events.collector.attack=function(){
     var x = document.getElementById("lmid2");
-    if (x!=null && x.innerHTML.indexOf("warsim.php")>0) {
-        var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-        var last_event_time=0;
-        var event_count=0;
-    
-        for ( var i=0 ; i < res.snapshotLength; i++ ) {
-            x = res.snapshotItem(i);
-            // var what = x.childNodes[3].childNodes[0].innerHTML;
-            // if (what == "Aankomst") {
-            // Instead of checking if this is the correct line, just act as if it's correct
-            // If it isn't this will certainly fail.
-            try {
-                var d = new tl_date();
-                d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)"));
-                var t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-        
-                // Using the time as unique id. If there are multiple with the same time increase event_count.
-                // It's the best I could do.
-                if (last_event_time==t) event_count++;
-                else last_event_time=t;
-                var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
-                e[0] = "attack";
-                e[1] = t;
-                e[2] = x.childNodes[0].childNodes[2].textContent;
-                e[3] = [];
-                for (var j = 1; j<12; j++) {
-                    var y = x.childNodes[2].childNodes[j];
-                    if (y!=undefined)
-                        e[3][j] = y.textContent - 0;
-                }
+    if (x==null) return;
+    if (x.innerHTML.indexOf("warsim.php")<=0) return;
+    var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+    var last_event_time=0;
+    var event_count=0;
 
-            } catch (e) {
-                // So it probably wasn't the correct line.
+    for ( var i=0 ; i < res.snapshotLength; i++ ) {
+        x = res.snapshotItem(i);
+        // var what = x.childNodes[3].childNodes[0].innerHTML;
+        // if (what == "Aankomst") {
+        // Instead of checking if this is the correct line, just act as if it's correct
+        // If it isn't this will certainly fail.
+        try {
+            var d = new tl_date();
+            d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)"));
+            var t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+    
+            // Using the time as unique id. If there are multiple with the same time increase event_count.
+            // It's the best I could do.
+            if (last_event_time==t) event_count++;
+            else last_event_time=t;
+            var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+            e[0] = "attack";
+            e[1] = t;
+            e[2] = x.childNodes[0].childNodes[2].textContent;
+            e[3] = [];
+            for (var j = 1; j<12; j++) {
+                var y = x.childNodes[2].childNodes[j];
+                if (y!=undefined)
+                    e[3][j] = y.textContent - 0;
             }
+
+        } catch (e) {
+            // So it probably wasn't the correct line.
         }
     }
 }
+
+// Market Deliveries
+Events.collector.market=function(){
+    // Make sure we're on an individual building page
+    if (location.href.indexOf('build.php')<=0) return;
+    if (document.forms[0] == undefined) return;
+    // And there is an OK button
+    if (document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')<=0)return
+    // Then this must be the market! (in a language-insensitive manner :D)
+
+    var last_event_time=0;
+    var event_count=0;
+
+    var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (var i=0; i < shipment.snapshotLength; i++){
+        var x = shipment.snapshotItem(i);
+        var d = new tl_date();
+
+        // Extract the arrival time
+        d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+
+        // Extract and adjust by the duration of the shipment
+        var t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
+
+        // Extract the value of the shipment
+        var res = x.childNodes[4].childNodes[1].textContent.split(' | ');
+        Debug.debug("Merchant carrying "+res);
+    
+        // Check if merchant is returning
+        var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
+        if (ret) Debug.debug("Merchant is returning");
+
+        // Using the time as unique id. If there are multiple with the same time increase event_count.
+        // It's the best I could do.
+        if (last_event_time==t) event_count++;
+        else last_event_time=t;
+        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+
+        e[0] = "market";
+        e[1] = t;
+        // Extract the action type
+        e[2] = x.childNodes[0].childNodes[3].textContent;
+        
+        // Add resource pictures and amounts (if sending)
+        if (!ret) 
+            e[4] = res;
+    }
+}       
 
 
 /****************************************
@@ -1681,49 +1729,7 @@ function tl_main(){
             if (er != "ERR_EVENT_OVERWRITE") throw er;
         }
     } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
-        // Market Deliveries
-        if (document.forms[0] != undefined &&
-            document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')>0){ // And there is a OK button
-            // Then this must be the market! (in a language-insensitive manner :D)
-
-            var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-            for (var i=0; i < shipment.snapshotLength; i++){
-                x = shipment.snapshotItem(i);
-                d = new tl_date();
-
-                // Extract the arrival time
-                d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-
-                // Extract and adjust by the duration of the shipment
-                t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
-
-                // Extract the value of the shipment
-                res = x.childNodes[4].childNodes[1].textContent.split(' | ');
-                Debug.debug("Merchant carrying "+res);
-            
-                // Check if merchant is returning
-                ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
-                if (ret) Debug.debug("Merchant is returning");
-
-                // Extract the action type
-                type = x.childNodes[0].childNodes[3].textContent;
-                
-                try {
-                    e = tl_get_event(t, type, active_vil);
-                } catch (er){
-                    if (er == "ERR_EVENT_OVERWRITE") continue;
-                    throw er;
-                }
-
-                e[0] = TYPE_MARKET;
-
-                // Add resource pictures and amounts (if sending)
-                if (!ret)
-                    for (j=0; j<4; j++)
-                        e[13+j]=res[j];
-            }
-        }
-
+        
         // Party events! Still a building...
         // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
         // This should be exclusive for Town Halls.
