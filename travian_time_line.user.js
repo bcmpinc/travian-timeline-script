@@ -401,6 +401,7 @@ Settings.config=function(parent_element) {
 };
 Settings.setting("username","someone", Settings.type.string, undefined, "The name you use to log in into your account.");
 Settings.setting("race",0, Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+Settings.setting("village_names",{},Settings.type.object,undefined,"The names of the villages.");
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
@@ -435,6 +436,8 @@ Settings.run=function() {
         // Having the name in the timeline isn't really usefull then.
     }
     Debug.debug("The active village is "+Settings.village_id+": "+Settings.village_name);
+    Settings.village_names[Settings.village_id]=Settings.village_name;
+    Settings.s.village_names.write();
 };
 Settings.show=function() {
     var w = document.createElement("div");
@@ -1554,10 +1557,12 @@ Timeline.draw=function() {
             // Draw the village id. (if village number is known, otherwise there's only one village)
             if (v>0) {
                 // TODO: convert to human readable village name.
+                var v_name = Settings.village_names[v];
+                if (!v_name) v_name="["+v+"]";
                 g.fillStyle = "rgb(0,0,128)";
                 g.save();
                 g.translate(20 - Timeline.width, y-5);
-                g.mozDrawText(v);
+                g.mozDrawText(v_name);
                 g.restore();
             }
 
