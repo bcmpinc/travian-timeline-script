@@ -85,6 +85,12 @@ String.prototype.pad = function(n,s,rev) {
         return this+s.repeat(n);
 }
 
+function pad2(x) {
+    if (x<10)
+        return "0"+x;
+    return x;
+}
+
 // Functions missing in Math
 Math.sinh     = function(x) { return .5*(Math.exp(x)-Math.exp(-x)); }
 Math.cosh     = function(x) { return .5*(Math.exp(x)+Math.exp(-x)); }
@@ -1203,7 +1209,7 @@ Timeline.create_canvas=function() {
     tlc.style.height   = Timeline.height + "px";
     tlc.style.zIndex   = "20";
     tlc.style.backgroundColor=Timeline.color;
-    tlc.style.visibility = GM_getValue(prefix("TL_VISIBLE"), "visible");
+    tlc.style.visibility = Timeline.visible?'visible':'hidden';
     tlc.style.overflow = "hidden";
 
     tl.id = "tl";
@@ -1270,6 +1276,18 @@ Timeline.create_canvas=function() {
     // Could scroll backwards and forwards on the timeline
     // We also probably want to stop the mouse scrolling from propegating in this case...
     tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
+
+    // The click event listener for the link  with the 'travian task queue'-script.
+    function setAt(e) {
+        var at = document.getElementById("at");
+        if (at) {
+            var n = new Date();
+            n.setTime(Timeline.unwarp(e.pageY));
+            var s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
+            at.value=s;
+        }
+    }
+    tlc.addEventListener("click",setAt,false);
     
     Timeline.element=tlc;
     Timeline.context=tl.getContext("2d");
@@ -1366,7 +1384,7 @@ Timeline.draw=function() {
         var m="";
         var d = new Date();
         d.setTime(x);
-        var t=d.getHours()+":"+(""+d.getMinutes()).pad(2,"0",true);
+        var t=d.getHours()+":"+pad2(d.getMinutes());
         
         /**/ if ((x% 3600000)==0 && d.getHours()==0
                                 ) {      b=8;m=
@@ -1410,7 +1428,7 @@ Timeline.draw=function() {
     g.fillStyle = "rgb(0,0,255)";
     var d=new Date();
     d.setTime(Timeline.now);
-    var m=d.getHours()+":"+(""+d.getMinutes()).pad(2,"0",true);
+    var m=d.getHours()+":"+pad2(d.getMinutes());
     g.save();
     g.translate(-g.mozMeasureText(m)-10, 4+y);
     g.mozDrawText(m);    
@@ -1750,29 +1768,6 @@ function tl_main(){
             if (er != "ERR_EVENT_OVERWRITE") throw er;
         }
     }
-
-    /////////////////////////////////
-    // End Timeline Data collector //
-    /////////////////////////////////
-
-    // The click event listener for the link  with the 'travian task queue'-script.
-    function setAt(e) {
-        var at = document.getElementById("at");
-        if (at) {
-            // d = 'top of the timeline time'        
-            var n = new Date();
-            n.setTime(d.getTime() + (tl_unwarp(e.pageY - tl_scroll_offset*TIMELINE_SIZES_HEIGHT)) *60*1000);
-            s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
-            at.value=s;
-        }
-    }
-
-    tlc.addEventListener("click",setAt,false);
-
-    // TODO: This might be useful for displaying only the events from *some* villages, not all at once
-    // Could maybe have the basic canvas with just the timeline and no events, and then layer
-    // canvases on top with events from just one village? That way can turn them on/off at will.
-    // It would also be best to save the point of rotation as a GM_value...
 
 } /* Timeline.enabled */
 
