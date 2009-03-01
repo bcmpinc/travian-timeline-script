@@ -1031,55 +1031,14 @@ Market.run=function(){
 };
 
 
-
 /****************************************
- *  TIMELINE
+ *  EVENTS
  ****************************************/
 
-// WIP
- 
-Feature.create("Timeline");
-Timeline.setting("enabled",          true,  Settings.type.bool, undefined, "Enable the timeline"); 
-Timeline.setting("visible",          true,  Settings.type.bool, undefined, "Is the timeline visible on pageload. This setting can also be changed with the timeline-button.");
-Timeline.setting("collapse",         false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
-Timeline.setting("report_info",      true,  Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
-Timeline.setting("position_fixed",   false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
-Timeline.setting("keep_updated",     true,  Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
-
-Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
-
-Timeline.setting("width",              400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
-Timeline.setting("height",             800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
-Timeline.setting("history",           1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
-Timeline.setting("duration",           300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
-Timeline.setting("marker_seperation",   10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
-
-Timeline.setting("collapse_width",      60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
-Timeline.setting("collapse_speed",    1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
-Timeline.setting("collapse_rate",       50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
-Timeline.setting("update_interval",  30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
-
-//Timeline.setting("use_server_time",  false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
-//Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
-
-Timeline.setting("scale_warp",           0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
-
-Timeline.scroll_offset=0; // the current 'center' of the timeline.
-
-if (Timeline.scale_warp==0) {
-    Timeline.warp   = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
-    Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
-} else {
-    Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
-    Timeline.warp   = function(x) { return (Math.arsinh(
-                                                         ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
-                                                       )/Timeline.scale_warp +1)/2*Timeline.height; };
-    Timeline.unwarp = function(y) { return Math.sinh(
-                                                      (2*y/Timeline.height-1)*Timeline.scale_warp
-                                                    )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
-}
-
-Timeline.setting("type", {/* <tag>  : [<color>        <visible>] */
+Feature.create("Events");
+Events.setting("enabled",          true, Settings.type.bool,    undefined, "Enable the event data collector"); 
+Events.setting("history",          1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
+Events.setting("type", {/* <tag>  : [<color>        <visible>] */
                             building: ['rgb(0,0,0)',       true],
                             attack  : ['rgb(255,0,0)',     true],
                             market  : ['rgb(0,128,0)',     true], 
@@ -1087,11 +1046,12 @@ Timeline.setting("type", {/* <tag>  : [<color>        <visible>] */
                             party   : ['rgb(255,128,128)', true], 
                             recruit : ['rgb(128,128,128)', true]
                          }, Settings.type.object, undefined, "List of event types");
-Timeline.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
+Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
-// report should be part of the respective main type.
+// There is no report type, because there are different types of reports, which can also be divided over the currently 
+// available types.
 
-/*  A timeline-data-packet torn apart:
+/*  A event-data-packet torn apart:
     Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
     
     129390:              #### ~ The village id
@@ -1125,27 +1085,58 @@ Timeline.setting("events", {}, Settings.type.object, undefined, "The list of col
 
 // village = id of the village.
 // id      = The consistent unique event identifier.
-Timeline.get_event=function(village, id) {
-    var e = Timeline.events[village];
+Events.get_event=function(village, id) {
+    var e = Events.events[village];
     if (e == undefined) {
         e = {};
-        Timeline.events[village]=e;
+        Events.events[village]=e;
         Debug.debug("Added village: "+village);
     }
-    e = Timeline.events[village][id];
+    e = Events.events[village][id];
     if (e == undefined) {
         e = [];
-        Timeline.events[village][id]=e;
+        Events.events[village][id]=e;
         Debug.debug("Created element: "+id);
     }
     return e;
 };
 
+Events.update_data=function() {
+    Events.s.events.read(); // Make sure the variable data is up to date.
+    // Collect new stuff
+    for (var c in Events.collector) {
+        try {
+            Events.collector[c]();
+        } catch (e) {
+            Debug.exception("Events.collector."+c,e);
+        }
+    }
+
+    // Remove old stuff
+    // TODO: use tl_date()? Do something with server time?
+    Events.pageload = new Date().getTime();
+    Events.old = Events.pageload-Events.history*60000;
+    for (var v in Events.events) {
+        for (var e in Events.events[v]) {
+            if (Events.events[v][e][1]<Events.old) {
+                delete Events.events[v][e];
+            }
+            // room for updates: (for migration to new versions of this script)
+        }
+    }
+    Events.s.events.write();
+};
+
+Events.run=function() {
+    Events.update_data();
+};
+
+
 // Collectors
 // ----------
 
-Timeline.collector={};
-Timeline.collector.building=function(){
+Events.collector={};
+Events.collector.building=function(){
     // Checking if data is available
     if (location.href.indexOf("dorf")<=0) return;
     var build = document.getElementById("lbau1");
@@ -1158,7 +1149,7 @@ Timeline.collector.building=function(){
     for (var nn in build.childNodes) {
         var x    = build.childNodes[nn];
         var id   = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
-        var e = Timeline.get_event(Settings.village_id, id);
+        var e = Events.get_event(Settings.village_id, id);
         //if (e[0]) continue; 
         e[0]="building";
         
@@ -1172,31 +1163,53 @@ Timeline.collector.building=function(){
     }
 };
 
-// ======================================================================
 
-Timeline.update_data=function() {
-    Timeline.s.events.read(); // Make sure the variable data is up to date.
-    // Collect new stuff
-    for (var c in Timeline.collector) {
-        try {
-            Timeline.collector[c]();
-        } catch (e) {
-            Debug.exception("Timeline.collector."+c,e);
-        }
-    }
 
-    // Remove old stuff
-    Timeline.old = Timeline.pageload-Timeline.history*60000;
-    for (var v in Timeline.events) {
-        for (var e in Timeline.events[v]) {
-            if (Timeline.events[v][e][1]<Timeline.old) {
-                delete Timeline.events[v][e];
-            }
-            // room for updates: (for migration to new versions of this script)
-        }
-    }
-    Timeline.s.events.write();
-};
+/****************************************
+ *  TIMELINE
+ ****************************************/
+
+// WIP
+ 
+Feature.create("Timeline");
+Timeline.setting("enabled",          true,  Settings.type.bool, undefined, "Enable the timeline (make sure that the events feature is also enabled)."); 
+Timeline.setting("visible",          true,  Settings.type.bool, undefined, "Is the timeline visible on pageload. This setting can also be changed with the timeline-button.");
+Timeline.setting("collapse",         false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+Timeline.setting("report_info",      true,  Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+Timeline.setting("position_fixed",   false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
+Timeline.setting("keep_updated",     true,  Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
+
+Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
+
+Timeline.setting("width",              400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
+Timeline.setting("height",             800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
+Timeline.setting("duration",           300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
+Timeline.setting("marker_seperation",   10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
+
+Timeline.setting("collapse_width",      60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
+Timeline.setting("collapse_speed",    1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
+Timeline.setting("collapse_rate",       50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
+Timeline.setting("update_interval",  30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
+
+//Timeline.setting("use_server_time",  false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
+//Timeline.setting("time_difference",      0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
+
+Timeline.setting("scale_warp",           0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
+
+Timeline.scroll_offset=0; // the current 'center' of the timeline.
+
+if (Timeline.scale_warp==0) {
+    Timeline.warp   = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
+    Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+} else {
+    Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
+    Timeline.warp   = function(x) { return (Math.arsinh(
+                                                         ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
+                                                       )/Timeline.scale_warp +1)/2*Timeline.height; };
+    Timeline.unwarp = function(y) { return Math.sinh(
+                                                      (2*y/Timeline.height-1)*Timeline.scale_warp
+                                                    )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+}
 
 Timeline.create_canvas=function() {
     // Create timeline canvas + container
@@ -1338,7 +1351,7 @@ Timeline.load_images=function() {
 
 Timeline.draw=function() {
     // Update the event data
-    Timeline.s.events.read();
+    Events.s.events.read();
     Timeline.now=new Date().getTime();
 
     // Get context
@@ -1435,12 +1448,12 @@ Timeline.draw=function() {
     g.restore();    
 
     // Highlight the 'elapsed time since last refresh'
-    var y2 = Timeline.warp(Timeline.pageload);
+    var y2 = Timeline.warp(Events.pageload);
     g.fillStyle = "rgba(0,128,255,0.1)";
     g.fillRect(9-Timeline.width, y,Timeline.width+1, y2-y);
     
     // Darken forgotten history
-    var y3 = Timeline.warp(Timeline.old);
+    var y3 = Timeline.warp(Events.old);
     g.fillStyle = "rgba(0,0,0,0.5)";
     if (y3>0) 
         g.fillRect(9-Timeline.width, 0,Timeline.width+1, y3);
@@ -1453,10 +1466,10 @@ Timeline.draw=function() {
     }
 
     // Draw data
-    for (v in Timeline.events) {
-        for (e in Timeline.events[v]) {
-            var p = Timeline.events[v][e];
-            var t = Timeline.type[p[0]];
+    for (v in Events.events) {
+        for (e in Events.events[v]) {
+            var p = Events.events[v][e];
+            var t = Events.type[p[0]];
             var y = Timeline.warp(p[1]);
             
             // Check if this type of event is visible
@@ -1533,9 +1546,6 @@ Timeline.draw=function() {
 };
 
 Timeline.run=function() {
-    // TODO: use tl_date()? Do something with server time?
-    Timeline.pageload=new Date().getTime();
-    Timeline.update_data();
     Timeline.create_canvas();
     Timeline.create_button();
     Timeline.draw();
