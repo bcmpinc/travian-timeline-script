@@ -1163,6 +1163,46 @@ Events.collector.building=function(){
     }
 };
 
+// Travelling armies (rally point)
+Events.collector.attack=function(){
+    var x = document.getElementById("lmid2");
+    if (x!=null && x.innerHTML.indexOf("warsim.php")>0) {
+        var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+        var last_event_time=0;
+        var event_count=0;
+    
+        for ( var i=0 ; i < res.snapshotLength; i++ ) {
+            x = res.snapshotItem(i);
+            // var what = x.childNodes[3].childNodes[0].innerHTML;
+            // if (what == "Aankomst") {
+            // Instead of checking if this is the correct line, just act as if it's correct
+            // If it isn't this will certainly fail.
+            try {
+                var d = new tl_date();
+                d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)"));
+                var t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+        
+                // Using the time as unique id. If there are multiple with the same time increase event_count.
+                // It's the best I could do.
+                if (last_event_time==t) event_count++;
+                else last_event_time=t;
+                var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+                e[0] = "attack";
+                e[1] = t;
+                e[2] = x.childNodes[0].childNodes[2].textContent;
+                e[3] = [];
+                for (var j = 1; j<12; j++) {
+                    var y = x.childNodes[2].childNodes[j];
+                    if (y!=undefined)
+                        e[3][j] = y.textContent - 0;
+                }
+
+            } catch (e) {
+                // So it probably wasn't the correct line.
+            }
+        }
+    }
+}
 
 
 /****************************************
@@ -1483,13 +1523,15 @@ Timeline.draw=function() {
             g.lineTo(-50, y);    
             g.stroke();
         
-            // Draw the village id.
-            // TODO: convert to human readable village name.
-            g.fillStyle = "rgb(0,0,128)";
-            g.save();
-            g.translate(20 - Timeline.width, y-5);
-            g.mozDrawText(v);
-            g.restore();
+            // Draw the village id. (if village number is known, otherwise there's only one village)
+            if (v>0) {
+                // TODO: convert to human readable village name.
+                g.fillStyle = "rgb(0,0,128)";
+                g.save();
+                g.translate(20 - Timeline.width, y-5);
+                g.mozDrawText(v);
+                g.restore();
+            }
 
             // Draw the event text
             g.fillStyle = "rgb(0,128,0)";
@@ -1546,6 +1588,9 @@ Timeline.draw=function() {
 };
 
 Timeline.run=function() {
+    tp1 = document.getElementById("tp1");
+    if (!tp1) return;
+
     Timeline.create_canvas();
     Timeline.create_button();
     Timeline.draw();
@@ -1556,51 +1601,10 @@ Timeline.run=function() {
 //////////////////////////////////////////
 
 function tl_main(){
-    tp1 = document.getElementById("tp1");
-    if (!tp1) return;
 
     // Get the active village
     // TODO: replace in code.
     var active_vil = Settings.village_name;
-
-    // Travelling armies (rally point)
-    x = document.getElementById("lmid2");
-    if (x!=null && x.innerHTML.indexOf("warsim.php")>0) {
-
-        var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-    
-        for ( var i=0 ; i < res.snapshotLength; i++ )
-            {
-                x = res.snapshotItem(i);
-                what = x.childNodes[3].childNodes[0].innerHTML;
-                // if (what == "Aankomst") {
-                // Instead of checking if this is the correct line, just act as if it's correct
-                // If it isn't this will certainly fail.
-                try {
-                    d = new tl_date();
-                    d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d)"));
-                    t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-                    where = x.childNodes[0].childNodes[2].textContent;
-            
-                    try {
-                        e = tl_get_event(t, where, active_vil);
-                    }
-                    catch(er){
-                        if (er == "ERR_EVENT_OVERWRITE") continue;
-                        throw er;
-                    }
-                    for (var j = 1; j<12; j++) {
-                        y = x.childNodes[2].childNodes[j];
-                        if (y!=undefined)
-                            e[j] = y.textContent - 0;
-                    }
-
-                    e[0] = TYPE_ATTACK;
-                } catch (e) {
-                    // So it probably wasn't the correct line.
-                }
-            }
-    }
 
     // Reports 
     if (location.href.indexOf("berichte.php?id")>0) {
