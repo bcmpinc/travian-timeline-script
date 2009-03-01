@@ -1374,20 +1374,48 @@ Timeline.create_button=function() {
 
 Timeline.load_images=function() {
     // TODO: A special images feature?
-    Timeline.img_unit = new Array(12);
-    for (i=1; i<11; i++) {
+    Timeline.img_unit = new Array(11);
+    for (i=0; i<10; i++) {
         Timeline.img_unit[i] = new Image();
-        Timeline.img_unit[i].src = "img/un/u/"+(Settings.race*10+i)+".gif";
+        Timeline.img_unit[i].src = "img/un/u/"+(Settings.race*10+i+1)+".gif";
     }
-    Timeline.img_unit[11] = new Image();
-    Timeline.img_unit[11].src = "img/un/u/hero.gif";
+    Timeline.img_unit[10] = new Image();
+    Timeline.img_unit[10].src = "img/un/u/hero.gif";
 
-    Timeline.img_res = new Array(5);
-    for (i=1; i<4; i++) {
+    Timeline.img_res = new Array(4);
+    for (i=0; i<4; i++) {
         Timeline.img_res[i] = new Image();
-        Timeline.img_res[i].src = "img/un/r/"+(i)+".gif";
+        Timeline.img_res[i].src = "img/un/r/"+(i+1)+".gif";
     }
 };
+
+Timeline.draw_info=function(img,nrs) {
+    if (!nrs) return;
+    var g = Timeline.context;
+    try {
+        g.translate(-img.width - 8, 0);
+        g.drawImage(img, -0.5, Math.round(-img.height*0.7) -0.5);
+    } catch (e) {
+        // This might fail if the image is not yet or can't be loaded.
+        // Ignoring this exception prevents the script from terminating to early.
+        var fs = g.fillStyle;
+        g.fillStyle = "rgb(128,128,128)";
+        g.translate(-24,0);
+        g.mozDrawText("??");
+        g.fillStyle = fs;
+    }
+    if (nrs.constructor == Array) {
+        g.fillStyle = "rgb(192,0,0)";
+        g.translate(-g.mozMeasureText(-nrs[1]) - 2, 0);
+        g.mozDrawText(-nrs[1]);
+        g.fillStyle = "rgb(0,0,255)";
+        g.translate(-g.mozMeasureText(nrs[0]), 0);
+        g.mozDrawText(nrs[0]);
+    } else {
+        g.translate(-g.mozMeasureText(nrs) - 2, 0);
+        g.mozDrawText(nrs);
+    }
+}
 
 Timeline.draw=function() {
     // Update the event data
@@ -1546,37 +1574,19 @@ Timeline.draw=function() {
             g.restore();
 
             // Draw the resources info.
-            if (false && Timeline.report_info) {
-                g.fillStyle = "rgb(64,192,64)";
+            if (Timeline.report_info) {
                 g.save();
                 g.translate(-40, y+4+12); // Move this below the message.
-                for (i = 16; i>0; i--) {
-                    if (i==12)
-                        g.fillStyle = "rgb(0,0,255)";
-                    else if (p[i]) {
-                        try {
-                            g.translate(-unit[i].width - 8, 0);
-                            g.drawImage(unit[i], -0.5, Math.round(-unit[i].height*0.7) -0.5);
-                        } catch (e) {
-                            // This might fail if the image is not yet or can't be loaded.
-                            // Ignoring this exception prevents the script from terminating to early.
-                            var fs = g.fillStyle;
-                            g.fillStyle = "rgb(128,128,128)";
-                            g.translate(-24,0);
-                            g.mozDrawText("??");
-                            g.fillStyle = fs;
-                        }
-                        if (p[i].constructor == Array) {
-                            g.fillStyle = "rgb(192,0,0)";
-                            g.translate(-g.mozMeasureText(-p[i][1]) - 2, 0);
-                            g.mozDrawText(-p[i][1]);
-                            g.fillStyle = "rgb(0,0,255)";
-                            g.translate(-g.mozMeasureText(p[i][0]), 0);
-                            g.mozDrawText(p[i][0]);
-                        } else {
-                            g.translate(-g.mozMeasureText(p[i]) - 2, 0);
-                            g.mozDrawText(p[i]);
-                        }
+                if (p[4]) {
+                    g.fillStyle = "rgb(64,192,64)";
+                    for (var i=3; i>=0; i--) {
+                        Timeline.draw_info(Timeline.img_res[i],p[4][i])
+                    }
+                }
+                if (p[3]) {
+                    g.fillStyle = "rgb(0,0,255)";
+                    for (i = 16; i>0; i--) {
+                        Timeline.draw_info(Timeline.img_unit[i],p[3][i])
                     }
                 }
                 g.restore();
@@ -1593,6 +1603,7 @@ Timeline.run=function() {
 
     Timeline.create_canvas();
     Timeline.create_button();
+    Timeline.load_images();
     Timeline.draw();
 };
 
