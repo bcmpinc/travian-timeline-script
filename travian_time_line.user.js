@@ -1638,7 +1638,7 @@ Timeline.draw=function() {
                 }
                 if (p[3]) {
                     g.fillStyle = "rgb(0,0,255)";
-                    for (i = 15; i>=0; i--) {
+                    for (i = 11; i>=0; i--) {
                         Timeline.draw_info(Timeline.img_unit[i],p[3][i])
                     }
                 }
