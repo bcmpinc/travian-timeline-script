@@ -1195,8 +1195,8 @@ Events.collector.attack=function(){
             e[1] = t;
             e[2] = x.childNodes[0].childNodes[2].textContent;
             e[3] = [];
-            for (var j = 1; j<12; j++) {
-                var y = x.childNodes[2].childNodes[j];
+            for (var j = 0; j<11; j++) {
+                var y = x.childNodes[2].childNodes[j+1];
                 if (y!=undefined)
                     e[3][j] = y.textContent - 0;
             }
@@ -1638,7 +1638,7 @@ Timeline.draw=function() {
                 }
                 if (p[3]) {
                     g.fillStyle = "rgb(0,0,255)";
-                    for (i = 11; i>=0; i--) {
+                    for (i = 10; i>=0; i--) {
                         Timeline.draw_info(Timeline.img_unit[i],p[3][i])
                     }
                 }
