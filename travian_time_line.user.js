@@ -69,82 +69,82 @@ String.prototype.repeat = function(n) {
         s += this;
     }
     return s;
-}
+};
 
 // Add spaces (or s) to make the string have a length of at least n
 // s must have length 1.
-    String.prototype.pad = function(n,s,rev) {
-        if (s==undefined) s=" ";
-        n = n-this.length;
-        if (n<=0) return this;
-        if (rev)
-            return s.repeat(n)+this;
-        else
-            return this+s.repeat(n);
-    }
+String.prototype.pad = function(n,s,rev) {
+    if (s==undefined) s=" ";
+    n = n-this.length;
+    if (n<=0) return this;
+    if (rev)
+        return s.repeat(n)+this;
+    else
+        return this+s.repeat(n);
+};
 
-        function pad2(x) {
-            if (x<10)
-                return "0"+x;
-            return x;
-        }
+function pad2(x) {
+    if (x<10)
+        return "0"+x;
+    return x;
+}
 
 // Functions missing in Math
-Math.sinh     = function(x) { return .5*(Math.exp(x)-Math.exp(-x)); }
-    Math.cosh     = function(x) { return .5*(Math.exp(x)+Math.exp(-x)); }
-        Math.arsinh   = function(x) { return Math.log(x+Math.sqrt(x*x+1)); }
-            Math.arcosh   = function(x) { return Math.log(x+Math.sqrt(x*x-1)); }
+Math.sinh     = function(x) { return .5*(Math.exp(x)-Math.exp(-x)); };
+Math.cosh     = function(x) { return .5*(Math.exp(x)+Math.exp(-x)); };
+Math.arsinh   = function(x) { return Math.log(x+Math.sqrt(x*x+1)); };
+Math.arcosh   = function(x) { return Math.log(x+Math.sqrt(x*x-1)); };
  
-                function tl_date(){
-                    this.date = new Date();
-                    this.date.setTime(this.date.getTime());
-                    this.date.setMilliseconds(0);
-                    this.start_time = this.date.getTime();
+function tl_date(){
+    this.date = new Date();
+    this.date.setTime(this.date.getTime());
+    this.date.setMilliseconds(0);
+    this.start_time = this.date.getTime();
+
+    this.set_time = function(time){
+        // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
+        Debug.debug('Setting the time: '+time);
  
-                    this.set_time = function(time){
-                        // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
-                        Debug.debug('Setting the time: '+time);
- 
-                        // Can't understand why people use am/pm, it's so confusing..??
-                        if (time[time.length - 1] == 'am' || time[time.length - 1] == 'pm')
-                            if (time[1]==12) time[1]=0;
-                        if (time[time.length - 1] == 'pm') time[1] -= -12;
+        // Can't understand why people use am/pm, it's so confusing..??
+        if (time[time.length - 1] == 'am' || time[time.length - 1] == 'pm')
+            if (time[1]==12) time[1]=0;
+        if (time[time.length - 1] == 'pm') time[1] -= -12;
         
-                        this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
+        this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
  
-                        Debug.debug('time is: '+this.date);
+        Debug.debug('time is: '+this.date);
+
+        return this.date.getTime();
+    }
  
-                        return this.date.getTime();
-                    }
+    this.set_day = function(day){
+        // day is [day, month, year (optional)]. Month is 1-12.
+        Debug.debug('Setting the day: '+day);
  
-                    this.set_day = function(day){
-                        // day is [day, month, year (optional)]. Month is 1-12.
-                        Debug.debug('Setting the day: '+day);
+        this.date.setFullYear(day[2] == undefined ? this.date.getFullYear() : '20'+day[2], day[1] - 1, day[0]);
  
-                        this.date.setFullYear(day[2] == undefined ? this.date.getFullYear() : '20'+day[2], day[1] - 1, day[0]);
+        Debug.debug('time is: '+this.date);
  
-                        Debug.debug('time is: '+this.date);
+        return this.date.getTime();
+    }
  
-                        return this.date.getTime();
-                    }
+    this.adjust_day = function(duration){
+        // The idea with this is to compare a duration value with the current day/time, and adjust the day for every 24 hours in duration.
+        // duration is of type [string, hours, ....].
+        Debug.debug('Adjusting the day by: '+duration);
  
-                    this.adjust_day = function(duration){
-                        // The idea with this is to compare a duration value with the current day/time, and adjust the day for every 24 hours in duration.
-                        // duration is of type [string, hours, ....].
-                        Debug.debug('Adjusting the day by: '+duration);
+        this.date.setDate(this.date.getDate() + Math.floor(duration[1]/24));
  
-                        this.date.setDate(this.date.getDate() + Math.floor(duration[1]/24));
+        // Cover the wrap-around cases. If an event has a duration, then it must be in the future. Hence, if the time we've set for it
+        // is in the past, we've done something wrong and it's probably a midnight error.
+        // This check needs to be done carefully, or some events will get pushed 24 hours father into the future than they should be.
+        if (this.date.getTime() < this.start_time-600000) this.date.setDate(this.date.getDate() + 1);
  
-                        // Cover the wrap-around cases. If an event has a duration, then it must be in the future. Hence, if the time we've set for it
-                        // is in the past, we've done something wrong and it's probably a midnight error.
-                        // This check needs to be done carefully, or some events will get pushed 24 hours father into the future than they should be.
-                        if (this.date.getTime() < this.start_time-600000) this.date.setDate(this.date.getDate() + 1);
+        Debug.debug('time is: '+this.date);
  
-                        Debug.debug('time is: '+this.date);
- 
-                        return this.date.getTime();
-                    }
-                }
+        return this.date.getTime();
+    }
+}
  
 function nothing(){}
  
@@ -1908,9 +1908,6 @@ try{
             }
         }
     }
- 
- 
- 
  
 }catch(e){
     try{Debug.exception(e);}
