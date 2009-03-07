@@ -479,14 +479,15 @@ try{
             txt += '</tr></tbody>';
             tabbar.innerHTML = txt;
 
-            add_el('hr');
             var display = add_el('div'); // The actual menu elements go here...
+            display.style.border = "1px solid #000";
+            display.style.padding = "7px";
             var f = Feature.list['Settings']; // It starts on this feature... hardwire for now...
             for (var i in f.s){
                 f.s[i].read();
                 f.s[i].config(display);
             }
-            add_el('hr');
+
             var notice = add_el('div'); // Add the copyright
             notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
                 "GNU General Public License as published by the Free Software\n"+
