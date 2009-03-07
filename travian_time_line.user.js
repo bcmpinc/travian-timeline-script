@@ -154,1761 +154,1761 @@ function nothing(){}
  
 try{
  
-    Feature=new Object();
-    Feature.list=[];
-    Feature.init=nothing;
-    Feature.run =nothing;
-    Feature.setting=function(name, def_val, type, typedata, description) {
-        var s = new Object();
-        if (type==undefined) type=Settings.type.none;
-        s.__proto__ = Settings;
-        s.fullname = Settings.server+'.'+this.name+'.'+name;
-        s.parent = this;
-        s.name = name;
-        this[name] = def_val;
-        s.type = type;
-        s.typedata = typedata;
-        s.description = description;
-        s.def_val = def_val;
-        s.read();
-        this.s[name] = s;
-        return s;
-    };
-    Feature.create=function(name){
-        var x=new Object();
-        x.__proto__=Feature;
-        x.name = name;
-        x.s=new Object();
-        Feature.list[name]=x;
-        global[name]=x;
-        return x;
-    };
-    // Executes the function specified by fn_name
-    // wrapped by a try..catch block and stores
-    // the start and endtime of execution.
-    // If (once), this function can't be called
-    // anymore in the future.
-    Feature.call=function(fn_name, once) {
-        if (once==undefined) once=false;
-        if (!this.start) this.start=new Object();
-        this.start[fn_name] = new Date().getTime();
-        try {
-            this[fn_name]();
-        } catch (e) {
-            Debug.exception("call "+this.name+'.'+fn_name, e);
-        }
-        if (once) this[fn_name]=nothing;
-        if (!this.end) this.end=new Object();
-        this.end[fn_name] = new Date().getTime();
-        // TODO: make this timing info visible somewhere.
-    };
-    // Executes (using Feature.call) the function specified by fn_name for all _enabled_
-    // Features created with Feature.create() in the order they have been created.
-    // A feature is enabled iff it doesn't have an enabled field or its enabled field is not
-    // exactly equal to false.
-    Feature.forall=function(fn_name, once) {
-        for (var n in this.list) {
-            if (this.list[n].enabled!==false)
-                this.list[n].call(fn_name, once);
-        }
-    };
- 
-    /****************************************
-     * SETTINGS
-     ****************************************/
- 
-    Feature.create("Settings");
-    Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
-    Settings.server=function(){
-        // This should give the server id as used by travian analyzer.
-        var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
-        if (!url) return "unknown";
-        var a=url[2];
-        if (url[1]=='speed') a='x';
-        if (url[1]=='speed2') a='y';
-        return url[3]+a;
-    }();
-    // Get the value of this setting.
-    // Note that (for example)
-    // "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
-    Settings.get=function() {
-        return this.parent[this.name];
+Feature=new Object();
+Feature.list=[];
+Feature.init=nothing;
+Feature.run =nothing;
+Feature.setting=function(name, def_val, type, typedata, description) {
+    var s = new Object();
+    if (type==undefined) type=Settings.type.none;
+    s.__proto__ = Settings;
+    s.fullname = Settings.server+'.'+this.name+'.'+name;
+    s.parent = this;
+    s.name = name;
+    this[name] = def_val;
+    s.type = type;
+    s.typedata = typedata;
+    s.description = description;
+    s.def_val = def_val;
+    s.read();
+    this.s[name] = s;
+    return s;
+};
+Feature.create=function(name){
+    var x=new Object();
+    x.__proto__=Feature;
+    x.name = name;
+    x.s=new Object();
+    Feature.list[name]=x;
+    global[name]=x;
+    return x;
+};
+// Executes the function specified by fn_name
+// wrapped by a try..catch block and stores
+// the start and endtime of execution.
+// If (once), this function can't be called
+// anymore in the future.
+Feature.call=function(fn_name, once) {
+    if (once==undefined) once=false;
+    if (!this.start) this.start=new Object();
+    this.start[fn_name] = new Date().getTime();
+    try {
+        this[fn_name]();
+    } catch (e) {
+        Debug.exception("call "+this.name+'.'+fn_name, e);
     }
- 
-    // Set the value of this setting.
-    // Note that (for example)
-    // "Settings.username = u;" and "Settings.s.username.set(u);" have the same effect.
-    Settings.set=function(value) {
-        this.parent[this.name]=value;
+    if (once) this[fn_name]=nothing;
+    if (!this.end) this.end=new Object();
+    this.end[fn_name] = new Date().getTime();
+    // TODO: make this timing info visible somewhere.
+};
+// Executes (using Feature.call) the function specified by fn_name for all _enabled_
+// Features created with Feature.create() in the order they have been created.
+// A feature is enabled iff it doesn't have an enabled field or its enabled field is not
+// exactly equal to false.
+Feature.forall=function(fn_name, once) {
+    for (var n in this.list) {
+        if (this.list[n].enabled!==false)
+            this.list[n].call(fn_name, once);
     }
- 
-    // Retrieves the value from the GM persistent storage database aka about:config
-    // Settings are not automatically updated.
-    // Call this if the value might have changed and you want it's latest value.
-    Settings.read=function() {
-        try {
-            switch (this.type) {
-            case Settings.type.none:
-            break;
- 
-            case Settings.type.string:
-            var x = GM_getValue(this.fullname);
-            if (x!==undefined && x!=="")
-                this.set(x);
-            break;
- 
-            case Settings.type.integer:
-            case Settings.type.enumeration:
-            var x = GM_getValue(this.fullname);
-            if (x!==undefined && x!=="")
-                this.set(x-0);
-            break;
- 
-            case Settings.type.object:
-            var x = GM_getValue(this.fullname);
-            if (x!==undefined && x!=="")
-                this.set(eval(x));
-            break;
- 
-            case Settings.type.bool:
-            var x = GM_getValue(this.fullname);
-            if (x!==undefined && x!=="")
-                this.set(x==true);
-            break;
-            }
-        } catch (e) {
-            if (Debug&&Debug.exception)
-                Debug.exception("Settings.read", e);
-            else
-                GM_log("FATAL:"+e);
+};
+
+/****************************************
+ * SETTINGS
+ ****************************************/
+
+Feature.create("Settings");
+Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
+Settings.server=function(){
+    // This should give the server id as used by travian analyzer.
+    var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
+    if (!url) return "unknown";
+    var a=url[2];
+    if (url[1]=='speed') a='x';
+    if (url[1]=='speed2') a='y';
+    return url[3]+a;
+}();
+// Get the value of this setting.
+// Note that (for example)
+// "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
+Settings.get=function() {
+    return this.parent[this.name];
+}
+
+// Set the value of this setting.
+// Note that (for example)
+// "Settings.username = u;" and "Settings.s.username.set(u);" have the same effect.
+Settings.set=function(value) {
+    this.parent[this.name]=value;
+}
+
+// Retrieves the value from the GM persistent storage database aka about:config
+// Settings are not automatically updated.
+// Call this if the value might have changed and you want it's latest value.
+Settings.read=function() {
+    try {
+        switch (this.type) {
+        case Settings.type.none:
+        break;
+
+        case Settings.type.string:
+        var x = GM_getValue(this.fullname);
+        if (x!==undefined && x!=="")
+            this.set(x);
+        break;
+
+        case Settings.type.integer:
+        case Settings.type.enumeration:
+        var x = GM_getValue(this.fullname);
+        if (x!==undefined && x!=="")
+            this.set(x-0);
+        break;
+
+        case Settings.type.object:
+        var x = GM_getValue(this.fullname);
+        if (x!==undefined && x!=="")
+            this.set(eval(x));
+        break;
+
+        case Settings.type.bool:
+        var x = GM_getValue(this.fullname);
+        if (x!==undefined && x!=="")
+            this.set(x==true);
+        break;
         }
-    };
- 
-    // Stores the value in the GM persistent storage database aka about:config
-    Settings.write=function() {
-        try {
-            switch (this.type) {
-            case Settings.type.none:
-            Debug.warning("This setting ("+this.fullname+") has no type and can't be stored!");
-            break;
- 
-            case Settings.type.string:
-            case Settings.type.integer:
-            case Settings.type.enumeration:
-            case Settings.type.bool:
-            GM_setValue(this.fullname, this.get());
-            break;
- 
-            case Settings.type.object:
-            GM_setValue(this.fullname, uneval(this.get()));
-            break;
-            }
-        } catch (e) {
-            if (Debug&&Debug.exception)
-                Debug.exception("Settings.read", e);
-            else
-                GM_log("FATAL:"+e);
+    } catch (e) {
+        if (Debug&&Debug.exception)
+            Debug.exception("Settings.read", e);
+        else
+            GM_log("FATAL:"+e);
+    }
+};
+
+// Stores the value in the GM persistent storage database aka about:config
+Settings.write=function() {
+    try {
+        switch (this.type) {
+        case Settings.type.none:
+        Debug.warning("This setting ("+this.fullname+") has no type and can't be stored!");
+        break;
+
+        case Settings.type.string:
+        case Settings.type.integer:
+        case Settings.type.enumeration:
+        case Settings.type.bool:
+        GM_setValue(this.fullname, this.get());
+        break;
+
+        case Settings.type.object:
+        GM_setValue(this.fullname, uneval(this.get()));
+        break;
         }
-    };
- 
-    // Appends a DOM element to parent_element that can be used to modify this setting.
-    Settings.config=function(parent_element) {
-        try {
-            var s = document.createElement("span");
-            var setting = this;
-            var settingsname = this.name.replace(/_/g," ").pad(22);
-            var hint="";
- 
-            // Add tooltip with a description (if available)
-            if (this.description) {
-                s.title = this.description;
-                var h = this.description.match("\\(([-a-zA-Z0-9.,_ ]+)\\)$");
-                if (h)
-                    hint = " "+h[1];
+    } catch (e) {
+        if (Debug&&Debug.exception)
+            Debug.exception("Settings.read", e);
+        else
+            GM_log("FATAL:"+e);
+    }
+};
+
+// Appends a DOM element to parent_element that can be used to modify this setting.
+Settings.config=function(parent_element) {
+    try {
+        var s = document.createElement("span");
+        var setting = this;
+        var settingsname = this.name.replace(/_/g," ").pad(22);
+        var hint="";
+
+        // Add tooltip with a description (if available)
+        if (this.description) {
+            s.title = this.description;
+            var h = this.description.match("\\(([-a-zA-Z0-9.,_ ]+)\\)$");
+            if (h)
+                hint = " "+h[1];
+        }
+
+        // Create the input element.
+        switch (this.type) {
+        case Settings.type.none: {
+            s.innerHTML = settingsname+": "+this.get()+hint+"\n";
+            break;
+        }
+
+        case Settings.type.string:
+        case Settings.type.integer: {
+            {
+                var input = '<input value="'+this.get()+'"/>';
+                s.innerHTML = settingsname+": "+input+hint+"\n";
             }
- 
-            // Create the input element.
-            switch (this.type) {
-            case Settings.type.none: {
-                s.innerHTML = settingsname+": "+this.get()+hint+"\n";
-                break;
-            }
- 
-            case Settings.type.string:
-            case Settings.type.integer: {
-                {
-                    var input = '<input value="'+this.get()+'"/>';
-                    s.innerHTML = settingsname+": "+input+hint+"\n";
-                }
-                s.childNodes[1].addEventListener("change",function (e) {
-                        var val=e.target.value;
-                        if (setting.type==Settings.type.integer) {
-                            if (val=="") val = setting.def_val;
-                            else val-=0;
-                        }
-                        setting.set(val);
-                        setting.write();
-                    },false);
-                break;
-            }
- 
-            case Settings.type.enumeration: {
-                {
-                    var select='<select>';
-                    var j = this.get();
-                    for (var i in this.typedata) {
-                        select+='<option value="'+i+'"';
-                        if (i==j) select+='selected="" ';
-                        select+='>'+this.typedata[i]+'</option>';
+            s.childNodes[1].addEventListener("change",function (e) {
+                    var val=e.target.value;
+                    if (setting.type==Settings.type.integer) {
+                        if (val=="") val = setting.def_val;
+                        else val-=0;
                     }
-                    select+='</select>';
-                    s.innerHTML = settingsname+": "+select+hint+"\n";
+                    setting.set(val);
+                    setting.write();
+                },false);
+            break;
+        }
+
+        case Settings.type.enumeration: {
+            {
+                var select='<select>';
+                var j = this.get();
+                for (var i in this.typedata) {
+                    select+='<option value="'+i+'"';
+                    if (i==j) select+='selected="" ';
+                    select+='>'+this.typedata[i]+'</option>';
                 }
-                s.childNodes[1].addEventListener("change",function (e) {
-                        var val=e.target.value-0;
-                        setting.set(val);
-                        setting.write();
-                    },false);
-                break;
+                select+='</select>';
+                s.innerHTML = settingsname+": "+select+hint+"\n";
             }
-            
-            case Settings.type.object: {
-                // TODO: have some more info for this object in some special cases.
-                s.innerHTML = settingsname+": (Object)"+hint+"\n";
-                break;
-            }
-            
-            case Settings.type.bool: {
-                s.style.cursor = "pointer";
-                s.style.color = this.get()?'green':'red';
-                s.innerHTML = settingsname+": <u>"+this.get()+"</u>"+hint+"\n";
-                s.addEventListener("click",function (e) {
-                        var val=!setting.get();
-                        s.style.color = val?'green':'red';
-                        s.childNodes[1].innerHTML = val;
-                        setting.set(val);
-                        setting.write();
-                    },false);
-                break;
-            }
-            }
-            // Insert the element.
-            parent_element.appendChild(s);
-        } catch (e) {
-            GM_log(e);
+            s.childNodes[1].addEventListener("change",function (e) {
+                    var val=e.target.value-0;
+                    setting.set(val);
+                    setting.write();
+                },false);
+            break;
         }
-    };
-    Settings.setting("username","someone", Settings.type.string, undefined, "The name you use to log in into your account.");
-    Settings.setting("race",0, Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
-    Settings.setting("village_names",{},Settings.type.object,undefined,"The names of the villages.");
-    Settings.run=function() {
-        // Create link for opening the settings menu.
-        var div = document.createElement("div");
-        div.style.position = "absolute";
-        div.style.zIndex = "2";
-        var right = Timeline.width;
-        if (Timeline.collapse) right = Timeline.collapse_width;
-        if (!Timeline.enabled) right = 0;
-        right+=5;
-        div.style.right = right+"px";
-        div.style.top = "-5px";
-        div.style.MozBorderRadius = "6px";
-        div.style.padding = "3px";
-        div.style.border = "1px solid #999";
-        div.style.background = "#ccc";
-        div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
-        document.body.appendChild(div);
-        var link = div.firstChild;
-        link.style.cursor="pointer";
-        link.addEventListener("click",Settings.show,false);
- 
-        // Extract the active village
-        // These values below are sufficient to keep things working when only 1 village exists.
-        Settings.village_name = "";
-        Settings.village_id = 0;
-        try {
-            var village_link = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-            Settings.village_name = village_link.textContent;
-            Settings.village_id=village_link.href.match("newdid=(\\d+)")[1]-0;
-        } catch (e) {
-            // If this fails, there probably is only 1 village.
-            // Having the name in the timeline isn't really usefull then.
-        }
-        Debug.debug("The active village is "+Settings.village_id+": "+Settings.village_name);
-        Settings.village_names[Settings.village_id]=Settings.village_name;
-        Settings.s.village_names.write();
-    };
-    Settings.show=function() {
-        var w = document.createElement("div");
-        w.style.position = "fixed";
-        w.style.zIndex = "250";
-        w.style.left = "0px";
-        w.style.top = "0px";
-        w.style.right = "0px";
-        w.style.bottom = "0px";
-        w.style.background = "rgba(192,192,192,0.8)";
-        w.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
-        '<div style="position: absolute; left: 50%; top: 50%;">'+
-        '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 450px;'+
-        ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
-        '</pre></div>';
-        document.body.appendChild(w);
-        Settings.window = w;
-        try {
-            var p = w.childNodes[1].childNodes[0];
-            function add_el(type) {
-                var el=document.createElement(type);
-                p.appendChild(el);
-                return el;
-            }
-
-            // First we need to create the tab bar, to switch between tabs
-            var tabbar = add_el('table');
-            tabbar.width = "100%";
-
-            // Then we need to create the tabs...
-            var txt = '<tbody><tr align="center">';
-            for (var n in Feature.list){
-                var f = Feature.list[n];
-                if (f.s == undefined) continue;
-
-                txt += '<td><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-topright:8px;'+
-                    'padding:3px; border: 1px solid #444; background:'+(n=='Settings'?'#eee':'#ccc')+'; color:black">'+
-                    f.name + '</a></td>';
-            }
-            txt += '</tr></tbody>';
-            tabbar.innerHTML = txt;
-
-            var display = add_el('div'); // The actual menu elements go here...
-            display.style.border = "1px solid #000";
-            display.style.padding = "7px";
-            var f = Feature.list['Settings']; // It starts on this feature... hardwire for now...
-            for (var i in f.s){
-                f.s[i].read();
-                f.s[i].config(display);
-            }
-
-            var notice = add_el('div'); // Add the copyright
-            notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
-                "GNU General Public License as published by the Free Software\n"+
-                "Foundation; either version 3 of the License, or (at your option)\n"+
-                "any later version. This program comes with ABSOLUTELY NO WARRANTY!\n\n";
-            notice.style.color="#999";
-            notice.style.fontStyle="italic";
-
-            // Add click listeners to all of the tab buttons
-            for (var n in p.childNodes[0].childNodes[0].childNodes[0].childNodes){
-                var a = p.childNodes[0].childNodes[0].childNodes[0].childNodes[n];
-                a.addEventListener('click', function(e){
-                        var el = e.target;
-                        var f = Feature.list[el.textContent];
-
-                        // Reset the background colours of *all* tab buttons
-                        for (var i in el.parentNode.parentNode.childNodes){
-                            el.parentNode.parentNode.childNodes[i].childNodes[0].style.background = "#ccc";
-                        }
-
-                        e.target.style.background = "#eee"; // Turn the colour of the clicked element near-white
-                        display.innerHTML = ''; // Clear the display section
-                        for (var i in f.s){ // And refill it
-                            f.s[i].read();
-                            f.s[i].config(display);
-                        }
-                    }, false);
-            }
-        } catch (e) {
-            Debug.exception("Settings.show", e);
-        }
-        w.firstChild.addEventListener("click",Settings.close,false);
-    };
-    Settings.close=function(){
-        remove(Settings.window);
-    };
- 
-    // TODO: remove following BWC (backwards compatability code)
-    function prefix(s) {
-        return "speed.nl."+s;
-    }
- 
- 
- 
-    /****************************************
-     * DEBUG
-     ****************************************/
- 
-    Feature.create("Debug");
-    // These categories are in order from extremely severe to extremely verbose and
-    // are converted to functions in the Debug namespace using the specified name.
-    // Example: Debug.warning("This shouldn't have happend!");
-    // Using the index is also allowed: Debug[1]("This shouldn't have happend!");
-    // has the same effect as the previous example.
-    Debug.categories=["none","fatal","error","warning","info","debug","all"];
-    Debug.methods=["console","firebug"];
-    Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
-    Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
-    Debug.print =GM_log;
-    Debug.lineshift = function(){
-        try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-551; } // Keep the number in this line equal to it's line number. Don't modify anything else.
-    }();
-    Debug.exception=function(fn_name, e) {
-        // The lineshift is to correct the linenumber shift caused by greasemonkey.
-        var msg = fn_name+' ('+(e.lineNumber-Debug.lineshift)+'): '+e;
-        try {
-            Debug.error(msg);
-        } catch (ee) {
-            GM_log(msg);
-        }
-    };
-    Debug.init =function() {
-        switch (Debug.output) {
-        case 0:
-        for (var i in Debug.categories) {
-            Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
-        }
-        break;
-        case 1:
-        var console = unsafeWindow.console;
-        if (!console) {
-            Debug.print("Firebug not found! Using console for this page!");
-            Debug.output=0;
-            Debug.init();
-            return;
-        }
-        var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
-        for (var i in Debug.categories) {
-            Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?fns[i]:nothing;
-        }
-        break;
-        }
-    };
-    Debug.call("init",true); // Runs init once.
-    Debug.info("Running on server: "+Settings.server);
- 
- 
- 
-    /****************************************
-     * LINES (and circles)
-     ****************************************/
- 
-    Feature.create("Lines");
-    Lines.setting("enabled", true, Settings.type.bool, undefined, "Enable the map lines");
-    Lines.setting("update_owned", true, Settings.type.bool, undefined, "Automatically create and remove lines to your villages.");
-    Lines.setting("update_ally", true, Settings.type.bool, undefined, "Automatically create and remove lines to ally members.");
-    Lines.setting("update_allies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of allied alliances.");
-    Lines.setting("update_naps", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of nap-alliances.");
-    Lines.setting("update_enemies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of alliances, with which your ally is at war.");
-    Lines.setting("update_crop", true, Settings.type.bool, undefined, "Automatically create and remove lines to 9- and 15-croppers.");
-    Lines.setting("list_extra_villages", true, Settings.type.bool, undefined, "Append villages in the 'extra' category to the villages list.");
-    Lines.setting("analyze_neighbourhood", true, Settings.type.bool, undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
-    Lines.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
-    Lines.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
-            none: ["",false], // ie. remove from 'locations'.
-                owned: ["rgba(192,128,0,1.0)", true],
-                ally: ["rgba(0,0,255,0.5)", true],
-                allies: ["rgba(0,255,0,0.5)", true],
-                naps: ["rgba(0,255,255,0.5)", false],
-                enemies: ["rgba(255,0,0,0.5)", true],
-                crop9: ["rgba(255,128,0.5)", true],
-                crop15: ["rgba(255,128,1.0)", true],
-                extra: ["rgba(128,128,128,0.5)", true],
-                farms: ["rgba(255,255,255,0.5)", true],
-                ban: ["rgba(0,0,0,0.5)", false],
-                other: ["rgba(255,0,255,0.5)", true]
-                }, Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
-    Lines.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");
-    // A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
-    // name is optional.
- 
-    Lines.new_table_cell=function(innerhtml) {
-        cell = document.createElement("td");
-        cell.innerHTML = innerhtml;
-        cell.className = "nbr";
-        return cell;
-    };
-    // Adds the location to the villages list.
-    Lines.append_villages=function(){
-        for (var l in Lines.locations) {
-            var location = Lines.locations[l];
-            if (location[2]=="extra") {
-                var row = document.createElement("tr");
-                row.appendChild(newcell("<span>%Gâ¢%@ </span> "+location[3]));
-                row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+location[0]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+location[1]+")</td>\n</tr>\n</tbody></table>"));
-                tab.appendChild(row);
-            }
-        }
-    };
-    // Adds a diff to the page below the map that can contain links to
-    // travian analyzer.
-    Lines.create_analyzer_links=function(){
-        var rdiv=document.createElement("div");
-        rdiv.style.position = "absolute";
-        rdiv.style.left = "315px";
-        rdiv.style.top = "500px";
-        rdiv.style.border = "solid 1px #000";
-        rdiv.style.background = "#ffc";
-        rdiv.style.zIndex = 16;
-        rdiv.style.padding = "3px";
-        rdiv.style.MozBorderRadius = "6px";
-        document.body.appendChild(rdiv);
-        Lines.analyzer_links = rdiv;
-    };
-    // Creates the canvas for drawing the lines.
-    Lines.create_canvas=function(x){
-        var pos = [x.offsetLeft, x.offsetTop, x.offsetWidth, x.offsetHeight];
- 
-        var canvas=document.createElement("canvas");
-        canvas.style.position = "absolute";
-        canvas.style.left = pos[0]+"px";
-        canvas.style.top = pos[1]+"px";
-        canvas.style.zIndex = 14;
-        canvas.width = pos[2];
-        canvas.height = pos[3];
         
-        x.parentNode.insertBefore(canvas, x.nextSibling);
- 
-        var g = canvas.getContext("2d");
-        Lines.context = g;
-        Lines.pos = pos;
-    };
-    // Draws a line to the specified location
-    Lines.touch=function(location) {
-        var x = location[0]-Lines.posx;
-        var y = location[1]-Lines.posy;
-        if (x<-400) x+=800;
-        if (x> 400) x-=800;
-        if (y<-400) y+=800;
-        if (y> 400) y-=800;
-        var px = 1.83*(x+y)*20;
-        var py = 1.00*(x-y)*20;
-        px += py/50;
- 
-        // Get the location's category
-        var category=Lines.categories[location[2]];
-        // Get the drawing context
-        var g = Lines.context;
-        g.strokeStyle=category[0];
-        if (category[1]) { // Draw lines only if enabled for category.
-            g.beginPath();
-            var px2 = px * Lines.scale;
-            var py2 = py * Lines.scale;
-            g.moveTo(px2,py2);
-            g.lineTo(px,py);
-            g.stroke();
-            if (x!=0 || y!=0)
-                g.fillRect(px2-2,py2-2,4,4);
+        case Settings.type.object: {
+            // TODO: have some more info for this object in some special cases.
+            s.innerHTML = settingsname+": (Object)"+hint+"\n";
+            break;
         }
-    
-        // Always draw circle (when on map)
-        if (x>=-3 && x<=3 && y>=-3 && y<=3) {
-            if (x==0 && y==0)
-                g.lineWidth = 2.5;
-            g.beginPath();
-            g.moveTo(px+20,py);
-            g.arc(px,py,20,0,Math.PI*2,true);
-            g.stroke();
-            if (x==0 && y==0)
-                g.lineWidth = 1;
+        
+        case Settings.type.bool: {
+            s.style.cursor = "pointer";
+            s.style.color = this.get()?'green':'red';
+            s.innerHTML = settingsname+": <u>"+this.get()+"</u>"+hint+"\n";
+            s.addEventListener("click",function (e) {
+                    var val=!setting.get();
+                    s.style.color = val?'green':'red';
+                    s.childNodes[1].innerHTML = val;
+                    setting.set(val);
+                    setting.write();
+                },false);
+            break;
         }
-    };
-    Lines.delayed_update=function() {
-        setTimeout(Lines.update,10);
+        }
+        // Insert the element.
+        parent_element.appendChild(s);
+    } catch (e) {
+        GM_log(e);
     }
-    Lines.update=function() {
-        // But don't do an update when it's not necessary.
-        try {
-            z = unsafeWindow.m_c.z;
-            if (z == null) return;
-            if (Lines.posx == z.x && Lines.posy == z.y) return;
-            Lines.posx = z.x - 0;
-            Lines.posy = z.y - 0;
-        } catch (e) {
-            Debug.exception("Lines.update", e);
+};
+Settings.setting("username","someone", Settings.type.string, undefined, "The name you use to log in into your account.");
+Settings.setting("race",0, Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+Settings.setting("village_names",{},Settings.type.object,undefined,"The names of the villages.");
+Settings.run=function() {
+    // Create link for opening the settings menu.
+    var div = document.createElement("div");
+    div.style.position = "absolute";
+    div.style.zIndex = "2";
+    var right = Timeline.width;
+    if (Timeline.collapse) right = Timeline.collapse_width;
+    if (!Timeline.enabled) right = 0;
+    right+=5;
+    div.style.right = right+"px";
+    div.style.top = "-5px";
+    div.style.MozBorderRadius = "6px";
+    div.style.padding = "3px";
+    div.style.border = "1px solid #999";
+    div.style.background = "#ccc";
+    div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
+    document.body.appendChild(div);
+    var link = div.firstChild;
+    link.style.cursor="pointer";
+    link.addEventListener("click",Settings.show,false);
+
+    // Extract the active village
+    // These values below are sufficient to keep things working when only 1 village exists.
+    Settings.village_name = "";
+    Settings.village_id = 0;
+    try {
+        var village_link = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        Settings.village_name = village_link.textContent;
+        Settings.village_id=village_link.href.match("newdid=(\\d+)")[1]-0;
+    } catch (e) {
+        // If this fails, there probably is only 1 village.
+        // Having the name in the timeline isn't really usefull then.
+    }
+    Debug.debug("The active village is "+Settings.village_id+": "+Settings.village_name);
+    Settings.village_names[Settings.village_id]=Settings.village_name;
+    Settings.s.village_names.write();
+};
+Settings.show=function() {
+    var w = document.createElement("div");
+    w.style.position = "fixed";
+    w.style.zIndex = "250";
+    w.style.left = "0px";
+    w.style.top = "0px";
+    w.style.right = "0px";
+    w.style.bottom = "0px";
+    w.style.background = "rgba(192,192,192,0.8)";
+    w.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
+    '<div style="position: absolute; left: 50%; top: 50%;">'+
+    '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 450px;'+
+    ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
+    '</pre></div>';
+    document.body.appendChild(w);
+    Settings.window = w;
+    try {
+        var p = w.childNodes[1].childNodes[0];
+        function add_el(type) {
+            var el=document.createElement(type);
+            p.appendChild(el);
+            return el;
         }
-        // Make sure the locations variable is up to date
-        Lines.s.locations.read();
- 
-        // Get the drawing context
-        var g = Lines.context;
- 
-        // Clear map
-        g.clearRect(0,0,Lines.pos[2],Lines.pos[3]);
-        g.save()
- 
-        // Initialize render context
-        g.translate(Lines.pos[2]/2-1,Lines.pos[3]/2 + 5.5);
-        g.fillStyle = "rgba(128,128,128,0.8)";
- 
-        // Draw lines
-        for (var l in Lines.locations) {
-            Lines.touch(Lines.locations[l]);
+
+        // First we need to create the tab bar, to switch between tabs
+        var tabbar = add_el('table');
+        tabbar.width = "100%";
+
+        // Then we need to create the tabs...
+        var txt = '<tbody><tr align="center">';
+        for (var n in Feature.list){
+            var f = Feature.list[n];
+            if (f.s == undefined) continue;
+
+            txt += '<td><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-topright:8px;'+
+                'padding:3px; border: 1px solid #444; background:'+(n=='Settings'?'#eee':'#ccc')+'; color:black">'+
+                f.name + '</a></td>';
         }
- 
-        // Reset render context
-        g.restore();
- 
-        // Update the travian analyzer links:
-        if (Lines.analyzer_links) {
-            var linkstart = "<a href=\"http://travian.ws/analyser.pl?s="+Settings.server+"&q="+Lines.posx+","+Lines.posy;
-            Lines.analyzer_links.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
-                linkstart+",5\" > 5</a>, "+
-                linkstart+",10\">10</a>, "+
-                linkstart+",15\">15</a>, "+
-                linkstart+",20\">20</a>, "+
-                linkstart+",25\">25</a>";
+        txt += '</tr></tbody>';
+        tabbar.innerHTML = txt;
+
+        var display = add_el('div'); // The actual menu elements go here...
+        display.style.border = "1px solid #000";
+        display.style.padding = "7px";
+        var f = Feature.list['Settings']; // It starts on this feature... hardwire for now...
+        for (var i in f.s){
+            f.s[i].read();
+            f.s[i].config(display);
+        }
+
+        var notice = add_el('div'); // Add the copyright
+        notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
+            "GNU General Public License as published by the Free Software\n"+
+            "Foundation; either version 3 of the License, or (at your option)\n"+
+            "any later version. This program comes with ABSOLUTELY NO WARRANTY!\n\n";
+        notice.style.color="#999";
+        notice.style.fontStyle="italic";
+
+        // Add click listeners to all of the tab buttons
+        for (var n in p.childNodes[0].childNodes[0].childNodes[0].childNodes){
+            var a = p.childNodes[0].childNodes[0].childNodes[0].childNodes[n];
+            a.addEventListener('click', function(e){
+                    var el = e.target;
+                    var f = Feature.list[el.textContent];
+
+                    // Reset the background colours of *all* tab buttons
+                    for (var i in el.parentNode.parentNode.childNodes){
+                        el.parentNode.parentNode.childNodes[i].childNodes[0].style.background = "#ccc";
+                    }
+
+                    e.target.style.background = "#eee"; // Turn the colour of the clicked element near-white
+                    display.innerHTML = ''; // Clear the display section
+                    for (var i in f.s){ // And refill it
+                        f.s[i].read();
+                        f.s[i].config(display);
+                    }
+                }, false);
+        }
+    } catch (e) {
+        Debug.exception("Settings.show", e);
+    }
+    w.firstChild.addEventListener("click",Settings.close,false);
+};
+Settings.close=function(){
+    remove(Settings.window);
+};
+
+// TODO: remove following BWC (backwards compatability code)
+function prefix(s) {
+    return "speed.nl."+s;
+}
+
+
+
+/****************************************
+ * DEBUG
+ ****************************************/
+
+Feature.create("Debug");
+// These categories are in order from extremely severe to extremely verbose and
+// are converted to functions in the Debug namespace using the specified name.
+// Example: Debug.warning("This shouldn't have happend!");
+// Using the index is also allowed: Debug[1]("This shouldn't have happend!");
+// has the same effect as the previous example.
+Debug.categories=["none","fatal","error","warning","info","debug","all"];
+Debug.methods=["console","firebug"];
+Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
+Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
+Debug.print =GM_log;
+Debug.lineshift = function(){
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-551; } // Keep the number in this line equal to it's line number. Don't modify anything else.
+}();
+Debug.exception=function(fn_name, e) {
+    // The lineshift is to correct the linenumber shift caused by greasemonkey.
+    var msg = fn_name+' ('+(e.lineNumber-Debug.lineshift)+'): '+e;
+    try {
+        Debug.error(msg);
+    } catch (ee) {
+        GM_log(msg);
+    }
+};
+Debug.init =function() {
+    switch (Debug.output) {
+    case 0:
+    for (var i in Debug.categories) {
+        Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
+    }
+    break;
+    case 1:
+    var console = unsafeWindow.console;
+    if (!console) {
+        Debug.print("Firebug not found! Using console for this page!");
+        Debug.output=0;
+        Debug.init();
+        return;
+    }
+    var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
+    for (var i in Debug.categories) {
+        Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?fns[i]:nothing;
+    }
+    break;
+    }
+};
+Debug.call("init",true); // Runs init once.
+Debug.info("Running on server: "+Settings.server);
+
+
+
+/****************************************
+ * LINES (and circles)
+ ****************************************/
+
+Feature.create("Lines");
+Lines.setting("enabled", true, Settings.type.bool, undefined, "Enable the map lines");
+Lines.setting("update_owned", true, Settings.type.bool, undefined, "Automatically create and remove lines to your villages.");
+Lines.setting("update_ally", true, Settings.type.bool, undefined, "Automatically create and remove lines to ally members.");
+Lines.setting("update_allies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of allied alliances.");
+Lines.setting("update_naps", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of nap-alliances.");
+Lines.setting("update_enemies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of alliances, with which your ally is at war.");
+Lines.setting("update_crop", true, Settings.type.bool, undefined, "Automatically create and remove lines to 9- and 15-croppers.");
+Lines.setting("list_extra_villages", true, Settings.type.bool, undefined, "Append villages in the 'extra' category to the villages list.");
+Lines.setting("analyze_neighbourhood", true, Settings.type.bool, undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
+Lines.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
+Lines.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
+        none: ["",false], // ie. remove from 'locations'.
+            owned: ["rgba(192,128,0,1.0)", true],
+            ally: ["rgba(0,0,255,0.5)", true],
+            allies: ["rgba(0,255,0,0.5)", true],
+            naps: ["rgba(0,255,255,0.5)", false],
+            enemies: ["rgba(255,0,0,0.5)", true],
+            crop9: ["rgba(255,128,0.5)", true],
+            crop15: ["rgba(255,128,1.0)", true],
+            extra: ["rgba(128,128,128,0.5)", true],
+            farms: ["rgba(255,255,255,0.5)", true],
+            ban: ["rgba(0,0,0,0.5)", false],
+            other: ["rgba(255,0,255,0.5)", true]
+            }, Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
+Lines.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");
+// A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
+// name is optional.
+
+Lines.new_table_cell=function(innerhtml) {
+    cell = document.createElement("td");
+    cell.innerHTML = innerhtml;
+    cell.className = "nbr";
+    return cell;
+};
+// Adds the location to the villages list.
+Lines.append_villages=function(){
+    for (var l in Lines.locations) {
+        var location = Lines.locations[l];
+        if (location[2]=="extra") {
+            var row = document.createElement("tr");
+            row.appendChild(newcell("<span>%Gâ¢%@ </span> "+location[3]));
+            row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+location[0]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+location[1]+")</td>\n</tr>\n</tbody></table>"));
+            tab.appendChild(row);
         }
     }
-    // The event listener (used by tag_tool)
-    Lines.tag_change=function(e) {
-        Lines.s.locations.read();
-        var cat = e.target.value;
-        var l = Lines.posx+","+Lines.posy;
-        if (cat=="none") {
-            delete Lines.locations[l];
+};
+// Adds a diff to the page below the map that can contain links to
+// travian analyzer.
+Lines.create_analyzer_links=function(){
+    var rdiv=document.createElement("div");
+    rdiv.style.position = "absolute";
+    rdiv.style.left = "315px";
+    rdiv.style.top = "500px";
+    rdiv.style.border = "solid 1px #000";
+    rdiv.style.background = "#ffc";
+    rdiv.style.zIndex = 16;
+    rdiv.style.padding = "3px";
+    rdiv.style.MozBorderRadius = "6px";
+    document.body.appendChild(rdiv);
+    Lines.analyzer_links = rdiv;
+};
+// Creates the canvas for drawing the lines.
+Lines.create_canvas=function(x){
+    var pos = [x.offsetLeft, x.offsetTop, x.offsetWidth, x.offsetHeight];
+
+    var canvas=document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.left = pos[0]+"px";
+    canvas.style.top = pos[1]+"px";
+    canvas.style.zIndex = 14;
+    canvas.width = pos[2];
+    canvas.height = pos[3];
+    
+    x.parentNode.insertBefore(canvas, x.nextSibling);
+
+    var g = canvas.getContext("2d");
+    Lines.context = g;
+    Lines.pos = pos;
+};
+// Draws a line to the specified location
+Lines.touch=function(location) {
+    var x = location[0]-Lines.posx;
+    var y = location[1]-Lines.posy;
+    if (x<-400) x+=800;
+    if (x> 400) x-=800;
+    if (y<-400) y+=800;
+    if (y> 400) y-=800;
+    var px = 1.83*(x+y)*20;
+    var py = 1.00*(x-y)*20;
+    px += py/50;
+
+    // Get the location's category
+    var category=Lines.categories[location[2]];
+    // Get the drawing context
+    var g = Lines.context;
+    g.strokeStyle=category[0];
+    if (category[1]) { // Draw lines only if enabled for category.
+        g.beginPath();
+        var px2 = px * Lines.scale;
+        var py2 = py * Lines.scale;
+        g.moveTo(px2,py2);
+        g.lineTo(px,py);
+        g.stroke();
+        if (x!=0 || y!=0)
+            g.fillRect(px2-2,py2-2,4,4);
+    }
+
+    // Always draw circle (when on map)
+    if (x>=-3 && x<=3 && y>=-3 && y<=3) {
+        if (x==0 && y==0)
+            g.lineWidth = 2.5;
+        g.beginPath();
+        g.moveTo(px+20,py);
+        g.arc(px,py,20,0,Math.PI*2,true);
+        g.stroke();
+        if (x==0 && y==0)
+            g.lineWidth = 1;
+    }
+};
+Lines.delayed_update=function() {
+    setTimeout(Lines.update,10);
+}
+Lines.update=function() {
+    // But don't do an update when it's not necessary.
+    try {
+        z = unsafeWindow.m_c.z;
+        if (z == null) return;
+        if (Lines.posx == z.x && Lines.posy == z.y) return;
+        Lines.posx = z.x - 0;
+        Lines.posy = z.y - 0;
+    } catch (e) {
+        Debug.exception("Lines.update", e);
+    }
+    // Make sure the locations variable is up to date
+    Lines.s.locations.read();
+
+    // Get the drawing context
+    var g = Lines.context;
+
+    // Clear map
+    g.clearRect(0,0,Lines.pos[2],Lines.pos[3]);
+    g.save()
+
+    // Initialize render context
+    g.translate(Lines.pos[2]/2-1,Lines.pos[3]/2 + 5.5);
+    g.fillStyle = "rgba(128,128,128,0.8)";
+
+    // Draw lines
+    for (var l in Lines.locations) {
+        Lines.touch(Lines.locations[l]);
+    }
+
+    // Reset render context
+    g.restore();
+
+    // Update the travian analyzer links:
+    if (Lines.analyzer_links) {
+        var linkstart = "<a href=\"http://travian.ws/analyser.pl?s="+Settings.server+"&q="+Lines.posx+","+Lines.posy;
+        Lines.analyzer_links.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
+            linkstart+",5\" > 5</a>, "+
+            linkstart+",10\">10</a>, "+
+            linkstart+",15\">15</a>, "+
+            linkstart+",20\">20</a>, "+
+            linkstart+",25\">25</a>";
+    }
+}
+// The event listener (used by tag_tool)
+Lines.tag_change=function(e) {
+    Lines.s.locations.read();
+    var cat = e.target.value;
+    var l = Lines.posx+","+Lines.posy;
+    if (cat=="none") {
+        delete Lines.locations[l];
+    } else {
+        Lines.locations[l]=[Lines.posx,Lines.posy,cat];
+    }
+    Lines.s.locations.write();
+};
+// add a "this location is special!" button to the map's village view. (if applicable)
+Lines.tag_tool=function() {
+    if (location.href.indexOf("karte.php?d=")<=0) return;
+    var x = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+    if (!x) return;
+    var loc = x.textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
+    var cat=Lines.locations[loc[1]+","+loc[2]];
+    cat=(cat==undefined)?cat="none":cat[2];
+
+    var select=document.createElement("select");
+    for (var c in Lines.categories) {
+        var opt=document.createElement("option");
+        opt.value=c;
+        if (c==cat) opt.selected=true;
+        opt.innerHTML=c;
+        select.appendChild(opt);
+    }
+    Lines.posx=loc[1]-0;
+    Lines.posy=loc[2]-0;
+    select.addEventListener('change',Lines.tag_change,false);
+    x.appendChild(select);
+    x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
+};
+Lines.run=function() {
+    if (Lines.list_extra_villages) {
+        Lines.village_list = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+        if (Lines.village_list) {
+            Lines.append_villages();
         } else {
-            Lines.locations[l]=[Lines.posx,Lines.posy,cat];
+            Debug.warning("Could not find village list.");
         }
-        Lines.s.locations.write();
-    };
-    // add a "this location is special!" button to the map's village view. (if applicable)
-    Lines.tag_tool=function() {
-        if (location.href.indexOf("karte.php?d=")<=0) return;
-        var x = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
-        if (!x) return;
-        var loc = x.textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
-        var cat=Lines.locations[loc[1]+","+loc[2]];
-        cat=(cat==undefined)?cat="none":cat[2];
- 
-        var select=document.createElement("select");
-        for (var c in Lines.categories) {
-            var opt=document.createElement("option");
-            opt.value=c;
-            if (c==cat) opt.selected=true;
-            opt.innerHTML=c;
-            select.appendChild(opt);
-        }
-        Lines.posx=loc[1]-0;
-        Lines.posy=loc[2]-0;
-        select.addEventListener('change',Lines.tag_change,false);
-        x.appendChild(select);
-        x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
-    };
-    Lines.run=function() {
-        if (Lines.list_extra_villages) {
-            Lines.village_list = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
-            if (Lines.village_list) {
-                Lines.append_villages();
-            } else {
-                Debug.warning("Could not find village list.");
-            }
-        }
+    }
+
+    var x = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+    if (x != null) { // If this page has a map ...
+        if (Lines.analyze_neighbourhood)
+            Lines.create_analyzer_links();
+        Lines.create_canvas(x);
+        Lines.update();
+        document.addEventListener('click', Lines.delayed_update,true);
+        document.addEventListener('keydown',Lines.delayed_update,true);
+        document.addEventListener('keyup', Lines.delayed_update,true);
+    }
+
+    Lines.tag_tool();
+};
+
+
+/****************************************
+ * SIDEBAR
+ ****************************************/
+
+Feature.create("Sidebar");
+Sidebar.setting("enabled", true, Settings.type.bool, undefined, "Cutomize the sidebar");
+Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
+Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
+Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
+Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
+Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
+
+
+// Numbers for original sidebar links
+//-1: -- break --
+// 0: Home
+// 1: Instructions
+// 2: Profile
+// 3: Log out
+// 4: Forum
+// 5: Chat
+// 6: Travian Plus
+// 7: Support
+
+// Original sidebar links
+// Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
+// TODO: make configureable?
+Sidebar.setting("links",
+                [
+                 1,
+                 ["FAQ", "http://help.travian.nl/"],
+                 ["Travian Forum", "http://forum.travian.nl"],
+                 ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
+                 -1,
+                 2,
+                 ["Alliance Forum", "/allianz.php?s=2"],
+                 //["Alliantie Forum", "http://www.external-travian-forum.com/"],
+                 ["Alliance Overview", "allianz.php"],
+                 -1,
+                 ["Barracks", "/build.php?gid=19"],
+                 ["Stable", "/build.php?gid=20"],
+                 ["Workshop", "/build.php?gid=21"],
+                 ["Marketplace", "/build.php?gid=17"],
+                 ["Rally Point", "/build.php?gid=16"],
+                 -1,
+                 6,
+                 7
+                 ]
+                , Settings.type.object, undefined, "The links of the sidebar.");
     
-        var x = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
-        if (x != null) { // If this page has a map ...
-            if (Lines.analyze_neighbourhood)
-                Lines.create_analyzer_links();
-            Lines.create_canvas(x);
-            Lines.update();
-            document.addEventListener('click', Lines.delayed_update,true);
-            document.addEventListener('keydown',Lines.delayed_update,true);
-            document.addEventListener('keyup', Lines.delayed_update,true);
-        }
- 
-        Lines.tag_tool();
-    };
- 
- 
-    /****************************************
-     * SIDEBAR
-     ****************************************/
- 
-    Feature.create("Sidebar");
-    Sidebar.setting("enabled", true, Settings.type.bool, undefined, "Cutomize the sidebar");
-    Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
-    Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
-    Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
-    Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
-    Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
- 
- 
-    // Numbers for original sidebar links
-    //-1: -- break --
-    // 0: Home
-    // 1: Instructions
-    // 2: Profile
-    // 3: Log out
-    // 4: Forum
-    // 5: Chat
-    // 6: Travian Plus
-    // 7: Support
- 
-    // Original sidebar links
-    // Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
-    // TODO: make configureable?
-    Sidebar.setting("links",
-                    [
-                     1,
-                     ["FAQ", "http://help.travian.nl/"],
-                     ["Travian Forum", "http://forum.travian.nl"],
-                     ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
-                     -1,
-                     2,
-                     ["Alliance Forum", "/allianz.php?s=2"],
-                     //["Alliantie Forum", "http://www.external-travian-forum.com/"],
-                     ["Alliance Overview", "allianz.php"],
-                     -1,
-                     ["Barracks", "/build.php?gid=19"],
-                     ["Stable", "/build.php?gid=20"],
-                     ["Workshop", "/build.php?gid=21"],
-                     ["Marketplace", "/build.php?gid=17"],
-                     ["Rally Point", "/build.php?gid=16"],
-                     -1,
-                     6,
-                     7
-                     ]
-                    , Settings.type.object, undefined, "The links of the sidebar.");
-        
-    Sidebar.add=function(text, target) {
-        var el;
-        if (target=="") {
-            el=document.createElement("b"); // Create a bold header
+Sidebar.add=function(text, target) {
+    var el;
+    if (target=="") {
+        el=document.createElement("b"); // Create a bold header
+    } else {
+        el=document.createElement("a"); // Create a normal link
+        el.href=target;
+    }
+    el.innerHTML = text;
+    Sidebar.navi.appendChild(el);
+};
+Sidebar.add_break=function() {
+    if (Sidebar.use_hr) {
+        Sidebar.navi.appendChild(document.createElement("hr"));
+    } else {
+        Sidebar.navi.appendChild(document.createElement("br"));
+        Sidebar.navi.appendChild(document.createElement("br"));
+    }
+};
+Sidebar.run=function() {
+    if (Sidebar.remove_plus_button) {
+        var plus = document.getElementById("lplus1");
+        if (plus) {
+            plus.parentNode.style.visibility="hidden";
         } else {
-            el=document.createElement("a"); // Create a normal link
-            el.href=target;
+            Debug.info("Couldn't find the plus button.");
         }
-        el.innerHTML = text;
-        Sidebar.navi.appendChild(el);
-    };
-    Sidebar.add_break=function() {
-        if (Sidebar.use_hr) {
-            Sidebar.navi.appendChild(document.createElement("hr"));
+    }
+
+    var navi_table = document.getElementById("navi_table");
+    if (!navi_table) return;
+
+    if (Sidebar.remove_home_link)
+        navi_table.parentNode.childNodes[1].href=location.href;
+        
+    Sidebar.navi = navi_table.childNodes[1].childNodes[0].childNodes[1];
+    
+    // Make copy of links
+    Sidebar.oldnavi = [];
+    for (var i = 0; i < Sidebar.navi.childNodes.length; i++)
+        if (Sidebar.navi.childNodes[i].tagName=="A")
+            Sidebar.oldnavi.push(Sidebar.navi.childNodes[i]);
+
+    // Remove all links
+    for (var i = Sidebar.navi.childNodes.length - 1; i>=0; i--)
+        Sidebar.navi.removeChild(Sidebar.navi.childNodes[i]);
+    
+    // Add new links
+    for (var i = 0; i < Sidebar.links.length; i++) {'rgb(0,0,0)'
+            var x = Sidebar.links[i];
+        if (x.constructor == Array) {
+            Sidebar.add(x[0], x[1]);
+        } else if (x.constructor == String) {
+            Sidebar.add(x, "");
+        } else if (x<0) {
+            Sidebar.add_break();
         } else {
-            Sidebar.navi.appendChild(document.createElement("br"));
-            Sidebar.navi.appendChild(document.createElement("br"));
+            var el = Sidebar.oldnavi[x];
+            if (Sidebar.remove_target_blank)
+                el.removeAttribute("target"); // Force all links to open in the current page.
+            if (Sidebar.remove_plus_color)
+                el.innerHTML=el.textContent; // Remove color from Plus link.
+            Sidebar.navi.appendChild(el);
         }
-    };
-    Sidebar.run=function() {
-        if (Sidebar.remove_plus_button) {
-            var plus = document.getElementById("lplus1");
-            if (plus) {
-                plus.parentNode.style.visibility="hidden";
-            } else {
-                Debug.info("Couldn't find the plus button.");
-            }
-        }
- 
-        var navi_table = document.getElementById("navi_table");
-        if (!navi_table) return;
+    }
+};
     
-        if (Sidebar.remove_home_link)
-            navi_table.parentNode.childNodes[1].href=location.href;
-            
-        Sidebar.navi = navi_table.childNodes[1].childNodes[0].childNodes[1];
-        
-        // Make copy of links
-        Sidebar.oldnavi = [];
-        for (var i = 0; i < Sidebar.navi.childNodes.length; i++)
-            if (Sidebar.navi.childNodes[i].tagName=="A")
-                Sidebar.oldnavi.push(Sidebar.navi.childNodes[i]);
- 
-        // Remove all links
-        for (var i = Sidebar.navi.childNodes.length - 1; i>=0; i--)
-            Sidebar.navi.removeChild(Sidebar.navi.childNodes[i]);
-        
-        // Add new links
-        for (var i = 0; i < Sidebar.links.length; i++) {'rgb(0,0,0)'
-                var x = Sidebar.links[i];
-            if (x.constructor == Array) {
-                Sidebar.add(x[0], x[1]);
-            } else if (x.constructor == String) {
-                Sidebar.add(x, "");
-            } else if (x<0) {
-                Sidebar.add_break();
-            } else {
-                var el = Sidebar.oldnavi[x];
-                if (Sidebar.remove_target_blank)
-                    el.removeAttribute("target"); // Force all links to open in the current page.
-                if (Sidebar.remove_plus_color)
-                    el.innerHTML=el.textContent; // Remove color from Plus link.
-                Sidebar.navi.appendChild(el);
-            }
-        }
-    };
-        
- 
-    /****************************************
-     * RESOURCES
-     ****************************************/
-        
-    Feature.create("Resources");
-    Resources.setting("enabled", true, Settings.type.bool, undefined, "Add resource/minute and resources on market information to the resource bar.");
-    Resources.setting("market", {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
-    Resources.setting("production", {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
- 
-    Resources.show=function() {
-        var head = document.getElementById("lres0");
-        if (head!=null) {
-            head = head.childNodes[1].childNodes[0];
-        
-            var mkt = Resources.market [Settings.village_id];
-            var prod = Resources.production[Settings.village_id];
-            mkt = (mkt ==undefined)?[0,0,0,0]:mkt;
-            prod = (prod==undefined)?['?','?','?','?']:prod;
-        
-            cur = head.textContent.split("\n").filter(function(x) {return x[0]>='0' && x[0]<='9'; });
+
+/****************************************
+ * RESOURCES
+ ****************************************/
     
-            var a="";
-            for (var i=0; i < 4; i++) {
-                var c=(mkt[i]>0)?("+"+mkt[i]+" "):("");
-                var p=(prod[i]=='?')?'?':((prod[i]>0?"+":"")+Math.round(prod[i]/6)/10.0);
-                a+="<td></td><td>"+c+p+"/m</td>";
-            }
-            a+="<td></td><td></td>";
-        
-            var tr = document.createElement("tr");
-            head.appendChild(tr);
-            tr.innerHTML = a;
-        }
-    };
-    Resources.update=function() {
-        // Store info about resources put on the market if availbale
-        var x = document.getElementById("lmid2");
-        if (x!=null && x.innerHTML.indexOf("name=\"t\" value=\"2\"")>0) {
-            var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
- 
-            var mkt = new Array(0,0,0,0);
-            for ( var i=0 ; i < res.snapshotLength; i++ ){
-                var c = res.snapshotItem(i).textContent - 0;
-                var t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
-                mkt[t] += c;
-            }
-            Debug.debug("This is on the market: "+mkt);
-            Resources.market[Settings.village_id]=mkt;
-            Resources.s.market.write();
-        }
- 
-        // Store info about production rate if available
-        if (location.href.indexOf("dorf1")>0) {
-            var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-            var prod = new Array(0,0,0,0);
- 
-            for ( var i=0 ; i < res.snapshotLength; i++ ){
-                var c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
-                var t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
-                prod[t] += c;
-            }
-            Debug.debug("This is produced: "+prod);
-            Resources.production[Settings.village_id]=prod;
-            Resources.s.production.write();
-        }
-    };
- 
- 
-    Resources.run=function(){
-        Resources.update();
-        Resources.show();
-    };
- 
- 
-    /****************************************
-     * MARKET
-     ****************************************/
- 
-    Feature.create("Market");
-    Market.setting("enabled", true, Settings.type.bool, undefined, "Color the market offers to quickly determine their value.");
- 
-    Market.update_colors=true; // tells whether the next call to colorify should recolor the table.
- 
-    Market.colorify=function() {
-        // Run this function twice each second.
-        setTimeout(Market.colorify,500);
-        // But don't do an update when it's not necessary.
-        if (!Market.update_colors) return;
-        Market.update_colors=false;
+Feature.create("Resources");
+Resources.setting("enabled", true, Settings.type.bool, undefined, "Add resource/minute and resources on market information to the resource bar.");
+Resources.setting("market", {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
+Resources.setting("production", {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
+
+Resources.show=function() {
+    var head = document.getElementById("lres0");
+    if (head!=null) {
+        head = head.childNodes[1].childNodes[0];
     
-        var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
- 
-        for ( var i=0 ; i < res.snapshotLength; i++ ) {
-            x = res.snapshotItem(i);
-            if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
-                a = x.childNodes[2].textContent-0;
-                b = x.childNodes[6].textContent-0;
-                r = a/b;
-                if (r>1.5)
-                    color="#ddffdd";
-                else if (r>1.001)
-                    color = "#eeffdd";
-                else if (r>0.999)
-                    color = "#ffffdd";
-                else if (r>0.501)
-                    color = "#ffeedd";
-                else
-                    color = "#ffdddd";
- 
-                x.style.backgroundColor = color;
+        var mkt = Resources.market [Settings.village_id];
+        var prod = Resources.production[Settings.village_id];
+        mkt = (mkt ==undefined)?[0,0,0,0]:mkt;
+        prod = (prod==undefined)?['?','?','?','?']:prod;
+    
+        cur = head.textContent.split("\n").filter(function(x) {return x[0]>='0' && x[0]<='9'; });
+
+        var a="";
+        for (var i=0; i < 4; i++) {
+            var c=(mkt[i]>0)?("+"+mkt[i]+" "):("");
+            var p=(prod[i]=='?')?'?':((prod[i]>0?"+":"")+Math.round(prod[i]/6)/10.0);
+            a+="<td></td><td>"+c+p+"/m</td>";
+        }
+        a+="<td></td><td></td>";
+    
+        var tr = document.createElement("tr");
+        head.appendChild(tr);
+        tr.innerHTML = a;
+    }
+};
+Resources.update=function() {
+    // Store info about resources put on the market if availbale
+    var x = document.getElementById("lmid2");
+    if (x!=null && x.innerHTML.indexOf("name=\"t\" value=\"2\"")>0) {
+        var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+
+        var mkt = new Array(0,0,0,0);
+        for ( var i=0 ; i < res.snapshotLength; i++ ){
+            var c = res.snapshotItem(i).textContent - 0;
+            var t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
+            mkt[t] += c;
+        }
+        Debug.debug("This is on the market: "+mkt);
+        Resources.market[Settings.village_id]=mkt;
+        Resources.s.market.write();
+    }
+
+    // Store info about production rate if available
+    if (location.href.indexOf("dorf1")>0) {
+        var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+        var prod = new Array(0,0,0,0);
+
+        for ( var i=0 ; i < res.snapshotLength; i++ ){
+            var c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
+            var t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
+            prod[t] += c;
+        }
+        Debug.debug("This is produced: "+prod);
+        Resources.production[Settings.village_id]=prod;
+        Resources.s.production.write();
+    }
+};
+
+
+Resources.run=function(){
+    Resources.update();
+    Resources.show();
+};
+
+
+/****************************************
+ * MARKET
+ ****************************************/
+
+Feature.create("Market");
+Market.setting("enabled", true, Settings.type.bool, undefined, "Color the market offers to quickly determine their value.");
+
+Market.update_colors=true; // tells whether the next call to colorify should recolor the table.
+
+Market.colorify=function() {
+    // Run this function twice each second.
+    setTimeout(Market.colorify,500);
+    // But don't do an update when it's not necessary.
+    if (!Market.update_colors) return;
+    Market.update_colors=false;
+
+    var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+
+    for ( var i=0 ; i < res.snapshotLength; i++ ) {
+        x = res.snapshotItem(i);
+        if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
+            a = x.childNodes[2].textContent-0;
+            b = x.childNodes[6].textContent-0;
+            r = a/b;
+            if (r>1.5)
+                color="#ddffdd";
+            else if (r>1.001)
+                color = "#eeffdd";
+            else if (r>0.999)
+                color = "#ffffdd";
+            else if (r>0.501)
+                color = "#ffeedd";
+            else
+                color = "#ffdddd";
+
+            x.style.backgroundColor = color;
+        }
+    }
+};
+Market.attribute_changed=function(e) {
+    // Tell that something changed and that an update might be necessary
+    Market.update_colors=true;
+};
+Market.run=function(){
+    x = document.getElementById("lmid2");
+    // TODO: find out why this also matches reports.
+    if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
+        Market.colorify();
+        document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
+    }
+};
+
+
+/****************************************
+ * EVENTS
+ ****************************************/
+
+Feature.create("Events");
+Events.setting("enabled", true, Settings.type.bool, undefined, "Enable the event data collector");
+Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
+Events.setting("type", {/* <tag> : [<color> <visible>] */
+        building: ['rgb(0,0,0)', true],
+            attack : ['rgb(255,0,0)', true],
+            market : ['rgb(0,128,0)', true],
+            research: ['rgb(0,0,255)', true],
+            party : ['rgb(255,128,128)', true],
+            recruit : ['rgb(128,128,128)', true]
+            }, Settings.type.object, undefined, "List of event types");
+Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
+
+// There is no report type, because there are different types of reports, which can also be divided over the currently
+// available types.
+
+/* A event-data-packet torn apart:
+   Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
+   129390: #### ~ The village id
+   'b9930712': #### ~ Some identifier that is both unqiue and consistent between page loads.
+   ["building", 0 ~ Type of event
+   1225753710000, 1 ~ Estimated time at which this event occure(s|d).
+   "Granary (level 6)", 2 ~ Event message.
+   3 ~ For events that might include armies (can be 'undefined')
+   [0, 3. 0 ~ Amount of farm-men involved
+   0, 3. 1 ~ Amount of defense-men involved
+   0, 3. 2 ~ Amount of attack-men involved
+   0, 3. 3 ~ Amount of scouts involved
+   0, 3. 4 ~ Amount of defense-horses involved
+   0, 3. 5 ~ Amount of attack-horses involved
+   0, 3. 6 ~ Amount of rams involved
+   0, 3. 7 ~ Amount of trebuchets involved
+   0, 3. 8 ~ Amount of leaders involved
+   0, 3. 9 ~ Amount of settlers involved
+   0], 3.10 ~ Amount of heros involved
+   4 ~ For events that might include resources (can be 'undefined')
+   [0, 4. 0 ~ Amount of wood involved
+   0, 4. 1 ~ Amount of clay involved
+   0, 4. 2 ~ Amount of iron involved
+   0]] 4. 3 ~ Amount of grain involved
+   Instead of a number, the fields in field 4 and 5 are also allowed to be a tuple (list).
+   In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
+*/
+
+// village = id of the village.
+// id = The consistent unique event identifier.
+Events.get_event=function(village, id) {
+    var e = Events.events[village];
+    if (e == undefined) {
+        e = {};
+        Events.events[village]=e;
+        Debug.debug("Added village: "+village);
+    }
+    e = Events.events[village][id];
+    if (e == undefined) {
+        e = [];
+        Events.events[village][id]=e;
+        Debug.debug("Created element: "+id);
+    }
+    return e;
+};
+
+Events.update_data=function() {
+    Events.s.events.read(); // Make sure the variable data is up to date.
+    // Collect new stuff
+    for (var c in Events.collector) {
+        try {
+            Events.collector[c]();
+        } catch (e) {
+            Debug.exception("Events.collector."+c,e);
+        }
+    }
+
+    // Remove old stuff
+    // TODO: use tl_date()? Do something with server time?
+    Events.pageload = new Date().getTime();
+    Events.old = Events.pageload-Events.history*60000;
+    for (var v in Events.events) {
+        for (var e in Events.events[v]) {
+            if (Events.events[v][e][1]<Events.old) {
+                delete Events.events[v][e];
             }
+            // room for updates: (for migration to new versions of this script)
         }
-    };
-    Market.attribute_changed=function(e) {
-        // Tell that something changed and that an update might be necessary
-        Market.update_colors=true;
-    };
-    Market.run=function(){
-        x = document.getElementById("lmid2");
-        // TODO: find out why this also matches reports.
-        if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
-            Market.colorify();
-            document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
-        }
-    };
- 
- 
-    /****************************************
-     * EVENTS
-     ****************************************/
- 
-    Feature.create("Events");
-    Events.setting("enabled", true, Settings.type.bool, undefined, "Enable the event data collector");
-    Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
-    Events.setting("type", {/* <tag> : [<color> <visible>] */
-            building: ['rgb(0,0,0)', true],
-                attack : ['rgb(255,0,0)', true],
-                market : ['rgb(0,128,0)', true],
-                research: ['rgb(0,0,255)', true],
-                party : ['rgb(255,128,128)', true],
-                recruit : ['rgb(128,128,128)', true]
-                }, Settings.type.object, undefined, "List of event types");
-    Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
- 
-    // There is no report type, because there are different types of reports, which can also be divided over the currently
-    // available types.
- 
-    /* A event-data-packet torn apart:
-       Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
-       129390: #### ~ The village id
-       'b9930712': #### ~ Some identifier that is both unqiue and consistent between page loads.
-       ["building", 0 ~ Type of event
-       1225753710000, 1 ~ Estimated time at which this event occure(s|d).
-       "Granary (level 6)", 2 ~ Event message.
-       3 ~ For events that might include armies (can be 'undefined')
-       [0, 3. 0 ~ Amount of farm-men involved
-       0, 3. 1 ~ Amount of defense-men involved
-       0, 3. 2 ~ Amount of attack-men involved
-       0, 3. 3 ~ Amount of scouts involved
-       0, 3. 4 ~ Amount of defense-horses involved
-       0, 3. 5 ~ Amount of attack-horses involved
-       0, 3. 6 ~ Amount of rams involved
-       0, 3. 7 ~ Amount of trebuchets involved
-       0, 3. 8 ~ Amount of leaders involved
-       0, 3. 9 ~ Amount of settlers involved
-       0], 3.10 ~ Amount of heros involved
-       4 ~ For events that might include resources (can be 'undefined')
-       [0, 4. 0 ~ Amount of wood involved
-       0, 4. 1 ~ Amount of clay involved
-       0, 4. 2 ~ Amount of iron involved
-       0]] 4. 3 ~ Amount of grain involved
-       Instead of a number, the fields in field 4 and 5 are also allowed to be a tuple (list).
-       In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
-    */
- 
-    // village = id of the village.
-    // id = The consistent unique event identifier.
-    Events.get_event=function(village, id) {
-        var e = Events.events[village];
-        if (e == undefined) {
-            e = {};
-            Events.events[village]=e;
-            Debug.debug("Added village: "+village);
-        }
-        e = Events.events[village][id];
-        if (e == undefined) {
-            e = [];
-            Events.events[village][id]=e;
-            Debug.debug("Created element: "+id);
-        }
-        return e;
-    };
- 
-    Events.update_data=function() {
-        Events.s.events.read(); // Make sure the variable data is up to date.
-        // Collect new stuff
-        for (var c in Events.collector) {
-            try {
-                Events.collector[c]();
-            } catch (e) {
-                Debug.exception("Events.collector."+c,e);
-            }
-        }
- 
-        // Remove old stuff
-        // TODO: use tl_date()? Do something with server time?
-        Events.pageload = new Date().getTime();
-        Events.old = Events.pageload-Events.history*60000;
-        for (var v in Events.events) {
-            for (var e in Events.events[v]) {
-                if (Events.events[v][e][1]<Events.old) {
-                    delete Events.events[v][e];
-                }
-                // room for updates: (for migration to new versions of this script)
-            }
-        }
-        Events.s.events.write();
-    };
- 
-    Events.run=function() {
-        Events.update_data();
-    };
- 
- 
-    // Collectors
-    // ----------
- 
-    Events.collector={};
-    Events.collector.building=function(){
-        // Checking if data is available
-        if (location.href.indexOf("dorf")<=0) return;
-        var build = document.getElementById("lbau1");
-        if (build == undefined)
-            build = document.getElementById("lbau2");
-        if (build == undefined) return;
- 
-        // Collecting
-        build = build.childNodes[1].childNodes[0];
-        for (var nn in build.childNodes) {
-            var x = build.childNodes[nn];
-            var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
-            var e = Events.get_event(Settings.village_id, id);
-            //if (e[0]) continue;
-            e[0]="building";
-        
-            // TODO: get timing more accurate.
+    }
+    Events.s.events.write();
+};
+
+Events.run=function() {
+    Events.update_data();
+};
+
+
+// Collectors
+// ----------
+
+Events.collector={};
+Events.collector.building=function(){
+    // Checking if data is available
+    if (location.href.indexOf("dorf")<=0) return;
+    var build = document.getElementById("lbau1");
+    if (build == undefined)
+        build = document.getElementById("lbau2");
+    if (build == undefined) return;
+
+    // Collecting
+    build = build.childNodes[1].childNodes[0];
+    for (var nn in build.childNodes) {
+        var x = build.childNodes[nn];
+        var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
+        var e = Events.get_event(Settings.village_id, id);
+        //if (e[0]) continue;
+        e[0]="building";
+    
+        // TODO: get timing more accurate.
+        var d = new tl_date();
+        d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+        e[1] = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+        e[2] = x.childNodes[1].textContent;
+
+        Debug.debug("Time set to "+e[1]);
+    }
+};
+
+// Travelling armies (rally point)
+Events.collector.attack=function(){
+    var x = document.getElementById("lmid2");
+    if (x==null) return;
+    if (x.innerHTML.indexOf("warsim.php")<=0) return;
+    var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+    var last_event_time=0;
+    var event_count=0;
+
+    for ( var i=0 ; i < res.snapshotLength; i++ ) {
+        x = res.snapshotItem(i);
+        // var what = x.childNodes[3].childNodes[0].innerHTML;
+        // if (what == "Aankomst") {
+        // Instead of checking if this is the correct line, just act as if it's correct
+        // If it isn't this will certainly fail.
+        try {
             var d = new tl_date();
-            d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-            e[1] = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-            e[2] = x.childNodes[1].textContent;
- 
-            Debug.debug("Time set to "+e[1]);
-        }
-    };
- 
-    // Travelling armies (rally point)
-    Events.collector.attack=function(){
-        var x = document.getElementById("lmid2");
-        if (x==null) return;
-        if (x.innerHTML.indexOf("warsim.php")<=0) return;
-        var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-        var last_event_time=0;
-        var event_count=0;
- 
-        for ( var i=0 ; i < res.snapshotLength; i++ ) {
-            x = res.snapshotItem(i);
-            // var what = x.childNodes[3].childNodes[0].innerHTML;
-            // if (what == "Aankomst") {
-            // Instead of checking if this is the correct line, just act as if it's correct
-            // If it isn't this will certainly fail.
-            try {
-                var d = new tl_date();
-                d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)"));
-                var t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-    
-                // Using the time as unique id. If there are multiple with the same time increase event_count.
-                // It's the best I could do.
-                if (last_event_time==t) event_count++;
-                else last_event_time=t;
-                var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
-                e[0] = "attack";
-                e[1] = t;
-                e[2] = x.childNodes[0].childNodes[2].textContent;
-                e[3] = [];
-                for (var j = 0; j<11; j++) {
-                    var y = x.childNodes[2].childNodes[j+1];
-                    if (y!=undefined)
-                        e[3][j] = y.textContent - 0;
-                }
- 
-            } catch (e) {
-                // So it probably wasn't the correct line.
-            }
-        }
-    }
- 
-    // Market Deliveries
-    Events.collector.market=function(){
-        // Make sure we're on an individual building page
-        if (location.href.indexOf('build.php')<=0) return;
-        if (document.forms[0] == undefined) return;
-        // And there is an OK button
-        if (document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')<=0)return
-                                                                                         // Then this must be the market! (in a language-insensitive manner :D)
- 
-                                                                                         var last_event_time=0;
-        var event_count=0;
- 
-        var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-        for (var i=0; i < shipment.snapshotLength; i++){
-            var x = shipment.snapshotItem(i);
-            var d = new tl_date();
- 
-            // Extract the arrival time
-            d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
- 
-            // Extract and adjust by the duration of the shipment
-            var t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
- 
-            // Extract the value of the shipment
-            var res = x.childNodes[4].childNodes[1].textContent.split(' | ');
-            Debug.debug("Merchant carrying "+res);
-    
-            // Check if merchant is returning
-            var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
-            if (ret) Debug.debug("Merchant is returning");
- 
+            d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)"));
+            var t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+
             // Using the time as unique id. If there are multiple with the same time increase event_count.
             // It's the best I could do.
             if (last_event_time==t) event_count++;
             else last_event_time=t;
             var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
- 
-            e[0] = "market";
+            e[0] = "attack";
             e[1] = t;
-            // Extract the action type
-            e[2] = x.childNodes[0].childNodes[3].textContent;
-        
-            // Add resource pictures and amounts (if sending)
-            if (!ret)
-                e[4] = res;
-        }
-    }
- 
- 
-    /****************************************
-     * TIMELINE
-     ****************************************/
- 
-    // WIP
- 
-    Feature.create("Timeline");
-    Timeline.setting("enabled", true, Settings.type.bool, undefined, "Enable the timeline (make sure that the events feature is also enabled).");
-    Timeline.setting("visible", true, Settings.type.bool, undefined, "Is the timeline visible on pageload. This setting can also be changed with the timeline-button.");
-    Timeline.setting("collapse", false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
-    Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
-    Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
-    Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
- 
-    Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
- 
-    Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
-    Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
-    Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
-    Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
- 
-    Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
-    Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
-    Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
-    Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
- 
-    //Timeline.setting("use_server_time", false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
-    //Timeline.setting("time_difference", 0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
- 
-    Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
- 
-    Timeline.scroll_offset=0; // the current 'center' of the timeline.
- 
-    if (Timeline.scale_warp==0) {
-        Timeline.warp = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
-        Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
-    } else {
-        Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
-        Timeline.warp = function(x) { return (Math.arsinh(
-                                                          ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
-                                                          )/Timeline.scale_warp +1)/2*Timeline.height; };
-        Timeline.unwarp = function(y) { return Math.sinh(
-                                                         (2*y/Timeline.height-1)*Timeline.scale_warp
-                                                         )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
-    }
- 
-    Timeline.create_canvas=function() {
-        // Create timeline canvas + container
-        var tl = document.createElement("canvas");
-        var tlc = document.createElement("div");
-        tlc.style.position = (Timeline.position_fixed?"fixed":"absolute");
-        tlc.style.top = "0px";
-        tlc.style.right = "0px";
-        tlc.style.width = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
-        tlc.style.height = Timeline.height + "px";
-        tlc.style.zIndex = "20";
-        tlc.style.backgroundColor=Timeline.color;
-        tlc.style.visibility = Timeline.visible?'visible':'hidden';
-        tlc.style.overflow = "hidden";
- 
-        tl.id = "tl";
-        tl.width = Timeline.width;
-        tl.height = Timeline.height;
-        tl.style.position = "relative";
-        tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
-        tlc.appendChild(tl);
-        document.body.appendChild(tlc);
- 
-        // Code for expanding/collapsing the timeline.
-        // TODO: Move to seperate function(s)?
-        if (Timeline.collapse) {
-            var tl_col_cur = Timeline.collapse_width;
-            var tl_col_tar = Timeline.collapse_width;
-            var tl_col_run = false;
-            var tl_col_prev = 0;
-            function tlc_fade() {
-                var tl_col_next = new Date().getTime();
-                var diff = (tl_col_next - tl_col_prev) / 1000.0;
-                tl_col_prev = tl_col_next;
-                tl_col_run = true;
-                if (tl_col_cur==tl_col_tar) {
-                    tl_col_run = false;
-                    return;
-                }
-                if (tl_col_cur<tl_col_tar) {
-                    tl_col_cur+=Timeline.collapse_speed*diff;
-                    if (tl_col_cur>tl_col_tar)
-                        tl_col_cur=tl_col_tar;
-                }
-                if (tl_col_cur>tl_col_tar) {
-                    tl_col_cur-=Timeline.collapse_speed*diff;
-                    if (tl_col_cur<tl_col_tar)
-                        tl_col_cur=tl_col_tar;
-                }
-                tlc.style.width = tl_col_cur + "px";
-                tlc.firstChild.style.left = (tl_col_cur-Timeline.width)+"px";
-                setTimeout(tlc_fade, 1000/Timeline.collapse_rate);
+            e[2] = x.childNodes[0].childNodes[2].textContent;
+            e[3] = [];
+            for (var j = 0; j<11; j++) {
+                var y = x.childNodes[2].childNodes[j+1];
+                if (y!=undefined)
+                    e[3][j] = y.textContent - 0;
             }
-            function tlc_expand(e) {
-                tl_col_tar = Timeline.width;
-                tl_col_prev = new Date().getTime();
-                if (!tl_col_run) tlc_fade();
-            }
-            function tlc_collapse(e) {
-                tl_col_tar = Timeline.collapse_width;
-                tl_col_prev = new Date().getTime();
-                if (!tl_col_run) tlc_fade();
-            }
-            tlc.addEventListener('mouseover',tlc_expand,false);
-            tlc.addEventListener('mouseout',tlc_collapse,false);
-        }
-    
-        // Mouse Scroll Wheel
-        function tl_mouse_wheel(e){
-            Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
- 
-            e.stopPropagation(); // Kill the event to the standard window...
-            e.preventDefault();
-            Timeline.draw(true);
-        }
- 
-        // Could scroll backwards and forwards on the timeline
-        // We also probably want to stop the mouse scrolling from propegating in this case...
-        tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
- 
-        // The click event listener for the link with the 'travian task queue'-script.
-        function setAt(e) {
-            var at = document.getElementById("at");
-            if (at) {
-                var n = new Date();
-                n.setTime(Timeline.unwarp(e.pageY));
-                var s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
-                at.value=s;
-            }
-        }
-        tlc.addEventListener("click",setAt,false);
-    
-        Timeline.element=tlc;
-        Timeline.context=tl.getContext("2d");
-        Timeline.context.mozTextStyle = "8pt Monospace";
-    };
- 
-    Timeline.toggle=function() {
-        Timeline.visible=!Timeline.visible;
-        Timeline.element.style.visibility=Timeline.visible?'visible':'hidden';
-        Timeline.s.visible.write();
-    };
- 
-    Timeline.create_button=function() {
-        button = document.createElement("div");
-        button.style.position = Timeline.element.style.position;
-        button.style.backgroundColor = "rgba(0,0,128,0.5)";
-        button.style.right = "0px";
-        button.style.top = "-2px";
-        button.style.width = "60px";
-        button.style.height = "21px";
-        button.style.zIndex = "20";
-        button.style.textAlign = "center";
-        button.style.color = "#fff";
-        button.style.fontWeight = "bold";
-        button.style.MozBorderRadiusBottomleft = "6px";
-        button.style.cursor = "pointer";
-        button.addEventListener('click',Timeline.toggle,false);
-        button.innerHTML = "timeline";
-        document.body.appendChild(button);
-    };
- 
-    Timeline.load_images=function() {
-        // TODO: A special images feature?
-        Timeline.img_unit = new Array(11);
-        for (i=0; i<10; i++) {
-            Timeline.img_unit[i] = new Image();
-            Timeline.img_unit[i].src = "img/un/u/"+(Settings.race*10+i+1)+".gif";
-        }
-        Timeline.img_unit[10] = new Image();
-        Timeline.img_unit[10].src = "img/un/u/hero.gif";
- 
-        Timeline.img_res = new Array(4);
-        for (i=0; i<4; i++) {
-            Timeline.img_res[i] = new Image();
-            Timeline.img_res[i].src = "img/un/r/"+(i+1)+".gif";
-        }
-    };
- 
-    Timeline.draw_info=function(img,nrs) {
-        if (!nrs) return;
-        var g = Timeline.context;
-        try {
-            g.translate(-img.width - 8, 0);
-            g.drawImage(img, -0.5, Math.round(-img.height*0.7) -0.5);
+
         } catch (e) {
-            // This might fail if the image is not yet or can't be loaded.
-            // Ignoring this exception prevents the script from terminating to early.
-            var fs = g.fillStyle;
-            g.fillStyle = "rgb(128,128,128)";
-            g.translate(-24,0);
-            g.mozDrawText("??");
-            g.fillStyle = fs;
-        }
-        if (nrs.constructor == Array) {
-            g.fillStyle = "rgb(192,0,0)";
-            g.translate(-g.mozMeasureText(-nrs[1]) - 2, 0);
-            g.mozDrawText(-nrs[1]);
-            g.fillStyle = "rgb(0,0,255)";
-            g.translate(-g.mozMeasureText(nrs[0]), 0);
-            g.mozDrawText(nrs[0]);
-        } else {
-            g.translate(-g.mozMeasureText(nrs) - 2, 0);
-            g.mozDrawText(nrs);
+            // So it probably wasn't the correct line.
         }
     }
- 
-    Timeline.draw=function() {
-        // Update the event data
-        Events.s.events.read();
-        Timeline.now=new Date().getTime();
- 
-        // Get context
-        var g = Timeline.context;
-        g.clearRect(0,0,Timeline.width,Timeline.height);
-        g.save();
-        
-        // Draw bar
-        g.translate(Timeline.width - 9.5, 0);
- 
-        g.strokeStyle = "rgb(0,0,0)";
-        g.beginPath();
-        g.moveTo(0, 0);
-        g.lineTo(0, Timeline.height);
-        g.stroke();
+}
+
+// Market Deliveries
+Events.collector.market=function(){
+    // Make sure we're on an individual building page
+    if (location.href.indexOf('build.php')<=0) return;
+    if (document.forms[0] == undefined) return;
+    // And there is an OK button
+    if (document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')<=0)return
+                                                                                     // Then this must be the market! (in a language-insensitive manner :D)
+
+                                                                                     var last_event_time=0;
+    var event_count=0;
+
+    var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (var i=0; i < shipment.snapshotLength; i++){
+        var x = shipment.snapshotItem(i);
+        var d = new tl_date();
+
+        // Extract the arrival time
+        d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+
+        // Extract and adjust by the duration of the shipment
+        var t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
+
+        // Extract the value of the shipment
+        var res = x.childNodes[4].childNodes[1].textContent.split(' | ');
+        Debug.debug("Merchant carrying "+res);
+
+        // Check if merchant is returning
+        var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
+        if (ret) Debug.debug("Merchant is returning");
+
+        // Using the time as unique id. If there are multiple with the same time increase event_count.
+        // It's the best I could do.
+        if (last_event_time==t) event_count++;
+        else last_event_time=t;
+        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+
+        e[0] = "market";
+        e[1] = t;
+        // Extract the action type
+        e[2] = x.childNodes[0].childNodes[3].textContent;
     
-        // draw scale lines
-        var lastmark = 0;
-        for (var i=Timeline.marker_seperation/2; i<Timeline.height; i+=Timeline.marker_seperation) {
-        
-            // determine local scale
-            var z = Timeline.unwarp(i+Timeline.marker_seperation/2) - Timeline.unwarp(i-Timeline.marker_seperation/2);
-            /**/ if (z< 1000) z= 1000; // 1 sec.
-            else if (z< 5000) z= 5000; // 5 sec.
-            else if (z< 15000) z= 15000; // 15 sec.
-            else if (z< 60000) z= 60000; // 1 min.
-            else if (z< 300000) z= 300000; // 5 min.
-            else if (z< 900000) z= 900000; // 15 min.
-            else if (z< 3600000) z= 3600000; // 1 hr.
-            else if (z<21600000) z=21600000; // 6 hr.
-            else if (z<86400000) z=86400000; // 1 day.
-            else continue;
- 
-            // determine the time and location
-            var x = Timeline.unwarp(i);
-            x = Math.round(x/z)*z;
-            var y = Timeline.warp(x);
-            if (x<=lastmark) continue;
-            lastmark=x;
-        
-            var a=-8;
-            var b= 0;
-            var m="";
-            var d = new Date();
-            d.setTime(x);
-            var t=d.getHours()+":"+pad2(d.getMinutes());
-        
-            /**/ if ((x% 3600000)==0 && d.getHours()==0
-                     ) { b=8;m=
-                                 ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+
-                                 d.getDate()+" "+
-                                 ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" - 0:00";} // 1 day.
-            else if ((x% 3600000)==0 && d.getHours()%6==0
-                     ) { b=8; if (z<21600000) m=t;} // 6 hr.
-            else if ((x% 3600000)==0) { b=4; if (z< 3600000) m=t;} // 1 hr.
-            else if ((x% 900000)==0) {a=-6; if (z< 900000) m=t;} // 15 min.
-            else if ((x% 300000)==0) {a=-4; if (z< 300000) m=t;} // 5 min.
-            else if ((x% 60000)==0) {a=-2; if (z< 60000) m=t;} // 1 min.
-            else if ((x% 15000)==0) {a=-1; } // 15 sec.
-            else if ((x% 5000)==0) {a= 0; b=1; } // 5 sec.
-            else if ((x% 1000)==0) {a= 0; b=2; } // 1 sec.
-        
-            g.beginPath();
-            g.moveTo(a, y);
-            g.lineTo(b, y);
-            g.stroke();
-            if (m) {
-                g.save();
-                g.translate(-g.mozMeasureText(m)-10, 4+y);
-                g.mozDrawText(m);
-                g.restore();
+        // Add resource pictures and amounts (if sending)
+        if (!ret)
+            e[4] = res;
+    }
+}
+
+
+/****************************************
+ * TIMELINE
+ ****************************************/
+
+// WIP
+
+Feature.create("Timeline");
+Timeline.setting("enabled", true, Settings.type.bool, undefined, "Enable the timeline (make sure that the events feature is also enabled).");
+Timeline.setting("visible", true, Settings.type.bool, undefined, "Is the timeline visible on pageload. This setting can also be changed with the timeline-button.");
+Timeline.setting("collapse", false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
+Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
+
+Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
+
+Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
+Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
+Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
+Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
+
+Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
+Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
+Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
+Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
+
+//Timeline.setting("use_server_time", false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
+//Timeline.setting("time_difference", 0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
+
+Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
+
+Timeline.scroll_offset=0; // the current 'center' of the timeline.
+
+if (Timeline.scale_warp==0) {
+    Timeline.warp = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
+    Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+} else {
+    Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
+    Timeline.warp = function(x) { return (Math.arsinh(
+                                                      ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
+                                                      )/Timeline.scale_warp +1)/2*Timeline.height; };
+    Timeline.unwarp = function(y) { return Math.sinh(
+                                                     (2*y/Timeline.height-1)*Timeline.scale_warp
+                                                     )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+}
+
+Timeline.create_canvas=function() {
+    // Create timeline canvas + container
+    var tl = document.createElement("canvas");
+    var tlc = document.createElement("div");
+    tlc.style.position = (Timeline.position_fixed?"fixed":"absolute");
+    tlc.style.top = "0px";
+    tlc.style.right = "0px";
+    tlc.style.width = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
+    tlc.style.height = Timeline.height + "px";
+    tlc.style.zIndex = "20";
+    tlc.style.backgroundColor=Timeline.color;
+    tlc.style.visibility = Timeline.visible?'visible':'hidden';
+    tlc.style.overflow = "hidden";
+
+    tl.id = "tl";
+    tl.width = Timeline.width;
+    tl.height = Timeline.height;
+    tl.style.position = "relative";
+    tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
+    tlc.appendChild(tl);
+    document.body.appendChild(tlc);
+
+    // Code for expanding/collapsing the timeline.
+    // TODO: Move to seperate function(s)?
+    if (Timeline.collapse) {
+        var tl_col_cur = Timeline.collapse_width;
+        var tl_col_tar = Timeline.collapse_width;
+        var tl_col_run = false;
+        var tl_col_prev = 0;
+        function tlc_fade() {
+            var tl_col_next = new Date().getTime();
+            var diff = (tl_col_next - tl_col_prev) / 1000.0;
+            tl_col_prev = tl_col_next;
+            tl_col_run = true;
+            if (tl_col_cur==tl_col_tar) {
+                tl_col_run = false;
+                return;
             }
+            if (tl_col_cur<tl_col_tar) {
+                tl_col_cur+=Timeline.collapse_speed*diff;
+                if (tl_col_cur>tl_col_tar)
+                    tl_col_cur=tl_col_tar;
+            }
+            if (tl_col_cur>tl_col_tar) {
+                tl_col_cur-=Timeline.collapse_speed*diff;
+                if (tl_col_cur<tl_col_tar)
+                    tl_col_cur=tl_col_tar;
+            }
+            tlc.style.width = tl_col_cur + "px";
+            tlc.firstChild.style.left = (tl_col_cur-Timeline.width)+"px";
+            setTimeout(tlc_fade, 1000/Timeline.collapse_rate);
         }
- 
-        // Draw current time
-        g.strokeStyle = "rgb(0,0,255)";
-        g.beginPath();
-        var y = Timeline.warp(Timeline.now);
-        g.moveTo(-8, y);
-        g.lineTo( 4, y);
-        g.lineTo( 6, y-2);
-        g.lineTo( 8, y);
-        g.lineTo( 6, y+2);
-        g.lineTo( 4, y);
-        g.stroke();
- 
+        function tlc_expand(e) {
+            tl_col_tar = Timeline.width;
+            tl_col_prev = new Date().getTime();
+            if (!tl_col_run) tlc_fade();
+        }
+        function tlc_collapse(e) {
+            tl_col_tar = Timeline.collapse_width;
+            tl_col_prev = new Date().getTime();
+            if (!tl_col_run) tlc_fade();
+        }
+        tlc.addEventListener('mouseover',tlc_expand,false);
+        tlc.addEventListener('mouseout',tlc_collapse,false);
+    }
+
+    // Mouse Scroll Wheel
+    function tl_mouse_wheel(e){
+        Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
+
+        e.stopPropagation(); // Kill the event to the standard window...
+        e.preventDefault();
+        Timeline.draw(true);
+    }
+
+    // Could scroll backwards and forwards on the timeline
+    // We also probably want to stop the mouse scrolling from propegating in this case...
+    tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
+
+    // The click event listener for the link with the 'travian task queue'-script.
+    function setAt(e) {
+        var at = document.getElementById("at");
+        if (at) {
+            var n = new Date();
+            n.setTime(Timeline.unwarp(e.pageY));
+            var s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
+            at.value=s;
+        }
+    }
+    tlc.addEventListener("click",setAt,false);
+
+    Timeline.element=tlc;
+    Timeline.context=tl.getContext("2d");
+    Timeline.context.mozTextStyle = "8pt Monospace";
+};
+
+Timeline.toggle=function() {
+    Timeline.visible=!Timeline.visible;
+    Timeline.element.style.visibility=Timeline.visible?'visible':'hidden';
+    Timeline.s.visible.write();
+};
+
+Timeline.create_button=function() {
+    button = document.createElement("div");
+    button.style.position = Timeline.element.style.position;
+    button.style.backgroundColor = "rgba(0,0,128,0.5)";
+    button.style.right = "0px";
+    button.style.top = "-2px";
+    button.style.width = "60px";
+    button.style.height = "21px";
+    button.style.zIndex = "20";
+    button.style.textAlign = "center";
+    button.style.color = "#fff";
+    button.style.fontWeight = "bold";
+    button.style.MozBorderRadiusBottomleft = "6px";
+    button.style.cursor = "pointer";
+    button.addEventListener('click',Timeline.toggle,false);
+    button.innerHTML = "timeline";
+    document.body.appendChild(button);
+};
+
+Timeline.load_images=function() {
+    // TODO: A special images feature?
+    Timeline.img_unit = new Array(11);
+    for (i=0; i<10; i++) {
+        Timeline.img_unit[i] = new Image();
+        Timeline.img_unit[i].src = "img/un/u/"+(Settings.race*10+i+1)+".gif";
+    }
+    Timeline.img_unit[10] = new Image();
+    Timeline.img_unit[10].src = "img/un/u/hero.gif";
+
+    Timeline.img_res = new Array(4);
+    for (i=0; i<4; i++) {
+        Timeline.img_res[i] = new Image();
+        Timeline.img_res[i].src = "img/un/r/"+(i+1)+".gif";
+    }
+};
+
+Timeline.draw_info=function(img,nrs) {
+    if (!nrs) return;
+    var g = Timeline.context;
+    try {
+        g.translate(-img.width - 8, 0);
+        g.drawImage(img, -0.5, Math.round(-img.height*0.7) -0.5);
+    } catch (e) {
+        // This might fail if the image is not yet or can't be loaded.
+        // Ignoring this exception prevents the script from terminating to early.
+        var fs = g.fillStyle;
+        g.fillStyle = "rgb(128,128,128)";
+        g.translate(-24,0);
+        g.mozDrawText("??");
+        g.fillStyle = fs;
+    }
+    if (nrs.constructor == Array) {
+        g.fillStyle = "rgb(192,0,0)";
+        g.translate(-g.mozMeasureText(-nrs[1]) - 2, 0);
+        g.mozDrawText(-nrs[1]);
         g.fillStyle = "rgb(0,0,255)";
-        var d=new Date();
-        d.setTime(Timeline.now);
-        var m=d.getHours()+":"+pad2(d.getMinutes());
-        g.save();
-        g.translate(-g.mozMeasureText(m)-10, 4+y);
-        g.mozDrawText(m);
-        g.restore();
- 
-        // Highlight the 'elapsed time since last refresh'
-        var y2 = Timeline.warp(Events.pageload);
-        g.fillStyle = "rgba(0,128,255,0.1)";
-        g.fillRect(9-Timeline.width, y,Timeline.width+1, y2-y);
+        g.translate(-g.mozMeasureText(nrs[0]), 0);
+        g.mozDrawText(nrs[0]);
+    } else {
+        g.translate(-g.mozMeasureText(nrs) - 2, 0);
+        g.mozDrawText(nrs);
+    }
+}
+
+Timeline.draw=function() {
+    // Update the event data
+    Events.s.events.read();
+    Timeline.now=new Date().getTime();
+
+    // Get context
+    var g = Timeline.context;
+    g.clearRect(0,0,Timeline.width,Timeline.height);
+    g.save();
     
-        // Darken forgotten history
-        var y3 = Timeline.warp(Events.old);
-        g.fillStyle = "rgba(0,0,0,0.5)";
-        if (y3>0)
-            g.fillRect(9-Timeline.width, 0,Timeline.width+1, y3);
- 
-        function left(q) {
-            if (q.constructor == Array)
-                return q[0]-q[1];
-            else
-                return q-0;
+    // Draw bar
+    g.translate(Timeline.width - 9.5, 0);
+
+    g.strokeStyle = "rgb(0,0,0)";
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.lineTo(0, Timeline.height);
+    g.stroke();
+
+    // draw scale lines
+    var lastmark = 0;
+    for (var i=Timeline.marker_seperation/2; i<Timeline.height; i+=Timeline.marker_seperation) {
+    
+        // determine local scale
+        var z = Timeline.unwarp(i+Timeline.marker_seperation/2) - Timeline.unwarp(i-Timeline.marker_seperation/2);
+        /**/ if (z< 1000) z= 1000; // 1 sec.
+        else if (z< 5000) z= 5000; // 5 sec.
+        else if (z< 15000) z= 15000; // 15 sec.
+        else if (z< 60000) z= 60000; // 1 min.
+        else if (z< 300000) z= 300000; // 5 min.
+        else if (z< 900000) z= 900000; // 15 min.
+        else if (z< 3600000) z= 3600000; // 1 hr.
+        else if (z<21600000) z=21600000; // 6 hr.
+        else if (z<86400000) z=86400000; // 1 day.
+        else continue;
+
+        // determine the time and location
+        var x = Timeline.unwarp(i);
+        x = Math.round(x/z)*z;
+        var y = Timeline.warp(x);
+        if (x<=lastmark) continue;
+        lastmark=x;
+    
+        var a=-8;
+        var b= 0;
+        var m="";
+        var d = new Date();
+        d.setTime(x);
+        var t=d.getHours()+":"+pad2(d.getMinutes());
+    
+        /**/ if ((x% 3600000)==0 && d.getHours()==0
+                 ) { b=8;m=
+                             ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+
+                             d.getDate()+" "+
+                             ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" - 0:00";} // 1 day.
+        else if ((x% 3600000)==0 && d.getHours()%6==0
+                 ) { b=8; if (z<21600000) m=t;} // 6 hr.
+        else if ((x% 3600000)==0) { b=4; if (z< 3600000) m=t;} // 1 hr.
+        else if ((x% 900000)==0) {a=-6; if (z< 900000) m=t;} // 15 min.
+        else if ((x% 300000)==0) {a=-4; if (z< 300000) m=t;} // 5 min.
+        else if ((x% 60000)==0) {a=-2; if (z< 60000) m=t;} // 1 min.
+        else if ((x% 15000)==0) {a=-1; } // 15 sec.
+        else if ((x% 5000)==0) {a= 0; b=1; } // 5 sec.
+        else if ((x% 1000)==0) {a= 0; b=2; } // 1 sec.
+    
+        g.beginPath();
+        g.moveTo(a, y);
+        g.lineTo(b, y);
+        g.stroke();
+        if (m) {
+            g.save();
+            g.translate(-g.mozMeasureText(m)-10, 4+y);
+            g.mozDrawText(m);
+            g.restore();
         }
- 
-        // Draw data
-        for (v in Events.events) {
-            for (e in Events.events[v]) {
-                var p = Events.events[v][e];
-                var t = Events.type[p[0]];
-                var y = Timeline.warp(p[1]);
-            
-                // Check if this type of event is visible
-                if (!(t[1])) continue;
-                if (isNaN(y)) continue;
-            
-                // Draw the line
-                g.strokeStyle = t[0];
-                g.beginPath();
-                g.moveTo(-10, y);
-                g.lineTo(-50, y);
-                g.stroke();
+    }
+
+    // Draw current time
+    g.strokeStyle = "rgb(0,0,255)";
+    g.beginPath();
+    var y = Timeline.warp(Timeline.now);
+    g.moveTo(-8, y);
+    g.lineTo( 4, y);
+    g.lineTo( 6, y-2);
+    g.lineTo( 8, y);
+    g.lineTo( 6, y+2);
+    g.lineTo( 4, y);
+    g.stroke();
+
+    g.fillStyle = "rgb(0,0,255)";
+    var d=new Date();
+    d.setTime(Timeline.now);
+    var m=d.getHours()+":"+pad2(d.getMinutes());
+    g.save();
+    g.translate(-g.mozMeasureText(m)-10, 4+y);
+    g.mozDrawText(m);
+    g.restore();
+
+    // Highlight the 'elapsed time since last refresh'
+    var y2 = Timeline.warp(Events.pageload);
+    g.fillStyle = "rgba(0,128,255,0.1)";
+    g.fillRect(9-Timeline.width, y,Timeline.width+1, y2-y);
+
+    // Darken forgotten history
+    var y3 = Timeline.warp(Events.old);
+    g.fillStyle = "rgba(0,0,0,0.5)";
+    if (y3>0)
+        g.fillRect(9-Timeline.width, 0,Timeline.width+1, y3);
+
+    function left(q) {
+        if (q.constructor == Array)
+            return q[0]-q[1];
+        else
+            return q-0;
+    }
+
+    // Draw data
+    for (v in Events.events) {
+        for (e in Events.events[v]) {
+            var p = Events.events[v][e];
+            var t = Events.type[p[0]];
+            var y = Timeline.warp(p[1]);
         
-                // Draw the village id. (if village number is known, otherwise there's only one village)
-                if (v>0) {
-                    // TODO: convert to human readable village name.
-                    var v_name = Settings.village_names[v];
-                    if (!v_name) v_name="["+v+"]";
-                    g.fillStyle = "rgb(0,0,128)";
-                    g.save();
-                    g.translate(20 - Timeline.width, y-5);
-                    g.mozDrawText(v_name);
-                    g.restore();
-                }
- 
-                // Draw the event text
-                g.fillStyle = "rgb(0,128,0)";
-                // TODO: prepend an * when an attack has 100% efficiency.
-                //var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
-                //cap = (cap<=0)?"*":"";
+            // Check if this type of event is visible
+            if (!(t[1])) continue;
+            if (isNaN(y)) continue;
+        
+            // Draw the line
+            g.strokeStyle = t[0];
+            g.beginPath();
+            g.moveTo(-10, y);
+            g.lineTo(-50, y);
+            g.stroke();
+    
+            // Draw the village id. (if village number is known, otherwise there's only one village)
+            if (v>0) {
+                // TODO: convert to human readable village name.
+                var v_name = Settings.village_names[v];
+                if (!v_name) v_name="["+v+"]";
+                g.fillStyle = "rgb(0,0,128)";
                 g.save();
-                //g.translate(20 - Timeline.width - g.mozMeasureText(cap), y+4);
-                //g.mozDrawText(cap + p[2]);
-                g.translate(20 - Timeline.width, y+4);
-                g.mozDrawText(p[2]);
+                g.translate(20 - Timeline.width, y-5);
+                g.mozDrawText(v_name);
                 g.restore();
- 
-                // Draw the resources info.
-                if (Timeline.report_info) {
-                    g.save();
-                    g.translate(-40, y+4+12); // Move this below the message.
-                    if (p[4]) {
-                        g.fillStyle = "rgb(64,192,64)";
-                        for (var i=3; i>=0; i--) {
-                            Timeline.draw_info(Timeline.img_res[i],p[4][i])
-                                }
-                    }
-                    if (p[3]) {
-                        g.fillStyle = "rgb(0,0,255)";
-                        for (i = 10; i>=0; i--) {
-                            Timeline.draw_info(Timeline.img_unit[i],p[3][i])
-                                }
-                    }
-                    g.restore();
+            }
+
+            // Draw the event text
+            g.fillStyle = "rgb(0,128,0)";
+            // TODO: prepend an * when an attack has 100% efficiency.
+            //var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
+            //cap = (cap<=0)?"*":"";
+            g.save();
+            //g.translate(20 - Timeline.width - g.mozMeasureText(cap), y+4);
+            //g.mozDrawText(cap + p[2]);
+            g.translate(20 - Timeline.width, y+4);
+            g.mozDrawText(p[2]);
+            g.restore();
+
+            // Draw the resources info.
+            if (Timeline.report_info) {
+                g.save();
+                g.translate(-40, y+4+12); // Move this below the message.
+                if (p[4]) {
+                    g.fillStyle = "rgb(64,192,64)";
+                    for (var i=3; i>=0; i--) {
+                        Timeline.draw_info(Timeline.img_res[i],p[4][i])
+                            }
                 }
+                if (p[3]) {
+                    g.fillStyle = "rgb(0,0,255)";
+                    for (i = 10; i>=0; i--) {
+                        Timeline.draw_info(Timeline.img_unit[i],p[3][i])
+                            }
+                }
+                g.restore();
             }
         }
-        g.restore();
- 
-    };
- 
-    Timeline.run=function() {
-        tp1 = document.getElementById("tp1");
-        if (!tp1) return;
- 
-        Timeline.create_canvas();
-        Timeline.create_button();
-        Timeline.load_images();
-        Timeline.draw();
-    };
- 
-    //////////////////////////////////////////
-    // TIMELINE //
-    //////////////////////////////////////////
- 
-    function tl_main(){
- 
-        // Get the active village
-        // TODO: replace in code.
-        var active_vil = Settings.village_name;
- 
-        // Reports
-        if (location.href.indexOf("berichte.php?id")>0) {
-            try {
-                res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-                x = res.singleNodeValue;
-                if (x != undefined) {
-                    if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
-                        d = new tl_date();
- 
-                        time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?)[/.](\\d\\d)[/.](\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
-                        d.set_time(time.slice(3, 7)); // The first element in the array passed is ignored...
-                        t = d.set_day(time.slice(1, 4));
-                        where = x.childNodes[0].childNodes[3].innerHTML;
-            
-                        e = tl_get_event(t,where);
-                        e[12] = where;
-            
-                        // army composition + losses
-                        x = x.childNodes[6].childNodes[1];
-                        dualrow=false;
-                        if (x.childNodes[2]==undefined) {
-                            x = x.childNodes[1].childNodes[1];
-                        } else {
-                            x = x.childNodes[2].childNodes[1];
-                            dualrow=true;
-                        }
- 
-                        for (var j = 1; j<12; j++) {
-                            y1 = x.childNodes[3].childNodes[j];
-                            if (dualrow) y2 = x.childNodes[4].childNodes[j];
-                            if (y1!=undefined) {
-                                if (dualrow && y2.textContent>0)
-                                    e[j] = [y1.textContent - 0, y2.textContent - 0];
-                                else
-                                    e[j] = y1.textContent - 0;
-                            }
-                        }
-            
-                        // profit
-                        if (dualrow) {
-                            if (x.childNodes[5].childNodes[3] != undefined) {
-                                y = x.childNodes[5].childNodes[3].textContent.split(" ");
-                                for (var j = 1; j<5; j++) {
-                                    e[j + 12] = y[j - 1] - 0;
-                                }
-                            }
-                        } else {
-                            if (x.childNodes[4].childNodes[3] != undefined) {
-                                y = x.childNodes[4].childNodes[3].textContent.split(" ");
-                                e[16] = 0-y[0];
-                            }
-                        }
-                        e[0] = TYPE_REPORT;
-                    }
-                }
-            } catch (er){
-                if (er != "ERR_EVENT_OVERWRITE") throw er;
-            }
-        } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
+    }
+    g.restore();
+
+};
+
+Timeline.run=function() {
+    tp1 = document.getElementById("tp1");
+    if (!tp1) return;
+
+    Timeline.create_canvas();
+    Timeline.create_button();
+    Timeline.load_images();
+    Timeline.draw();
+};
+
+//////////////////////////////////////////
+// TIMELINE //
+//////////////////////////////////////////
+
+function tl_main(){
+
+    // Get the active village
+    // TODO: replace in code.
+    var active_vil = Settings.village_name;
+
+    // Reports
+    if (location.href.indexOf("berichte.php?id")>0) {
+        try {
+            res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
+            x = res.singleNodeValue;
+            if (x != undefined) {
+                if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
+                    d = new tl_date();
+
+                    time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?)[/.](\\d\\d)[/.](\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
+                    d.set_time(time.slice(3, 7)); // The first element in the array passed is ignored...
+                    t = d.set_day(time.slice(1, 4));
+                    where = x.childNodes[0].childNodes[3].innerHTML;
         
-            // Party events! Still a building...
-            // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
-            // This should be exclusive for Town Halls.
-            x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
+                    e = tl_get_event(t,where);
+                    e[12] = where;
+        
+                    // army composition + losses
+                    x = x.childNodes[6].childNodes[1];
+                    dualrow=false;
+                    if (x.childNodes[2]==undefined) {
+                        x = x.childNodes[1].childNodes[1];
+                    } else {
+                        x = x.childNodes[2].childNodes[1];
+                        dualrow=true;
+                    }
+
+                    for (var j = 1; j<12; j++) {
+                        y1 = x.childNodes[3].childNodes[j];
+                        if (dualrow) y2 = x.childNodes[4].childNodes[j];
+                        if (y1!=undefined) {
+                            if (dualrow && y2.textContent>0)
+                                e[j] = [y1.textContent - 0, y2.textContent - 0];
+                            else
+                                e[j] = y1.textContent - 0;
+                        }
+                    }
+        
+                    // profit
+                    if (dualrow) {
+                        if (x.childNodes[5].childNodes[3] != undefined) {
+                            y = x.childNodes[5].childNodes[3].textContent.split(" ");
+                            for (var j = 1; j<5; j++) {
+                                e[j + 12] = y[j - 1] - 0;
+                            }
+                        }
+                    } else {
+                        if (x.childNodes[4].childNodes[3] != undefined) {
+                            y = x.childNodes[4].childNodes[3].textContent.split(" ");
+                            e[16] = 0-y[0];
+                        }
+                    }
+                    e[0] = TYPE_REPORT;
+                }
+            }
+        } catch (er){
+            if (er != "ERR_EVENT_OVERWRITE") throw er;
+        }
+    } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
+    
+        // Party events! Still a building...
+        // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
+        // This should be exclusive for Town Halls.
+        x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
+                              document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        if (x.snapshotLength == 1){
+            x = x.snapshotItem(0).parentNode;
+            d = new tl_date();
+
+            Debug.info("Found a party event!");
+
+            d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
+            t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+
+            msg = x.childNodes[1].textContent;
+            Debug.debug('Type = '+msg);
+
+            try {
+                e = tl_get_event(t, msg, active_vil);
+                e[0] = TYPE_PARTY;
+            } catch (er){
+                if (er != 'ERR_EVENT_OVERWRITE') throw er;
+                Debug.info('An event already exists at this time!');
+            }
+        }
+    
+        // Research Events
+        // Ok, the idea here is to look for a building with a table of class 'tbg' that has its first
+        // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
+        // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
+        // This is still inside the if(building) statement
+        try {
+            x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
                                   document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
             if (x.snapshotLength == 1){
                 x = x.snapshotItem(0).parentNode;
                 d = new tl_date();
- 
-                Debug.info("Found a party event!");
- 
-                d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
-                t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
- 
-                msg = x.childNodes[1].textContent;
-                Debug.debug('Type = '+msg);
- 
-                try {
-                    e = tl_get_event(t, msg, active_vil);
-                    e[0] = TYPE_PARTY;
-                } catch (er){
-                    if (er != 'ERR_EVENT_OVERWRITE') throw er;
-                    Debug.info('An event already exists at this time!');
+
+                d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+                t = d.adjust_day(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+
+                // Extract the unit being upgraded
+                type = x.childNodes[3].textContent;
+                Debug.debug("Upgrading "+type);
+
+                // Extract the name of the building where the upgrade is occuring
+                // y is the table above the research-in-progress table
+                y = x.parentNode.parentNode.previousSibling.previousSibling.childNodes[1];
+                building = y.childNodes[0].childNodes[1].textContent;
+                Debug.debug("Upgrading at the "+building);
+
+                // Extract the level upgrading to - not for the acadamy!
+                // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
+                // in there could create compatibility problems... so keep it remote with textContent.
+                for (var i=0; i < y.childNodes.length; i++){
+                    level = y.childNodes[i].childNodes[1].textContent.match(type+' ([(][A-Z][a-z]* )(\\d\\d?)([)])');
+                    if (level){
+                        level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
+                        level = level[1]+level[2]+level[3];
+                        Debug.debug("Upgrading to "+level);
+                        break;
+                    }
+                }
+
+                // And now throw all of this information into an event
+                // Don't throw in the level information if we're researching a new unit at the acadamy... because there isn't any!
+                e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
+                e[0] = TYPE_RESEARCH;
+
+            } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
+        } catch (er){
+            if (er != "ERR_EVENT_OVERWRITE") throw er;
+        }
+    }
+
+} /* Timeline.enabled */
+
+
+
+/****************************************
+ * CURRENT END OF REDESING ATTEMPT
+ ****************************************/
+
+
+//////////////////////////////////////////
+// COLLECT SOME INFO //
+//////////////////////////////////////////
+
+function storeInfo(){
+    // Meaning of GM Values: (Some of the variable names are in dutch, to stay compatible with older scripts)
+    //
+    // ALLIANCE:
+    // dictionary (map) mapping the names of your ally's members to a list of it's villages.
+
+    // Load ally data
+    //function captureAllianceData(){
+    try {
+        ally = eval(GM_getValue(prefix("ALLIANCE"), "{}"));
+        if (ally==undefined) ally = {};
+    } catch (e) {
+        alert(e);
+        ally = { };
+    }
+    if (ally==undefined) ally2={};
+
+    // Store list of your alliance members.
+    if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
+        var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+        if (res.snapshotLength>0) {
+            ally2= ally;
+            ally = {}
+            for ( var i=0 ; i < res.snapshotLength; i++ ){
+                x = res.snapshotItem(i);
+                name = x.textContent;
+                id = x.href.match("\\d+")[0];
+                cnt = x.parentNode.parentNode.childNodes[5].textContent;
+                if (ally2[name] != undefined) {
+                    y = ally2[name];
+                    y[0] = id;
+                    y[1] = cnt;
+                    ally[name] = y;
+                } else {
+                    // [id, pop, {city1: [city1,x,y],city2: [city2,x,y],...} ]
+                    ally[name] = [id, cnt, {}];
                 }
             }
-        
-            // Research Events
-            // Ok, the idea here is to look for a building with a table of class 'tbg' that has its first
-            // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
-            // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
-            // This is still inside the if(building) statement
-            try {
-                x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
-                                      document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-                if (x.snapshotLength == 1){
-                    x = x.snapshotItem(0).parentNode;
-                    d = new tl_date();
- 
-                    d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-                    t = d.adjust_day(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
- 
-                    // Extract the unit being upgraded
-                    type = x.childNodes[3].textContent;
-                    Debug.debug("Upgrading "+type);
- 
-                    // Extract the name of the building where the upgrade is occuring
-                    // y is the table above the research-in-progress table
-                    y = x.parentNode.parentNode.previousSibling.previousSibling.childNodes[1];
-                    building = y.childNodes[0].childNodes[1].textContent;
-                    Debug.debug("Upgrading at the "+building);
- 
-                    // Extract the level upgrading to - not for the acadamy!
-                    // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
-                    // in there could create compatibility problems... so keep it remote with textContent.
-                    for (var i=0; i < y.childNodes.length; i++){
-                        level = y.childNodes[i].childNodes[1].textContent.match(type+' ([(][A-Z][a-z]* )(\\d\\d?)([)])');
-                        if (level){
-                            level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
-                            level = level[1]+level[2]+level[3];
-                            Debug.debug("Upgrading to "+level);
-                            break;
-                        }
-                    }
- 
-                    // And now throw all of this information into an event
-                    // Don't throw in the level information if we're researching a new unit at the acadamy... because there isn't any!
-                    e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
-                    e[0] = TYPE_RESEARCH;
- 
-                } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
-            } catch (er){
-                if (er != "ERR_EVENT_OVERWRITE") throw er;
-            }
+            GM_setValue(prefix("ALLIANCE"), uneval(ally));
         }
- 
-    } /* Timeline.enabled */
- 
- 
- 
-    /****************************************
-     * CURRENT END OF REDESING ATTEMPT
-     ****************************************/
- 
- 
-    //////////////////////////////////////////
-    // COLLECT SOME INFO //
-    //////////////////////////////////////////
- 
-    function storeInfo(){
-        // Meaning of GM Values: (Some of the variable names are in dutch, to stay compatible with older scripts)
-        //
-        // ALLIANCE:
-        // dictionary (map) mapping the names of your ally's members to a list of it's villages.
- 
-        // Load ally data
-        //function captureAllianceData(){
-        try {
-            ally = eval(GM_getValue(prefix("ALLIANCE"), "{}"));
-            if (ally==undefined) ally = {};
-        } catch (e) {
-            alert(e);
-            ally = { };
-        }
-        if (ally==undefined) ally2={};
- 
-        // Store list of your alliance members.
-        if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
-            var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-            if (res.snapshotLength>0) {
-                ally2= ally;
-                ally = {}
+    }
+
+    // Get alliance member data
+    if (location.href.indexOf("spieler")>0) {
+        who = document.body.innerHTML.match("<td class=\"rbg\" colspan=\"3\">[A-Z][a-z]+ ([^<]+)</td>");
+        if (who) {
+            who = who[1];
+            if (ally[who] != undefined || who == Settings.username) {
+                var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+                cities = {};
                 for ( var i=0 ; i < res.snapshotLength; i++ ){
                     x = res.snapshotItem(i);
                     name = x.textContent;
-                    id = x.href.match("\\d+")[0];
-                    cnt = x.parentNode.parentNode.childNodes[5].textContent;
-                    if (ally2[name] != undefined) {
-                        y = ally2[name];
-                        y[0] = id;
-                        y[1] = cnt;
-                        ally[name] = y;
-                    } else {
-                        // [id, pop, {city1: [city1,x,y],city2: [city2,x,y],...} ]
-                        ally[name] = [id, cnt, {}];
-                    }
+                    y = x.parentNode.parentNode.childNodes[4].textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
+                    y[0] = name;none = "0,0,0,0";
+
+                    y[1] -= 0;
+                    y[2] -= 0;
+                    cities[name] = y;
                 }
+                if (ally[who]==undefined) ally[who]=[0,0,{}];
+                ally[who][2] = cities;
                 GM_setValue(prefix("ALLIANCE"), uneval(ally));
             }
         }
- 
-        // Get alliance member data
-        if (location.href.indexOf("spieler")>0) {
-            who = document.body.innerHTML.match("<td class=\"rbg\" colspan=\"3\">[A-Z][a-z]+ ([^<]+)</td>");
-            if (who) {
-                who = who[1];
-                if (ally[who] != undefined || who == Settings.username) {
-                    var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-                    cities = {};
-                    for ( var i=0 ; i < res.snapshotLength; i++ ){
-                        x = res.snapshotItem(i);
-                        name = x.textContent;
-                        y = x.parentNode.parentNode.childNodes[4].textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
-                        y[0] = name;none = "0,0,0,0";
- 
-                        y[1] -= 0;
-                        y[2] -= 0;
-                        cities[name] = y;
-                    }
-                    if (ally[who]==undefined) ally[who]=[0,0,{}];
-                    ally[who][2] = cities;
-                    GM_setValue(prefix("ALLIANCE"), uneval(ally));
-                }
-            }
-        }
     }
+}
  
 }catch(e){
     try{Debug.exception(e);}
