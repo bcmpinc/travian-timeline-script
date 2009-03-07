@@ -548,7 +548,7 @@ try{
     Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
     Debug.print =GM_log;
     Debug.lineshift = function(){
-        try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-510; } // Keep the number in this line equal to it's line number. Don't modify otherwise.
+        try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-551; } // Keep the number in this line equal to it's line number. Don't modify anything else.
     }();
     Debug.exception=function(fn_name, e) {
         // The lineshift is to correct the linenumber shift caused by greasemonkey.
