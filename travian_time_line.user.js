@@ -449,72 +449,93 @@ Settings.show=function() {
     w.style.background = "rgba(192,192,192,0.8)";
     w.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
     '<div style="position: absolute; left: 50%; top: 50%;">'+
-    '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 450px;'+
-    ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;">'+
+    '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
+    ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
+    ' -moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;">'+
     '</pre></div>';
     document.body.appendChild(w);
     Settings.window = w;
     try {
-        var p = w.childNodes[1].childNodes[0];
+        var p = w.childNodes[1];
         function add_el(type) {
             var el=document.createElement(type);
             p.appendChild(el);
             return el;
         }
 
-        // First we need to create the tab bar, to switch between tabs
-        var tabbar = add_el('table');
-        tabbar.width = "100%";
-
-        // Then we need to create the tabs...
-        var txt = '<tbody><tr align="center">';
+        // First we need to create the tabs...
+        var txt = '<tbody>';
         for (var n in Feature.list){
             var f = Feature.list[n];
             if (f.s == undefined) continue;
 
-            txt += '<td><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-topright:8px;'+
-                'padding:3px; border: 1px solid #444; background:'+(n=='Settings'?'#eee':'#ccc')+'; color:black">'+
-                f.name + '</a></td>';
+            txt += '<tr align="right"><td style="padding: 5px 0px;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
+                'padding:2px 11px 3px; border: 1px solid #444; '+
+                (n=='Settings'?'background: #fff; border-right: none;':'background: #eee; border-right: 3px solid black;')+
+                ' color:black">'+
+                f.name + '</a></td></tr>';
         }
-        txt += '</tr></tbody>';
-        tabbar.innerHTML = txt;
+        txt += '</tbody>';
 
-        var display = add_el('div'); // The actual menu elements go here...
-        display.style.border = "1px solid #000";
-        display.style.padding = "7px";
+        // Then we need to create the tab bar, to switch between tabs
+        var tabbar = add_el('table');
+        tabbar.innerHTML = txt;
+        tabbar.style.position="absolute";
+        tabbar.style.width = "150px";
+        tabbar.style.left  = "-445px";
+        tabbar.style.top   = "-200px";
+
+        var display = p.childNodes[0]; // The actual menu elements go here...
+        //display.style.border = "1px solid #000";
+        //display.style.padding = "7px";
         var f = Feature.list['Settings']; // It starts on this feature... hardwire for now...
         for (var i in f.s){
             f.s[i].read();
             f.s[i].config(display);
         }
 
-        var notice = add_el('div'); // Add the copyright
+        var notice = add_el('pre'); // Add the copyright
         notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
-            "GNU General Public License as published by the Free Software\n"+
-            "Foundation; either version 3 of the License, or (at your option)\n"+
-            "any later version. This program comes with ABSOLUTELY NO WARRANTY!\n\n";
-        notice.style.color="#999";
+            "GNU General Public License as published by the Free Software Foundation;\n"+
+            "either version 3 of the License, or (at your option) any later version.\n"+
+            "This program comes with ABSOLUTELY NO WARRANTY!";
+        notice.style.color="#666";
         notice.style.fontStyle="italic";
+        notice.style.fontSize="75%";
+        notice.style.textAlign="center";
+        notice.style.position="absolute";
+        notice.style.left="-300px";
+        notice.style.top="180px";
+        notice.style.width="600px";
+        notice.style.padding="1px 8px";
+        notice.style.border="3px solid #000";
+        notice.style.background="#fff";
+        notice.style.MozBorderRadiusBottomleft ="12px";
+        notice.style.MozBorderRadiusBottomright="12px";
 
         // Add click listeners to all of the tab buttons
-        for (var n in p.childNodes[0].childNodes[0].childNodes[0].childNodes){
-            var a = p.childNodes[0].childNodes[0].childNodes[0].childNodes[n];
+        var tabs=tabbar.childNodes[0].childNodes;
+        for (var n in tabs){
+            var a = tabs[n].childNodes[0].childNodes[0];
             a.addEventListener('click', function(e){
-                    var el = e.target;
-                    var f = Feature.list[el.textContent];
+                var el = e.target;
+                var f = Feature.list[el.textContent];
 
-                    // Reset the background colours of *all* tab buttons
-                    for (var i in el.parentNode.parentNode.childNodes){
-                        el.parentNode.parentNode.childNodes[i].childNodes[0].style.background = "#ccc";
-                    }
+                // Reset the background colours of *all* tab buttons
+                for (var i in tabs){
+                    tabs[i].childNodes[0].childNodes[0].style.background = "#eee";
+                    tabs[i].childNodes[0].childNodes[0].style.borderRight = "3px solid black";
+                }
 
-                    e.target.style.background = "#eee"; // Turn the colour of the clicked element near-white
-                    display.innerHTML = ''; // Clear the display section
-                    for (var i in f.s){ // And refill it
-                        f.s[i].read();
-                        f.s[i].config(display);
-                    }
-                }, false);
+                el.style.background = "#fff"; // Turn the colour of the clicked element white
+                el.style.borderRight = "none"; // Simulate that the tab is connected to the settings page
+
+                display.innerHTML = ''; // Clear the display section
+                for (var i in f.s){ // And refill it
+                    f.s[i].read();
+                    f.s[i].config(display);
+                }
+            }, false);
         }
     } catch (e) {
         Debug.exception("Settings.show", e);
