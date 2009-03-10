@@ -398,9 +398,10 @@ Settings.config=function(parent_element) {
         GM_log(e);
     }
 };
-Settings.setting("username","someone", Settings.type.string, undefined, "The name you use to log in into your account.");
-Settings.setting("race",0, Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
-Settings.setting("village_names",{},Settings.type.object,undefined,"The names of the villages.");
+Settings.setting("username",     "someone", Settings.type.string,      undefined, "The name you use to log in into your account.");
+Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.");
+Settings.setting("current_tab",  "Settings",Settings.type.none,        undefined);
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
@@ -470,9 +471,9 @@ Settings.show=function() {
             if (f.s == undefined) continue;
 
             txt += '<tr align="right"><td style="padding: 5px 0px;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
-                'padding:2px 11px 3px; border: 1px solid #444; '+
-                (n=='Settings'?'background: #fff; border-right: none;':'background: #eee; border-right: 3px solid black;')+
-                ' color:black">'+
+                'padding:2px 11px 3px; border: 2px solid #000; '+
+                (n==Settings.current_tab?'background: #fff; border-right: none;':'background: #ddd; border-right: 3px solid black;')+
+                ' color:black; outline: none;">'+
                 f.name + '</a></td></tr>';
         }
         txt += '</tbody>';
@@ -488,7 +489,7 @@ Settings.show=function() {
         var display = p.childNodes[0]; // The actual menu elements go here...
         //display.style.border = "1px solid #000";
         //display.style.padding = "7px";
-        var f = Feature.list['Settings']; // It starts on this feature... hardwire for now...
+        var f = Feature.list[Settings.current_tab]; // It starts on this feature... 
         for (var i in f.s){
             f.s[i].read();
             f.s[i].config(display);
@@ -520,10 +521,12 @@ Settings.show=function() {
             a.addEventListener('click', function(e){
                 var el = e.target;
                 var f = Feature.list[el.textContent];
+                Settings.current_tab=el.textContent;
+                Settings.s.current_tab.write();
 
                 // Reset the background colours of *all* tab buttons
                 for (var i in tabs){
-                    tabs[i].childNodes[0].childNodes[0].style.background = "#eee";
+                    tabs[i].childNodes[0].childNodes[0].style.background = "#ddd";
                     tabs[i].childNodes[0].childNodes[0].style.borderRight = "3px solid black";
                 }
 
