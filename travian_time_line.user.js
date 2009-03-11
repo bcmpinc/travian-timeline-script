@@ -204,7 +204,7 @@ Feature.call=function(fn_name, once) {
 };
 // Executes (using Feature.call) the function specified by fn_name for all _enabled_
 // Features created with Feature.create() in the order they have been created.
-// A feature is enabled iff it doesn't have an enabled field or its enabled field is not
+// A feature is enabled if it doesn't have an enabled field or its enabled field is not
 // exactly equal to false.
 Feature.forall=function(fn_name, once) {
     for (var n in this.list) {
@@ -1326,7 +1326,6 @@ Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the t
 Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
 Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
 Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
-
 Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
 Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
 Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
@@ -1709,6 +1708,74 @@ Timeline.run=function() {
     Timeline.load_images();
     Timeline.draw();
 };
+
+/****************************************
+ * Village Tool Tip
+ ****************************************/
+Feature.create("Tooltip");
+Tooltip.setting("enabled", true, Settings.type.bool, undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
+Tooltip.setting("mouseover_delay", 1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
+Tooltip.setting("mouseout_delay", 500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
+
+// This creates the tooltips
+Tooltip.add = function(element, contents){
+    // 'contents' is an array of table rows, that still need to be encased in <tr>'s and a <table>
+    var div = document.createElement('div');
+    div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px #000; background-color:#fff; visibility:hidden;');
+    if (contents.length > 0)
+        div.innerHTML = '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('<tr>')+'</tbody></table>';
+    else div.innerHTML = 'IDLE!';
+    document.getElementById('ltop1').parentNode.appendChild(div);
+
+    var timer;
+    element.addEventListener('mouseover', function(e){
+            if (timer != undefined) window.clearTimeout(timer);
+            timer = window.setTimeout(function(){
+                    div.style.visibility = 'visible';
+                    div.style.left = (e.pageX+1)+'px';
+                    div.style.top = (e.pageY+1)+'px';
+                }, Tooltip.mouseover_delay);
+        }, false);
+    element.addEventListener('mouseout', function(e){
+            if (timer != undefined) window.clearTimeout(timer);
+            timer = window.setTimeout(function(){
+                    div.style.visibility = 'hidden';
+                }, Tooltip.mouseout_delay);
+        }, false);
+
+    return div;
+}
+
+Tooltip.run = function(){
+    // The events are now sorted by village, so that simplifies our task here somewhat
+    var x = document.evaluate('//div[@id="lright1"]/table[@class="f10"]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var d = new Date();
+    // Run through our villages
+    for (var i=0; i < x.snapshotLength; i++){
+        var vil = x.snapshotItem(i);
+        var did = vil.childNodes[0].childNodes[2].href.split('newdid=')[1];
+        if (did.indexOf('&') >= 0) did = did.split('&')[0];
+
+        var events = []; // This contains time/text pairs; the time in the first index for sorting, the text for display
+
+        // Run through the tasks for each village
+        for (var j in Events.events[did]){
+            var e = Events.events[did][j];
+            if (e[1] < d.getTime()) continue; // If the event is in the past...
+
+            var txt = '<td vAlign="bottom">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+            txt += '<td style="color:'+Events.type[e[0]][0]+'">'+e[2];
+
+            events.push([e[1], txt]);
+        }
+
+        events.sort();
+        ev = []; // This is a rather annoying effect caused by using both sort() and join()... :(
+        for (var j in events) ev.push(events.shift()[1]);
+
+        Tooltip.add(vil, ev);
+    }
+}
 
 //////////////////////////////////////////
 // TIMELINE //
