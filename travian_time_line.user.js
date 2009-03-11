@@ -401,22 +401,22 @@ Settings.config=function(parent_element) {
 Settings.setting("username",     "someone", Settings.type.string,      undefined, "The name you use to log in into your account.");
 Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
 Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.");
-Settings.setting("current_tab",  "Settings",Settings.type.none,        undefined);
+Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined);
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
     div.style.position = "absolute";
-    div.style.zIndex = "2";
+    div.style.zIndex   = "2";
     var right = Timeline.width;
     if (Timeline.collapse) right = Timeline.collapse_width;
     if (!Timeline.enabled) right = 0;
     right+=5;
-    div.style.right = right+"px";
-    div.style.top = "-5px";
+    div.style.right           = right+"px";
+    div.style.top             = "-5px";
     div.style.MozBorderRadius = "6px";
-    div.style.padding = "3px";
-    div.style.border = "1px solid #999";
-    div.style.background = "#ccc";
+    div.style.padding         = "3px";
+    div.style.border          = "1px solid #999";
+    div.style.background      = "#ccc";
     div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
     document.body.appendChild(div);
     var link = div.firstChild;
@@ -442,18 +442,18 @@ Settings.run=function() {
 Settings.show=function() {
     var w = document.createElement("div");
     w.style.position = "fixed";
-    w.style.zIndex = "250";
-    w.style.left = "0px";
-    w.style.top = "0px";
-    w.style.right = "0px";
-    w.style.bottom = "0px";
+    w.style.zIndex   = "250";
+    w.style.left     = "0px";
+    w.style.top      = "0px";
+    w.style.right    = "0px";
+    w.style.bottom   = "0px";
     w.style.background = "rgba(192,192,192,0.8)";
     w.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
-    '<div style="position: absolute; left: 50%; top: 50%;">'+
-    '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
-    ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
-    ' -moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;">'+
-    '</pre></div>';
+                  '<div style="position: absolute; left: 50%; top: 50%;">'+
+                  '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
+                  ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
+                  ' -moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;">'+
+                  '</pre></div>';
     document.body.appendChild(w);
     Settings.window = w;
     try {
@@ -487,14 +487,16 @@ Settings.show=function() {
         tabbar.style.top   = "-200px";
 
         var display = p.childNodes[0]; // The actual menu elements go here...
-        //display.style.border = "1px solid #000";
-        //display.style.padding = "7px";
         var f = Feature.list[Settings.current_tab]; // It starts on this feature... 
-        for (var i in f.s){
-            f.s[i].read();
-            f.s[i].config(display);
-        }
-
+        if (f) { // Check if it's a valid feature.
+            for (var i in f.s){
+                f.s[i].read();
+                f.s[i].config(display);
+            }
+        } else {
+            display.innerHTML="Unknown feature: "+Settings.current_tab+"\nPlease select a tab on the left.";
+        }      
+        
         var notice = add_el('pre'); // Add the copyright
         notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
             "GNU General Public License as published by the Free Software Foundation;\n"+
@@ -572,7 +574,7 @@ Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which ca
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
 Debug.print =GM_log;
 Debug.lineshift = function(){
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-551; } // Keep the number in this line equal to it's line number. Don't modify anything else.
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-577; } // Keep the number in this line equal to it's line number. Don't modify anything else.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
