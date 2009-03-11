@@ -21,8 +21,25 @@ Lines:
 - Add names to special locations.
 - Seperate GM_values etc for different accounts on the same server (ie sitters).
 
+Event Capture:
+- Make colors customizable, add preview?
+- Capture resource generation and amounts
+
+Tool Tip:
+- Add market events to the receiving village, too
+- Add images
+- Add link to building in question inside the tooltips?
+- If mouseover the tooltip itself, don't hide
+
 Other Features:
 
 New Features:
 - Modify all the links for more robust navigation
-- Add latest warehouse info to the village tool tips?
+- Add latest warehouse info to the village tool tips
+- Add warehouse full display (to tooltip and timeline)
+- Add event synchronization between multiple browsers
+- Add task queue functionality
+
+BUGS:
+- Event capture: need to prevent/mask double-reporting of internal trade market events
+- Tooltip: seems to drop the occasional event? unconfirmed
