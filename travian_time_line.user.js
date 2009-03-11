@@ -1750,6 +1750,7 @@ Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
     var x = document.evaluate('//div[@id="lright1"]/table[@class="f10"]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     var d = new Date();
+    var e_time = new Date();
     // Run through our villages
     for (var i=0; i < x.snapshotLength; i++){
         var vil = x.snapshotItem(i);
@@ -1763,7 +1764,8 @@ Tooltip.run = function(){
             var e = Events.events[did][j];
             if (e[1] < d.getTime()) continue; // If the event is in the past...
 
-            var txt = '<td vAlign="bottom">'+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+            e_time.setTime(e[1]);
+            var txt = '<td vAlign="bottom">'+e_time.getHours()+':'+(e_time.getMinutes()<10?'0':'')+e_time.getMinutes();
             txt += '<td style="color:'+Events.type[e[0]][0]+'">'+e[2];
 
             events.push([e[1], txt]);
