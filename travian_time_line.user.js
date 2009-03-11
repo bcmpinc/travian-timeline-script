@@ -144,6 +144,28 @@ function tl_date(){
  
         return this.date.getTime();
     }
+
+    this.set_seconds = function(duration){
+        // This will change the time such that it approximates the completion time better. 
+        // Note that this approximation is not consistent between pageloads.
+        // duration is of type [string, hours, minutes, seconds].
+        Debug.debug('Setting seconds with: '+duration);
+ 
+        var date2=new Date();
+        date2.setHours(date2.getHours()- -duration[1]);
+        date2.setMinutes(date2.getMinutes()- -duration[2]);
+        date2.setSeconds(date2.getSeconds()- -duration[3]);
+        
+        // Check wheter the new value isn't screwed up somehow.
+        Debug.debug('new time would be: '+date2);
+        if (Math.abs(date2.getTime()-this.date.getTime())<60000) {
+            this.date=date2;
+        }
+  
+        Debug.debug('time is: '+this.date);
+ 
+        return this.date.getTime();
+    }
 }
  
 function nothing(){}
@@ -1209,7 +1231,9 @@ Events.collector.building=function(){
         // TODO: get timing more accurate.
         var d = new tl_date();
         d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        e[1] = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+        var duration = x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+        d.adjust_day(duration);
+        e[1] = d.set_seconds(duration);
         e[2] = x.childNodes[1].textContent;
 
         Debug.debug("Time set to "+e[1]);
@@ -1777,6 +1801,12 @@ Tooltip.run = function(){
     }
 }
 
+
+/****************************************
+ * CURRENT END OF REDESING ATTEMPT
+ ****************************************/
+
+
 //////////////////////////////////////////
 // TIMELINE //
 //////////////////////////////////////////
@@ -1923,12 +1953,6 @@ function tl_main(){
     }
 
 } /* Timeline.enabled */
-
-
-
-/****************************************
- * CURRENT END OF REDESING ATTEMPT
- ****************************************/
 
 
 //////////////////////////////////////////
