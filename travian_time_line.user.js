@@ -1810,7 +1810,7 @@ Tooltip.run = function(){
 
             e_time.setTime(e[1]);
             var txt = '<td vAlign="bottom">'+e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
-            txt += '<td style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
+            txt += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
             if (Tooltip.show_info) {
                 txt += '<td>';
                 if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
