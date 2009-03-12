@@ -1737,9 +1737,10 @@ Timeline.run=function() {
  * Village Tool Tip
  ****************************************/
 Feature.create("Tooltip");
-Tooltip.setting("enabled", true, Settings.type.bool, undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
+Tooltip.setting("enabled",         true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
+Tooltip.setting("show_info",       true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
 Tooltip.setting("mouseover_delay", 1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
-Tooltip.setting("mouseout_delay", 500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
+Tooltip.setting("mouseout_delay",   500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
 // This creates the tooltips
 Tooltip.add = function(element, contents){
@@ -1810,9 +1811,10 @@ Tooltip.run = function(){
             e_time.setTime(e[1]);
             var txt = '<td vAlign="bottom">'+e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
             txt += '<td style="color:'+Events.type[e[0]][0]+'">'+e[2];
-
-            if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
-            if (e[3]) for (var j=0; j<11; j++) txt+=Tooltip.convert_info(3,j,e[3][j]);
+            if (Tooltip.show_info) {
+                if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
+                if (e[3]) for (var j=0; j<11; j++) txt+=Tooltip.convert_info(3,j,e[3][j]);
+            }
             txt += '</td>';
             
             events.push([e[1], txt]);
