@@ -1783,7 +1783,7 @@ Tooltip.convert_info=function(type, index, amount) {
     }
     if (amount.constructor == Array) 
         amount=amount[0]+" (-"+amount[1]+")";
-    return " "+amount+"<img src=\""+img+"\"/>";
+    return " | "+amount+" <img src=\""+img+"\"/>";
 };
 
 // TODO: Creating the contents of the popup on-demand, would probably speed up pageloading, and gives more up to date results.
@@ -1810,12 +1810,13 @@ Tooltip.run = function(){
 
             e_time.setTime(e[1]);
             var txt = '<td vAlign="bottom">'+e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
-            txt += '<td style="color:'+Events.type[e[0]][0]+'">'+e[2];
+            txt += '<td style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
             if (Tooltip.show_info) {
+                txt += '<td>';
                 if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
                 if (e[3]) for (var j=0; j<11; j++) txt+=Tooltip.convert_info(3,j,e[3][j]);
+                txt += '</td>';
             }
-            txt += '</td>';
             
             events.push([e[1], txt]);
         }
