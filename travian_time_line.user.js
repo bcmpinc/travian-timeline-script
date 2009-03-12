@@ -1706,14 +1706,14 @@ Timeline.draw=function() {
                 if (p[4]) {
                     g.fillStyle = "rgb(64,192,64)";
                     for (var i=3; i>=0; i--) {
-                        Timeline.draw_info(Timeline.img_res[i],p[4][i])
-                            }
+                        Timeline.draw_info(Timeline.img_res[i],p[4][i]);
+                    }
                 }
                 if (p[3]) {
                     g.fillStyle = "rgb(0,0,255)";
-                    for (i = 10; i>=0; i--) {
-                        Timeline.draw_info(Timeline.img_unit[i],p[3][i])
-                            }
+                    for (var i=10; i>=0; i--) {
+                        Timeline.draw_info(Timeline.img_unit[i],p[3][i]);
+                    }
                 }
                 g.restore();
             }
@@ -1747,7 +1747,7 @@ Tooltip.add = function(element, contents){
     var div = document.createElement('div');
     div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px #000; background-color:#fff; visibility:hidden;');
     if (contents.length > 0)
-        div.innerHTML = '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('<tr>')+'</tbody></table>';
+        div.innerHTML = '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('</tr><tr>')+'</tr></tbody></table>';
     else div.innerHTML = 'IDLE!';
     document.getElementById('ltop1').parentNode.appendChild(div);
 
@@ -1756,8 +1756,8 @@ Tooltip.add = function(element, contents){
             if (timer != undefined) window.clearTimeout(timer);
             timer = window.setTimeout(function(){
                     div.style.visibility = 'visible';
-                    div.style.left = (e.pageX+1)+'px';
-                    div.style.top = (e.pageY+1)+'px';
+                    div.style.left = (e.pageX+8)+'px';
+                    div.style.top  = (e.pageY+8)+'px';
                 }, Tooltip.mouseover_delay);
         }, false);
     element.addEventListener('mouseout', function(e){
@@ -1770,6 +1770,23 @@ Tooltip.add = function(element, contents){
     return div;
 }
 
+// This creates the resource info html.
+Tooltip.convert_info=function(type, index, amount) {
+    if (!amount) return "";
+    var img = "";
+    if (type==3) {
+        if (index==10) img="img/un/u/hero.gif";
+        else img="img/un/u/"+(Settings.race*10+index+1)+".gif";
+    } else if (type==4) {
+        img="img/un/r/"+(index+1)+".gif"
+    }
+    if (amount.constructor == Array) 
+        amount=amount[0]+" (-"+amount[1]+")";
+    return " "+amount+"<img src=\""+img+"\"/>";
+};
+
+// TODO: Creating the contents of the popup on-demand, would probably speed up pageloading, and gives more up to date results.
+
 Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
     var x = document.evaluate('//div[@id="lright1"]/table[@class="f10"]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -1781,25 +1798,32 @@ Tooltip.run = function(){
         var did = vil.childNodes[0].childNodes[2].href.split('newdid=')[1];
         if (did.indexOf('&') >= 0) did = did.split('&')[0];
 
-        var events = []; // This contains time/text pairs; the time in the first index for sorting, the text for display
+        // This contains time/text pairs; the time in the first index for sorting, the text for display
+        // The text is actually html consisting of table cells wrapped in <td> tags.
+        var events = []; 
 
         // Run through the tasks for each village
         for (var j in Events.events[did]){
             var e = Events.events[did][j];
-            if (e[1] < d.getTime()) continue; // If the event is in the past...
+            if (e[1] < d.getTime()) continue; // Skip if the event is in the past...
 
             e_time.setTime(e[1]);
-            var txt = '<td vAlign="bottom">'+e_time.getHours()+':'+(e_time.getMinutes()<10?'0':'')+e_time.getMinutes();
+            var txt = '<td vAlign="bottom">'+e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
             txt += '<td style="color:'+Events.type[e[0]][0]+'">'+e[2];
 
+            if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
+            if (e[3]) for (var j=0; j<11; j++) txt+=Tooltip.convert_info(3,j,e[3][j]);
+            txt += '</td>';
+            
             events.push([e[1], txt]);
         }
 
         events.sort();
-        ev = []; // This is a rather annoying effect caused by using both sort() and join()... :(
-        for (var j in events) ev.push(events.shift()[1]);
+        
+        // Stripping of the time (sort-key), such that join() can be used.
+        for (var j in events) events[j]=events[j][1];
 
-        Tooltip.add(vil, ev);
+        Tooltip.add(vil, events);
     }
 }
 
