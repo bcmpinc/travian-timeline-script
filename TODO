@@ -34,9 +34,10 @@ Lines:
 Event Capture:
 - Make colors customizable, 
 - Capture resource generation and amounts
+- Add market events to the receiving village, without having to view the receiving village to get them
+-- //This is a bit of a capture & hide vs don't capture and create problem...
 
 Tool Tip:
-+ Add market events to the receiving village, too
 + Add images
 - Add link to building in question inside the tooltips?
 - If mouseover the tooltip itself, don't hide it
