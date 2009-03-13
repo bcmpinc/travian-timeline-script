@@ -1788,7 +1788,7 @@ Tooltip.convert_info=function(type, index, amount) {
         amount=amount[0]+" (-"+amount[1]+")";
     var seperator = Tooltip.seperate_values ? ' | '  : ' ';
     if (type==4 && Tooltip.merchant_kilo_values || type==3 && Tooltip.army_kilo_values)
-        return seperator + Math.round(amount/1000)+'k <img src="'+img+'"/>';
+        return seperator + Math.round(amount/1000)+'k<img src="'+img+'"/>';
     return seperator + amount + '<img src="'+img+'"/>';
 };
 
