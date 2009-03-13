@@ -1739,6 +1739,9 @@ Timeline.run=function() {
 Feature.create("Tooltip");
 Tooltip.setting("enabled",         true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
 Tooltip.setting("show_info",       true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
+Tooltip.setting('seperate_values', true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.");
+Tooltip.setting('merchant_kilo_values', false, Settings.type.bool, undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.");
+Tooltip.setting('army_kilo_values', false, Settings.type.bool,  undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.");
 Tooltip.setting("mouseover_delay", 1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
 Tooltip.setting("mouseout_delay",   500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
@@ -1783,7 +1786,10 @@ Tooltip.convert_info=function(type, index, amount) {
     }
     if (amount.constructor == Array) 
         amount=amount[0]+" (-"+amount[1]+")";
-    return " | "+amount+" <img src=\""+img+"\"/>";
+    var seperator = Tooltip.seperate_values ? ' | '  : ' ';
+    if (type==4 && Tooltip.merchant_kilo_values || type==3 && Tooltip.army_kilo_values)
+        return seperator + Math.round(amount/1000)+'k <img src="'+img+'"/>';
+    return seperator + amount + '<img src="'+img+'"/>';
 };
 
 // TODO: Creating the contents of the popup on-demand, would probably speed up pageloading, and gives more up to date results.
