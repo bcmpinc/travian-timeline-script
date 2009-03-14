@@ -988,7 +988,8 @@ Sidebar.run=function() {
  ****************************************/
     
 Feature.create("Resources");
-Resources.setting("enabled", true, Settings.type.bool, undefined, "Add resource/minute and resources on market information to the resource bar.");
+Resources.setting("enabled", true, Settings.type.bool, undefined, "Turn on resource and resource rate collection.");
+Resources.setting("display", true, Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off. Collection must be on for this to work.");
 Resources.setting("market", {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
 Resources.setting("production", {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
 
@@ -1053,7 +1054,7 @@ Resources.update=function() {
 
 Resources.run=function(){
     Resources.update();
-    Resources.show();
+    if (Resources.display) Resources.show();
 };
 
 
@@ -1287,10 +1288,10 @@ Events.collector.market=function(){
     if (location.href.indexOf('build.php')<=0) return;
     if (document.forms[0] == undefined) return;
     // And there is an OK button
-    if (document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')<=0)return
-                                                                                     // Then this must be the market! (in a language-insensitive manner :D)
+    if (document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')<=0) return;
+    // Then this must be the market! (in a language-insensitive manner :D)
 
-                                                                                     var last_event_time=0;
+    var last_event_time=0;
     var event_count=0;
 
     var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
