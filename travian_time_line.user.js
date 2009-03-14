@@ -992,6 +992,7 @@ Resources.setting("enabled", true, Settings.type.bool, undefined, "Turn on resou
 Resources.setting("display", true, Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off. Collection must be on for this to work.");
 Resources.setting("market", {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
 Resources.setting("production", {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
+Resources.setting("storage", {}, Settings.type.object, undefined, "An array of length 7 containing the stored values of wood, clay, iron and grain, the size of the warehouse, the size of the granary, and then a timestamp indicating when this was taken.");
 
 Resources.show=function() {
     var head = document.getElementById("lres0");
@@ -1049,6 +1050,18 @@ Resources.update=function() {
         Resources.production[Settings.village_id]=prod;
         Resources.s.production.write();
     }
+
+    // Store the warehouse values
+    Resources.storage[Settings.village_id] = [];
+    for (var i=0; i < 4; i++){
+        var e = document.getElementById('l'+(4-i)); // These are indexed in reverse order from what we're using
+        Resources.storage[Settings.village_id][i] = e.textContent.split('/')[0]; // Capture current values
+        if (i >= 2) Resources.storage[Settings.village_id][i+2] = e.textContent.split('/')[1]; // Capture storage sizes
+    }
+    // Timestamp. We don't need to worry about offset because it's only used to compare with itself.
+    Resources.storage[Settings.village_id][6] = new Date().getTime();
+    // Save the value
+    Resources.s.storage.write();
 };
 
 
@@ -1738,16 +1751,19 @@ Timeline.run=function() {
  * Village Tool Tip
  ****************************************/
 Feature.create("Tooltip");
-Tooltip.setting("enabled",         true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
-Tooltip.setting("show_info",       true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
-Tooltip.setting('seperate_values', true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.");
-Tooltip.setting('merchant_kilo_values', false, Settings.type.bool, undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.");
-Tooltip.setting('army_kilo_values', false, Settings.type.bool,  undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.");
-Tooltip.setting("mouseover_delay", 1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
-Tooltip.setting("mouseout_delay",   500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
+Tooltip.setting("enabled",              true, Settings.type.bool,     undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
+Tooltip.setting("show_info",            true, Settings.type.bool,     undefined, "Show additional info about units and resources involved with the events.");
+Tooltip.setting('seperate_values',      true, Settings.type.bool,     undefined, "Seperate the event values from each other with |'s. Show info must be true.");
+Tooltip.setting('show_warehouse_store', true, Settings.type.bool,     undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.");
+
+Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.");
+Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.");
+
+Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
+Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
 // This creates the tooltips
-Tooltip.add = function(element, contents){
+Tooltip.add = function(element, contents, did){
     // 'contents' is an array of table rows, that still need to be encased in <tr>'s and a <table>
     var div = document.createElement('div');
     div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px #000; background-color:#fff; visibility:hidden;');
@@ -1833,7 +1849,7 @@ Tooltip.run = function(){
         // Stripping of the time (sort-key), such that join() can be used.
         for (var j in events) events[j]=events[j][1];
 
-        Tooltip.add(vil, events);
+        Tooltip.add(vil, events, did);
     }
 }
 
