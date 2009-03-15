@@ -1784,6 +1784,8 @@ Tooltip.add = function(element, contents, did){
             txt += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
             // Turn red if value is decreasing or within two hours of overflowing
             txt += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
+            // If the value has overflowed, be sure to trim it...
+            if (r > s) r = s;
             if (Tooltip.resource_kilo_values){
                 txt += r > 10000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
                 txt += s > 10000 ? Math.round(s/1000)+'k' : s;
