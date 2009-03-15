@@ -1036,32 +1036,26 @@ Resources.update=function() {
         Resources.s.market.write();
     }
 
-    // Store info about production rate if available
-    if (location.href.indexOf("dorf1")>0) {
-        var res = document.evaluate( "//div[@id='lrpr']/table/tbody/tr", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-        var prod = new Array(0,0,0,0);
-
-        for ( var i=0 ; i < res.snapshotLength; i++ ){
-            var c = res.snapshotItem(i).childNodes[4].firstChild.textContent.match("-?\\d+") - 0;
-            var t = res.snapshotItem(i).childNodes[1].innerHTML.match("\\d")[0] - 1;
-            prod[t] += c;
-        }
-        Debug.debug("This is produced: "+prod);
-        Resources.production[Settings.village_id]=prod;
-        Resources.s.production.write();
-    }
-
-    // Store the warehouse values
+    // Store the warehouse and production values - always available in the header bar!
     Resources.storage[Settings.village_id] = [];
+    Resources.production[Settings.village_id] = [];
     for (var i=0; i < 4; i++){
-        var e = document.getElementById('l'+(4-i)); // These are indexed in reverse order from what we're using
-        Resources.storage[Settings.village_id][i] = e.textContent.split('/')[0]; // Capture current values
-        if (i >= 2) Resources.storage[Settings.village_id][i+2] = e.textContent.split('/')[1]; // Capture storage sizes
+        // These are indexed in reverse order from what we're using, and offset by one...
+        var e = document.getElementById('l'+(4-i));
+
+        // Capture current warehouse values
+        Resources.storage[Settings.village_id][i] = parseInt(e.textContent.split('/')[0]);
+        // Capture current production rates
+        Resources.production[Settings.village_id][i] = parseInt(e.title);
+
+        // Capture storage sizes
+        if (i >= 2) Resources.storage[Settings.village_id][i+2] = parseInt(e.textContent.split('/')[1]);
     }
-    // Timestamp. We don't need to worry about offset because it's only used to compare with itself.
+    // Timestamp. We don't need to worry about time offset because it's only used to compare with itself.
     Resources.storage[Settings.village_id][6] = new Date().getTime();
-    // Save the value
+    // Save the values
     Resources.s.storage.write();
+    Resources.s.production.write();
 };
 
 
@@ -1772,7 +1766,7 @@ Tooltip.add = function(element, contents, did){
     var txt = '';
     var store = Resources.storage[did];
     var prod = Resources.production[did];
-    if (Tooltip.show_warehouse_store && store != undefined){
+    if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
         // First, find how much time has elapsed since the recorded value
         var diff = (new Date().getTime() - store[6])/3600000; // In hours
         Debug.debug('Correcting by: '+diff+' hrs');
@@ -1834,7 +1828,7 @@ Tooltip.convert_info=function(type, index, amount) {
     if (amount.constructor == Array) 
         amount=amount[0]+" (-"+amount[1]+")";
     var seperator = Tooltip.seperate_values ? ' | '  : ' ';
-    if (type==4 && Tooltip.merchant_kilo_values || type==3 && Tooltip.army_kilo_values)
+    if ((type==4 && Tooltip.merchant_kilo_values || type==3 && Tooltip.army_kilo_values) && img != 'img/un/u/hero.gif')
         return seperator + '<img src="'+img+'"/>' + Math.round(amount/1000) + 'k';
     return seperator + '<img src="'+img+'"/>' + amount;
 };
