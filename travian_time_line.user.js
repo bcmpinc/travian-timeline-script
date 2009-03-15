@@ -1804,7 +1804,7 @@ Tooltip.add = function(element, contents, did){
                     div.style.left = (e.pageX+8)+'px';
                     div.style.top  = (e.pageY+8)+'px';
                 }, Tooltip.mouseover_delay);
-        }, false)
+        }, false);
     element.addEventListener('mouseout', function(e){
             if (timer != undefined) window.clearTimeout(timer);
             timer = window.setTimeout(function(){
