@@ -1828,7 +1828,9 @@ Tooltip.convert_info=function(type, index, amount) {
     if (amount.constructor == Array) 
         amount=amount[0]+" (-"+amount[1]+")";
     var seperator = Tooltip.seperate_values ? ' | '  : ' ';
-    if ((type==4 && Tooltip.merchant_kilo_values || type==3 && Tooltip.army_kilo_values) && img != 'img/un/u/hero.gif')
+    // We have a lower threshold for armies, given that large resource amounts are more common than equally large armies.
+    if ((type==4 && Tooltip.merchant_kilo_values && amount > 10000) ||
+        (type==3 && Tooltip.army_kilo_values && amount > 2000))
         return seperator + '<img src="'+img+'"/>' + Math.round(amount/1000) + 'k';
     return seperator + '<img src="'+img+'"/>' + amount;
 };
