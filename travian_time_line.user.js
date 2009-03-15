@@ -1804,14 +1804,25 @@ Tooltip.add = function(element, contents, did){
                     div.style.left = (e.pageX+8)+'px';
                     div.style.top  = (e.pageY+8)+'px';
                 }, Tooltip.mouseover_delay);
-        }, false);
+        }, false)
     element.addEventListener('mouseout', function(e){
             if (timer != undefined) window.clearTimeout(timer);
             timer = window.setTimeout(function(){
                     div.style.visibility = 'hidden';
                 }, Tooltip.mouseout_delay);
         }, false);
-
+    // We don't want to add a mousemove here, because then we could never mouse over the tooltip itself.
+    // If we *can* mouseover the tooltip, we can add buttons and more functionality to it.
+    // Clear the timeout if we mouse over the div
+    div.addEventListener('mouseover', function(e){
+            if (timer != undefined) window.clearTimeout(timer);
+        }, false);
+    div.addEventListener('mouseout', function(e){
+            if (timer != undefined) window.clearTimeout(timer);
+            timer = window.setTimeout(function(){
+                    div.style.visibility = 'hidden';
+                }, Tooltip.mouseout_delay);
+        }, false);
     return div;
 }
 
