@@ -1752,9 +1752,9 @@ Timeline.run=function() {
  ****************************************/
 Feature.create("Tooltip");
 Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
-Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
 Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
 Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.");
+Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
 Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.");
 
 Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.");
