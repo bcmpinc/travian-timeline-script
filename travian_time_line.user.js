@@ -1753,6 +1753,7 @@ Timeline.run=function() {
 Feature.create("Tooltip");
 Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
 Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
+Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
 Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.");
 Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.");
 
@@ -1834,8 +1835,8 @@ Tooltip.convert_info=function(type, index, amount) {
         amount=amount[0]+" (-"+amount[1]+")";
     var seperator = Tooltip.seperate_values ? ' | '  : ' ';
     if (type==4 && Tooltip.merchant_kilo_values || type==3 && Tooltip.army_kilo_values)
-        return seperator + Math.round(amount/1000)+'k<img src="'+img+'"/>';
-    return seperator + amount + '<img src="'+img+'"/>';
+        return seperator + '<img src="'+img+'"/>' + Math.round(amount/1000) + 'k';
+    return seperator + '<img src="'+img+'"/>' + amount;
 };
 
 // TODO: Creating the contents of the popup on-demand, would probably speed up pageloading, and gives more up to date results.
@@ -1861,7 +1862,11 @@ Tooltip.run = function(){
             if (e[1] < d.getTime()) continue; // Skip if the event is in the past...
 
             e_time.setTime(e[1]);
-            var txt = '<td vAlign="bottom">'+e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
+            var txt = '<td vAlign="bottom">';
+            if (Tooltip.relative_time){
+                var diff = e[1] - d.getTime();
+                txt += Math.floor(diff/3600000)+':'+pad2(Math.round((diff%3600000)/60000)) + '</td>';
+            } else txt += e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
             txt += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
             if (Tooltip.show_info) {
                 txt += '<td>';
