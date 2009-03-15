@@ -1751,11 +1751,12 @@ Timeline.run=function() {
  * Village Tool Tip
  ****************************************/
 Feature.create("Tooltip");
-Tooltip.setting("enabled",              true, Settings.type.bool,     undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
-Tooltip.setting("show_info",            true, Settings.type.bool,     undefined, "Show additional info about units and resources involved with the events.");
-Tooltip.setting('seperate_values',      true, Settings.type.bool,     undefined, "Seperate the event values from each other with |'s. Show info must be true.");
-Tooltip.setting('show_warehouse_store', true, Settings.type.bool,     undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.");
+Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
+Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
+Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.");
+Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.");
 
+Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.");
 Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.");
 Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.");
 
@@ -1767,9 +1768,35 @@ Tooltip.add = function(element, contents, did){
     // 'contents' is an array of table rows, that still need to be encased in <tr>'s and a <table>
     var div = document.createElement('div');
     div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px #000; background-color:#fff; visibility:hidden;');
+    var txt = '';
+    var store = Resources.storage[did];
+    var prod = Resources.production[did];
+    if (Tooltip.show_warehouse_store && store != undefined){
+        // First, find how much time has elapsed since the recorded value
+        var diff = (new Date().getTime() - store[6])/3600000; // In hours
+        Debug.debug('Correcting by: '+diff+' hrs');
+
+        txt += '<table class="f10" style="font-size:11px"><tbody><tr>';
+        // Calculate the new values & display
+        for (var i=0; i < 4; i++){
+            var r = parseInt(store[i] - (-diff * prod[i]));
+            var s = store[(i < 3 ? 4 : 5)];
+            txt += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+            // Turn red if value is decreasing or within two hours of overflowing
+            txt += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
+            if (Tooltip.resource_kilo_values){
+                txt += r > 10000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
+                txt += s > 10000 ? Math.round(s/1000)+'k' : s;
+            }
+            else txt += Math.round(r) + '/' + s;
+            txt += '</td>';
+        }
+        txt += '</tr></tbody></table><hr>';
+    }
     if (contents.length > 0)
-        div.innerHTML = '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('</tr><tr>')+'</tr></tbody></table>';
-    else div.innerHTML = 'IDLE!';
+        txt += '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('</tr><tr>')+'</tr></tbody></table>';
+    else txt += 'IDLE!';
+    div.innerHTML = txt;
     document.getElementById('ltop1').parentNode.appendChild(div);
 
     var timer;
