@@ -1872,7 +1872,7 @@ Tooltip.run = function(){
             var txt = '<td vAlign="bottom">';
             if (Tooltip.relative_time){
                 var diff = e[1] - d.getTime();
-                txt += Math.floor(diff/3600000)+':'+pad2(Math.round((diff%3600000)/60000)) + '</td>';
+                txt += Math.floor(diff/3600000)+':'+pad2(Math.floor((diff%3600000)/60000)) + '</td>';
             } else txt += e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
             txt += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
             if (Tooltip.show_info) {
