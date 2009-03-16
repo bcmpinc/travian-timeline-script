@@ -2,7 +2,7 @@
 
 Timeline Events,Look&Feel:
 + Change the warp feature to use arcsinh. (And draw a nicer scalebar)
-- Figure out a way to filter the events by village
+- Figure out a way to filter the events by village - still need now that we have tooltips?
 - Add filter to disable the displaying of some events (based on type)
   - and/or add a way of disabling the capture of certain event types
 - Capture warehouse/granary full events
@@ -33,13 +33,15 @@ Lines:
 
 Event Capture:
 - Make colors customizable, 
-- Capture resource generation and amounts
++ Capture resource generation and amounts
+- Migrate support for parties and research
 
 Tool Tip:
 + Add images
 - Add link to building in question inside the tooltips?
-- If mouseover the tooltip itself, don't hide it
-- Add latest warehouse info to the village tool tips
++ If mouseover the tooltip itself, don't hide it
++ Add latest warehouse info to the village tool tips
+- Add list of all units in currently in the village to header
 
 Other Features
 - Add warehouse full events, (such that they show up in the tooltip and timeline)
@@ -53,4 +55,3 @@ New Features:
 
 BUGS:
 + Tooltip: seems to drop the occasional event? confirmed + fixed
-
