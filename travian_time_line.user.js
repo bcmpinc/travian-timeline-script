@@ -1811,7 +1811,7 @@ Tooltip.add = function(element, contents, did){
     var txt = '';
     var store = Resources.storage[did];
     var prod = Resources.production[did];
-    var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=production rates, 2=time left, 3=troops?
+    var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates, 3=troops?
     if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
         txt += '<table class="f10" style="font-size:11px; cursor:pointer;"><tbody><tr>';
         txt += Tooltip.make_header(rota, store, prod);
@@ -1886,13 +1886,7 @@ Tooltip.make_header = function(rota, store, prod){
             rtn += '</td>';
         }
         break;
-    case 1: // Resource production
-        for (var i=0; i < 4; i++){
-            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
-            rtn += '<td>' + prod[i] + '</td>';
-        }
-        break;
-    case 2: // Time to overflow
+    case 1: // Time to overflow
         for (var i=0; i < 4; i++){
             rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
 
@@ -1911,6 +1905,12 @@ Tooltip.make_header = function(rota, store, prod){
                     rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
                 }
             } else rtn += '<td style="color:red">0:00</td>'
+        }
+        break;
+    case 2: // Resource production
+        for (var i=0; i < 4; i++){
+            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+            rtn += '<td>' + prod[i] + '</td>';
         }
         break;
     }
