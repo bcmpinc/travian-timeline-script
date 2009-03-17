@@ -46,6 +46,7 @@ Tool Tip:
 - Have buttons to cycle tooltip header between stored values, prod. rates, overflow times, and troop levels?
 -- Maybe on click?
 - Add buttons next to listed events, to delete an eronous event?
+- Add tooltip to the "Villages" bar, giving a summary of production etc of all villages.
 
 Other Features
 - Add warehouse full events, (such that they show up in the tooltip and timeline)
