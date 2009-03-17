@@ -40,16 +40,15 @@ Tool Tip:
 + Add images
 + If mouseover the tooltip itself, don't hide it
 + Add latest warehouse info to the village tool tips
++ Have buttons to cycle tooltip header between stored values, prod. rates, overflow times, and troop levels?
 - Add link to building in question inside the tooltips?
 - Keep track of the most recently completed task/building for each village
 - Add list of all units in currently in the village to header
-- Have buttons to cycle tooltip header between stored values, prod. rates, overflow times, and troop levels?
--- Maybe on click?
 - Add buttons next to listed events, to delete an eronous event?
 - Add tooltip to the "Villages" bar, giving a summary of production etc of all villages.
 
 Other Features
-- Add warehouse full events, (such that they show up in the tooltip and timeline)
+~ Add warehouse full events, (such that they show up in the tooltip and timeline) - partial, now kinda supported by the tooltip
 
 
 New Features:

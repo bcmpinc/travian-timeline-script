@@ -1811,27 +1811,10 @@ Tooltip.add = function(element, contents, did){
     var txt = '';
     var store = Resources.storage[did];
     var prod = Resources.production[did];
+    var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=production rates, 2=time left, 3=troops?
     if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
-        // First, find how much time has elapsed since the recorded value
-        var diff = (new Date().getTime() - store[6])/3600000; // In hours
-
-        txt += '<table class="f10" style="font-size:11px"><tbody><tr>';
-        // Calculate the new values & display
-        for (var i=0; i < 4; i++){
-            var r = parseInt(store[i] - (-diff * prod[i]));
-            var s = store[(i < 3 ? 4 : 5)];
-            txt += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
-            // Turn red if value is decreasing or within two hours of overflowing
-            txt += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
-            // If the value has overflowed, be sure to trim it...
-            if (r > s) r = s;
-            if (Tooltip.resource_kilo_values){
-                txt += r > 10000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
-                txt += s > 10000 ? Math.round(s/1000)+'k' : s;
-            }
-            else txt += Math.round(r) + '/' + s;
-            txt += '</td>';
-        }
+        txt += '<table class="f10" style="font-size:11px; cursor:pointer;"><tbody><tr>';
+        txt += Tooltip.make_header(rota, store, prod);
         txt += '</tr></tbody></table><hr>';
     }
     if (contents.length > 0)
@@ -1840,7 +1823,8 @@ Tooltip.add = function(element, contents, did){
     div.innerHTML = txt;
     document.getElementById('ltop1').parentNode.appendChild(div);
 
-    var timer;
+    var timer; // The mouseover/mouseout timer
+    // Add the inital listeners to the link itself
     element.addEventListener('mouseover', function(e){
             if (timer != undefined) window.clearTimeout(timer);
             timer = window.setTimeout(function(){
@@ -1867,7 +1851,70 @@ Tooltip.add = function(element, contents, did){
                     div.style.visibility = 'hidden';
                 }, Tooltip.mouseout_delay);
         }, false);
+    // Add the click listener to the header of each tooltip
+    div.childNodes[0].addEventListener('click', function(e){
+            rota++; // Increment and roll over the rota
+            rota %= 3;
+            // Redraw the text in the <tr>
+            div.childNodes[0].childNodes[0].childNodes[0].innerHTML = Tooltip.make_header(rota, store, prod);
+        }, false);
+
     return div;
+}
+
+// Calculate the new values & display
+Tooltip.make_header = function(rota, store, prod){
+    // First, find how much time has elapsed since the recorded value
+    var diff = (new Date().getTime() - store[6])/3600000; // In hours
+    var rtn = '';
+    switch (rota){
+    default:
+    case 0: // Stored resources
+        for (var i=0; i < 4; i++){
+            var r = parseInt(store[i] - (-diff * prod[i]));
+            var s = store[(i < 3 ? 4 : 5)];
+            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+            // Turn red if value is decreasing or within two hours of overflowing
+            rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
+            // If the value has overflowed, be sure to trim it...
+            if (r > s) r = s;
+            if (Tooltip.resource_kilo_values){
+                rtn += r > 10000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
+                rtn += s > 10000 ? Math.round(s/1000)+'k' : s;
+            }
+            else rtn += Math.round(r) + '/' + s;
+            rtn += '</td>';
+        }
+        break;
+    case 1: // Resource production
+        for (var i=0; i < 4; i++){
+            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+            rtn += '<td>' + prod[i] + '</td>';
+        }
+        break;
+    case 2: // Time to overflow
+        for (var i=0; i < 4; i++){
+            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+
+            // First we need to find the space remaining
+            var p = prod[i];
+            var c = parseInt(store[i] - (-diff * p));
+            var r = store[(i < 3 ? 4 : 5)] - c;
+            if ((r > 0 && p > 0) || (c > 0 && p < 0)){
+                if (p == 0) rtn += '<td>inf.</td>';
+                else {
+                    if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
+                    else time = Math.floor((c / (-1*p)) * 3600);
+
+                    rtn += '<td style="color:'+(time>7200 ? 'green' : 'red')+'">';
+                    if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
+                    rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
+                }
+            } else rtn += '<td style="color:red">0:00</td>'
+        }
+        break;
+    }
+    return rtn;
 }
 
 // This creates the resource info html.
