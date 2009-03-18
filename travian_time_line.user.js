@@ -1965,14 +1965,14 @@ Tooltip.run = function(){
                 var diff = e[1] - d.getTime();
                 txt += Math.floor(diff/3600000)+':'+pad2(Math.floor((diff%3600000)/60000)) + '</td>';
             } else txt += e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
-            txt += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
-            if (Tooltip.show_info) {
-                txt += '<td>';
+
+            if (Tooltip.show_info && (e[3] || e[4])) {
+                txt += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td><td>";
                 if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
                 if (e[3]) for (var j=0; j<11; j++) txt+=Tooltip.convert_info(3,j,e[3][j]);
                 txt += '</td>';
-            }
-            
+            } else txt += '<td vAlign="bottom" colspan="2" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
+
             events.push([e[1], txt]);
         }
 
