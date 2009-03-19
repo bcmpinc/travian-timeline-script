@@ -1813,9 +1813,9 @@ Tooltip.add = function(element, contents, did){
     var prod = Resources.production[did];
     var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates, 3=troops?
     if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
-        txt += '<table class="f10" style="font-size:11px; cursor:pointer;"><tbody><tr>';
+        txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
         txt += Tooltip.make_header(rota, store, prod);
-        txt += '</tr></tbody></table><hr>';
+        txt += '</tr></tbody></table>';
     }
     if (contents.length > 0)
         txt += '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('</tr><tr>')+'</tr></tbody></table>';
