@@ -1883,8 +1883,8 @@ Tooltip.make_header = function(rota, store, prod){
             // If the value has overflowed, be sure to trim it...
             if (r > s) r = s;
             if (Tooltip.resource_kilo_values){
-                rtn += r > 1000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
-                rtn += s > 1000 ? Math.round(s/1000)+'k' : s;
+                rtn += r > 2000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
+                rtn += s > 2000 ? Math.round(s/1000)+'k' : s;
             }
             else rtn += Math.round(r) + '/' + s;
             rtn += '</td>';
@@ -1935,7 +1935,7 @@ Tooltip.convert_info=function(type, index, amount) {
         amount=amount[0]+" (-"+amount[1]+")";
     var seperator = Tooltip.seperate_values ? ' | '  : ' ';
     // We have a lower threshold for armies, given that large resource amounts are more common than equally large armies.
-    if ((type==4 && Tooltip.merchant_kilo_values && amount > 10000) ||
+    if ((type==4 && Tooltip.merchant_kilo_values && amount > 2000) ||
         (type==3 && Tooltip.army_kilo_values && amount > 2000))
         return seperator + '<img src="'+img+'"/>' + Math.round(amount/1000) + 'k';
     return seperator + '<img src="'+img+'"/>' + amount;
