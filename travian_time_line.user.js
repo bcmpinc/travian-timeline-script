@@ -1807,12 +1807,14 @@ Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined,
 Tooltip.add = function(element, contents, did){
     // 'contents' is an array of table rows, that still need to be encased in <tr>'s and a <table>
     var div = document.createElement('div');
-    div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px #000; background-color:#fff; visibility:hidden;');
     var txt = '';
+    var colour = '#000';
     var store = Resources.storage[did];
     var prod = Resources.production[did];
-    var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates, 3=troops?
+    var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates
     if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
+        var age = (new Date().getTime() - store[6])/3600000; // In hours
+        colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
         txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
         txt += Tooltip.make_header(rota, store, prod);
         txt += '</tr></tbody></table>';
@@ -1820,6 +1822,8 @@ Tooltip.add = function(element, contents, did){
     if (contents.length > 0)
         txt += '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('</tr><tr>')+'</tr></tbody></table>';
     else txt += 'IDLE!';
+
+    div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px '+colour+'; background-color:#fff; visibility:hidden;');
     div.innerHTML = txt;
     document.getElementById('ltop1').parentNode.appendChild(div);
 
