@@ -1883,8 +1883,8 @@ Tooltip.make_header = function(rota, store, prod){
             // If the value has overflowed, be sure to trim it...
             if (r > s) r = s;
             if (Tooltip.resource_kilo_values){
-                rtn += r > 10000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
-                rtn += s > 10000 ? Math.round(s/1000)+'k' : s;
+                rtn += r > 1000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
+                rtn += s > 1000 ? Math.round(s/1000)+'k' : s;
             }
             else rtn += Math.round(r) + '/' + s;
             rtn += '</td>';
@@ -1904,7 +1904,7 @@ Tooltip.make_header = function(rota, store, prod){
                     if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
                     else time = Math.floor((c / (-1*p)) * 3600);
 
-                    rtn += '<td style="color:'+(time>7200 ? 'green' : 'red')+'">';
+                    rtn += '<td style="color:'+(time>7200 || p < 0 ? 'green' : 'red')+'">';
                     if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
                     rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
                 }
