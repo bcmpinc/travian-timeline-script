@@ -1866,7 +1866,8 @@ Tooltip.add = function(element, contents, did){
             rota++; // Increment and roll over the rota
             rota %= 3;
             // Redraw the text in the <tr>
-            header.innerHTML = Tooltip.make_header(rota, store, prod, new Date().getTime());
+            header_txt = Tooltip.make_header(rota, store, prod, new Date().getTime());
+            header.innerHTML = header_txt;
         }, false);
     if (Tooltip.show_warehouse_store && store != undefined && prod != undefined && contents.length > 0){
         // Add the mouseover listener to the events in each tooltip, but only if it's needed
@@ -2003,9 +2004,6 @@ Tooltip.run = function(){
 
         events.sort();
         
-        // Stripping of the time (sort-key), such that join() can be used.
-        //for (var j in events) events[j]=events[j][1];
-
         Tooltip.add(vil, events, did);
     }
 }
