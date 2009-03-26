@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.31
+// @version        0.32
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
  
 // @include        http://*.travian*.*/*.php*
@@ -1813,14 +1813,19 @@ Tooltip.add = function(element, contents, did){
     var prod = Resources.production[did];
     var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates
     if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
-        var age = (new Date().getTime() - store[6])/3600000; // In hours
+        var time = new Date().getTime();
+        var age = (time - store[6])/3600000; // In hours
         colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
         txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
-        txt += Tooltip.make_header(rota, store, prod);
+        var header_txt = Tooltip.make_header(rota, store, prod, time); // This is needed later...
+        txt += header_txt;
         txt += '</tr></tbody></table>';
     }
-    if (contents.length > 0)
-        txt += '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('</tr><tr>')+'</tr></tbody></table>';
+    if (contents.length > 0){
+        txt += '<table class="f10" style="font-size:11px"><tbody>';
+        for (var i in contents) txt += '<tr>'+contents[i][1]+'</tr>';
+        txt += '</tbody></table>';
+    }
     else txt += 'IDLE!';
 
     div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px '+colour+'; background-color:#fff; visibility:hidden;');
@@ -1843,7 +1848,7 @@ Tooltip.add = function(element, contents, did){
                     div.style.visibility = 'hidden';
                 }, Tooltip.mouseout_delay);
         }, false);
-    // We don't want to add a mousemove here, because then we could never mouse over the tooltip itself.
+    // We don't want to add a mousemove here, because if we did we could never mouse over the tooltip itself.
     // If we *can* mouseover the tooltip, we can add buttons and more functionality to it.
     // Clear the timeout if we mouse over the div
     div.addEventListener('mouseover', function(e){
@@ -1856,20 +1861,37 @@ Tooltip.add = function(element, contents, did){
                 }, Tooltip.mouseout_delay);
         }, false);
     // Add the click listener to the header of each tooltip
+    var header = div.childNodes[0].childNodes[0].childNodes[0];
     div.childNodes[0].addEventListener('click', function(e){
             rota++; // Increment and roll over the rota
             rota %= 3;
             // Redraw the text in the <tr>
-            div.childNodes[0].childNodes[0].childNodes[0].innerHTML = Tooltip.make_header(rota, store, prod);
+            header.innerHTML = Tooltip.make_header(rota, store, prod, new Date().getTime());
         }, false);
+    if (Tooltip.show_warehouse_store && store != undefined && prod != undefined && contents.length > 0){
+        // Add the mouseover listener to the events in each tooltip, but only if it's needed
+        var x = div.childNodes[1].childNodes[0].childNodes;
+        for (var i = 0; i < x.length; i++){
+            // If mousing over, change the header to what the value will be at this time
+            x[i].addEventListener('mouseover', function(e){
+                    for (var i in x) // Gah, there has *got* to be a better way to get 'i' here...
+                        if (x[i] == e.target.parentNode)
+                            header.innerHTML = Tooltip.make_header(rota, store, prod, contents[parseInt(i)][0]);
+                }, false);
+            // Reset on mouseout
+            x[i].addEventListener('mouseout', function(){
+                    header.innerHTML = header_txt;
+                }, false);
+        }
+    }
 
     return div;
 }
 
 // Calculate the new values & display
-Tooltip.make_header = function(rota, store, prod){
+Tooltip.make_header = function(rota, store, prod, time){
     // First, find how much time has elapsed since the recorded value
-    var diff = (new Date().getTime() - store[6])/3600000; // In hours
+    var diff = (time - store[6])/3600000; // In hours
     var rtn = '';
     switch (rota){
     default:
@@ -1889,7 +1911,7 @@ Tooltip.make_header = function(rota, store, prod){
             else rtn += Math.round(r) + '/' + s;
             rtn += '</td>';
         }
-        break;
+        return rtn;
     case 1: // Time to overflow
         for (var i=0; i < 4; i++){
             rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
@@ -1910,15 +1932,14 @@ Tooltip.make_header = function(rota, store, prod){
                 }
             } else rtn += '<td style="color:red">0:00</td>'
         }
-        break;
+        return rtn;
     case 2: // Resource production
         for (var i=0; i < 4; i++){
             rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
             rtn += '<td>' + prod[i] + '</td>';
         }
-        break;
+        return rtn;
     }
-    return rtn;
 }
 
 // This creates the resource info html.
@@ -1983,7 +2004,7 @@ Tooltip.run = function(){
         events.sort();
         
         // Stripping of the time (sort-key), such that join() can be used.
-        for (var j in events) events[j]=events[j][1];
+        //for (var j in events) events[j]=events[j][1];
 
         Tooltip.add(vil, events, did);
     }

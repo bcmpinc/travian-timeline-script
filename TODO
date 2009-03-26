@@ -41,6 +41,7 @@ Tool Tip:
 + If mouseover the tooltip itself, don't hide it
 + Add latest warehouse info to the village tool tips
 + Have buttons to cycle tooltip header between stored values, prod. rates, overflow times, and troop levels?
+- Update tooltip event mouseovers to take merchant arrivals into consideration?
 - Add link to building in question inside the tooltips?
 - Keep track of the most recently completed task/building for each village
 - Add list of all units currently in the village to header
