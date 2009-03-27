@@ -34,7 +34,8 @@ Lines:
 Event Capture:
 - Make colors customizable, 
 + Capture resource generation and amounts
-- Migrate support for parties
++ Migrate support for parties
+- Capture troops in the village (from rally point and dorf1.php?)
 
 Tool Tip:
 + Add images
@@ -42,22 +43,22 @@ Tool Tip:
 + Add latest warehouse info to the village tool tips
 + Have buttons to cycle tooltip header between stored values, prod. rates, overflow times, and troop levels?
 - Update tooltip event mouseovers to take merchant arrivals into consideration?
-- Add link to building in question inside the tooltips?
-- Keep track of the most recently completed task/building for each village
+- Keep track of the most recently completed task/building for each village, and provide link to it
 - Add list of all units currently in the village to header
-- Add buttons next to listed events, to delete an eronous event?
+- Add buttons next to listed events, to delete mistakes/changes event?
 - Add tooltip to the "Villages" bar, giving a summary of production etc of all villages.
-- Overwrite the "Your builders are already working" message on single building pages with what they're working on, and when it's done.
+- Overwrite the "Your builders are already working" message on single building pages with what they're working on, and when it's done?
 
 Other Features
 ~ Add warehouse full events, (such that they show up in the tooltip and timeline) - partial, now kinda supported by the tooltip
-
 
 New Features:
 - Modify all the links for more robust navigation
 - Add event synchronization between multiple browsers
 - Add quicklinks (for quickly building/upgrading something in a given village) (maybe something in combination with the tool tip)
 - Add task queue functionality
+? Add a 'scan all villages' option, to automatically (and non-deterministically) visit all your villages and exract pertinent information
 
 BUGS:
 + Tooltip: seems to drop the occasional event? confirmed + fixed
+- tl_date: events far in the future (>48 hours) tend to drop a day or two from their arrival time...

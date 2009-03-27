@@ -1168,7 +1168,8 @@ Events.setting("events", {}, Settings.type.object, undefined, "The list of colle
 
 // village = id of the village.
 // id = The consistent unique event identifier.
-Events.get_event=function(village, id) {
+// overwrite = optionally overwrite any matching events
+Events.get_event=function(village, id, overwrite) {
     var e = Events.events[village];
     if (e == undefined) {
         e = {};
@@ -1176,7 +1177,7 @@ Events.get_event=function(village, id) {
         Debug.debug("Added village: "+village);
     }
     e = Events.events[village][id];
-    if (e == undefined) {
+    if (e == undefined || overwrite === true) {
         e = [];
         Events.events[village][id]=e;
         Debug.debug("Created element: "+id);
@@ -1381,6 +1382,33 @@ Events.collector.research = function(){
     e[0] = 'research';
     e[1] = t;
     e[2] = building + ': '+type+(level ? ' '+level : '');
+}
+
+Events.collector.party = function(){
+    // Make sure we're on a building page
+    if (location.href.indexOf('build.php') < 0) return;
+    // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
+    // This should be exclusive for Town Halls, hence parties.
+    var x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
+                              document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (x.snapshotLength != 1) return;
+    x = x.snapshotItem(0).parentNode;
+
+    Debug.info('Found a party event!');
+
+    var d = new tl_date();
+    d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
+    var t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+
+    var msg = x.childNodes[1].textContent;
+    Debug.info('Party type = '+msg);
+
+    // We can only have one party per village max; overwrite any pre-existing party records
+    // (how the hell could we ever get pre-existing parties??? You can't cancel the damn things...)
+    var e = Events.get_event(Settings.village_id, 'party', true);
+    e[0] = 'party';
+    e[1] = t;
+    e[2] = msg;
 }
 
 /****************************************
