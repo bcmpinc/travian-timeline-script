@@ -1843,11 +1843,13 @@ Tooltip.add = function(element, contents, did){
     if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
         var time = new Date().getTime();
         var age = (time - store[6])/3600000; // In hours
-        colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
-        txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
-        var header_txt = Tooltip.make_header(rota, store, prod, time); // This is needed later...
-        txt += header_txt;
-        txt += '</tr></tbody></table>';
+        if (age < 12){ // Don't show the header at all for really out-of-date data
+            colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
+            txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
+            var header_txt = Tooltip.make_header(rota, store, prod, time); // This is needed later...
+            txt += header_txt;
+            txt += '</tr></tbody></table>';
+        }
     }
     if (contents.length > 0){
         txt += '<table class="f10" style="font-size:11px"><tbody>';
@@ -1897,7 +1899,7 @@ Tooltip.add = function(element, contents, did){
             header_txt = Tooltip.make_header(rota, store, prod, new Date().getTime());
             header.innerHTML = header_txt;
         }, false);
-    if (Tooltip.show_warehouse_store && store != undefined && prod != undefined && contents.length > 0){
+    if (Tooltip.show_warehouse_store && store != undefined && prod != undefined && contents.length > 0 && age < 12){
         // Add the mouseover listener to the events in each tooltip, but only if it's needed
         var x = div.childNodes[1].childNodes[0].childNodes;
         for (var i = 0; i < x.length; i++){
@@ -1973,7 +1975,7 @@ Tooltip.make_header = function(rota, store, prod, time){
 
 // This creates the resource info html.
 Tooltip.convert_info=function(type, index, amount) {
-    if (!amount) return "";
+    if (!amount || amount == '0') return "";
     var img = "";
     if (type==3) {
         if (index==10) img="img/un/u/hero.gif";
