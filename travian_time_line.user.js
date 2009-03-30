@@ -1832,144 +1832,179 @@ Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined,
 Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
 // This creates the tooltips
-Tooltip.add = function(element, contents, did){
-    // 'contents' is an array of table rows, that still need to be encased in <tr>'s and a <table>
-    var div = document.createElement('div');
-    var txt = '';
-    var colour = '#000';
-    var store = Resources.storage[did];
-    var prod = Resources.production[did];
-    var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates
-    if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
-        var time = new Date().getTime();
-        var age = (time - store[6])/3600000; // In hours
-        if (age < 12){ // Don't show the header at all for really out-of-date data
-            colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
-            txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
-            var header_txt = Tooltip.make_header(rota, store, prod, time); // This is needed later...
-            txt += header_txt;
-            txt += '</tr></tbody></table>';
-        }
-    }
-    if (contents.length > 0){
-        txt += '<table class="f10" style="font-size:11px"><tbody>';
-        for (var i in contents) txt += '<tr>'+contents[i][1]+'</tr>';
-        txt += '</tbody></table>';
-    }
-    else txt += 'IDLE!';
+Tooltip.tip = function(anchor, did){
+    var obj = this;
 
-    div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:2px; z-index:200; border:solid 1px '+colour+'; background-color:#fff; visibility:hidden;');
-    div.innerHTML = txt;
-    document.getElementById('ltop1').parentNode.appendChild(div);
-
-    var timer; // The mouseover/mouseout timer
-    // Add the inital listeners to the link itself
-    element.addEventListener('mouseover', function(e){
-            if (timer != undefined) window.clearTimeout(timer);
-            timer = window.setTimeout(function(){
-                    div.style.visibility = 'visible';
-                    div.style.left = (e.pageX+8)+'px';
-                    div.style.top  = (e.pageY+8)+'px';
+    // Add the listeners to the original village links
+    anchor.addEventListener('mouseover', function(e){
+            if (obj.timer != undefined) window.clearTimeout(obj.timer);
+            obj.timer = window.setTimeout(function(){
+                    obj.fill(new Date());
+                    obj.display(e);
                 }, Tooltip.mouseover_delay);
         }, false);
-    element.addEventListener('mouseout', function(e){
-            if (timer != undefined) window.clearTimeout(timer);
-            timer = window.setTimeout(function(){
-                    div.style.visibility = 'hidden';
-                }, Tooltip.mouseout_delay);
-        }, false);
-    // We don't want to add a mousemove here, because if we did we could never mouse over the tooltip itself.
-    // If we *can* mouseover the tooltip, we can add buttons and more functionality to it.
-    // Clear the timeout if we mouse over the div
-    div.addEventListener('mouseover', function(e){
-            if (timer != undefined) window.clearTimeout(timer);
-        }, false);
-    div.addEventListener('mouseout', function(e){
-            if (timer != undefined) window.clearTimeout(timer);
-            timer = window.setTimeout(function(){
-                    div.style.visibility = 'hidden';
-                }, Tooltip.mouseout_delay);
-        }, false);
-    // Add the click listener to the header of each tooltip
-    var header = div.childNodes[0].childNodes[0].childNodes[0];
-    div.childNodes[0].addEventListener('click', function(e){
-            rota++; // Increment and roll over the rota
-            rota %= 3;
-            // Redraw the text in the <tr>
-            header_txt = Tooltip.make_header(rota, store, prod, new Date().getTime());
-            header.innerHTML = header_txt;
-        }, false);
-    if (Tooltip.show_warehouse_store && store != undefined && prod != undefined && contents.length > 0 && age < 12){
-        // Add the mouseover listener to the events in each tooltip, but only if it's needed
-        var x = div.childNodes[1].childNodes[0].childNodes;
-        for (var i = 0; i < x.length; i++){
-            // If mousing over, change the header to what the value will be at this time
-            x[i].addEventListener('mouseover', function(e){
-                    for (var i in x) // Gah, there has *got* to be a better way to get 'i' here...
-                        if (x[i] == e.target.parentNode)
-                            header.innerHTML = Tooltip.make_header(rota, store, prod, contents[parseInt(i)][0]);
+    anchor.addEventListener('mouseout', function(){
+            if (obj.timer != undefined) window.clearTimeout(obj.timer);
+                    obj.timer = window.setTimeout(function(){
+                            if (obj.div.parentNode != undefined) obj.div.parentNode.removeChild(obj.div);
+                        }, Tooltip.mouseout_delay);
                 }, false);
-            // Reset on mouseout
-            x[i].addEventListener('mouseout', function(){
-                    header.innerHTML = header_txt;
-                }, false);
+
+    obj.did = did;
+    obj.div = document.createElement('div');
+    obj.rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates
+    obj.store = Resources.storage[obj.did];
+    obj.prod = Resources.production[obj.did];
+
+    // This fills in the events array
+    obj.fill = function(d){
+        // This contains time/text pairs; the time in the first index for sorting, the text for display
+        // The text is actually html consisting of table cells wrapped in <td> tags.
+        // Clear before starting
+        obj.events = [];
+        var e_time = new Date();
+        // Run through the tasks for each village
+        for (var j in Events.events[obj.did]){
+            var e = Events.events[obj.did][j];
+            if (e[1] < d.getTime()) continue; // Skip if the event is in the past...
+
+            e_time.setTime(e[1]);
+            var txt = '<td vAlign="bottom">';
+            if (Tooltip.relative_time){
+                var diff = e[1] - d.getTime();
+                txt += Math.floor(diff/3600000)+':'+pad2(Math.floor((diff%3600000)/60000)) + '</td>';
+            } else txt += e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
+
+            if (Tooltip.show_info && (e[3] || e[4])) {
+                txt += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td><td>";
+                if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
+                if (e[3]) for (var j=0; j<11; j++) txt+=Tooltip.convert_info(3,j,e[3][j]);
+                txt += '</td>';
+            } else txt += '<td vAlign="bottom" colspan="2" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
+
+            obj.events.push([e[1], txt]);
         }
+
+        obj.events.sort();
     }
 
-    return div;
-}
+    obj.display = function(e){
+        var txt = '';
+        var colour = '#000';
 
-// Calculate the new values & display
-Tooltip.make_header = function(rota, store, prod, time){
-    // First, find how much time has elapsed since the recorded value
-    var diff = (time - store[6])/3600000; // In hours
-    var rtn = '';
-    switch (rota){
-    default:
-    case 0: // Stored resources
-        for (var i=0; i < 4; i++){
-            var r = parseInt(store[i] - (-diff * prod[i]));
-            var s = store[(i < 3 ? 4 : 5)];
-            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
-            // Turn red if value is decreasing or within two hours of overflowing
-            rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
-            // If the value has overflowed, be sure to trim it...
-            if (r > s) r = s;
-            if (Tooltip.resource_kilo_values){
-                rtn += r > 2000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
-                rtn += s > 2000 ? Math.round(s/1000)+'k' : s;
+        if (Tooltip.show_warehouse_store && obj.store != undefined && obj.prod != undefined){
+            var time = new Date().getTime();
+            var age = (time - obj.store[6])/3600000; // In hours
+            if (age < 12){ // Don't show the header at all for really out-of-date data
+                colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
+                txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
+                var header_txt = obj.make_header(time); // This is needed later...
+                txt += header_txt;
+                txt += '</tr></tbody></table>';
+            } else colour = '#ddd';
+        }
+
+        if (obj.events.length > 0){
+            txt += '<table class="f10" style="font-size:11px"><tbody>';
+            for (var i in obj.events) txt += '<tr>'+obj.events[i][1]+'</tr>';
+            txt += '</tbody></table>';
+        }
+        else txt += 'IDLE!';
+
+        obj.div.setAttribute('style', 'position:absolute; top:'+(e.pageY+2)+'px; left:'+(e.pageX+4)+'px; padding:2px; z-index:200; border:solid 1px '+colour+'; background-color:#fff;');
+        obj.div.innerHTML = txt;
+        document.getElementById('ltop1').parentNode.appendChild(obj.div);
+
+        // If we can mouseover the tooltip, we can add buttons and more functionality to it.
+        // Clear the timeout if we mouse over the div
+        obj.div.addEventListener('mouseover', function(e){
+                if (obj.timer != undefined) window.clearTimeout(obj.timer);
+            }, false);
+        obj.div.addEventListener('mouseout', function(e){
+                if (obj.timer != undefined) window.clearTimeout(obj.timer);
+                obj.timer = window.setTimeout(function(){
+                        obj.div.parentNode.removeChild(obj.div);
+                    }, Tooltip.mouseout_delay);
+            }, false);
+
+        // Add the click listener to the header of each tooltip
+        var header = obj.div.childNodes[0].childNodes[0].childNodes[0];
+        obj.div.childNodes[0].addEventListener('click', function(e){
+                obj.rota++; // Increment and roll over the rota
+                obj.rota %= 3;
+                // Redraw the text in the <tr>
+                header_txt = obj.make_header(new Date().getTime());
+                header.innerHTML = header_txt;
+            }, false);
+
+        if (Tooltip.show_warehouse_store && obj.store != undefined && obj.prod != undefined &&
+            obj.events.length > 0 && age < 12){
+            // Add the mouseover listener to the events in each tooltip, but only if it's needed
+            var x = obj.div.childNodes[1].childNodes[0].childNodes;
+            for (var i = 0; i < x.length; i++){
+                // If mousing over, change the header to what the value will be at this time
+                // Well, this is slightly better than before; using the local variables of the anon function
+                (function (i){
+                    x[i].addEventListener('mouseover', function(e){
+                            header.innerHTML = obj.make_header(obj.events[i][0]);
+                        }, false);
+                })(i);
+                // Reset on mouseout
+                x[i].addEventListener('mouseout', function(){header.innerHTML = header_txt;}, false);
             }
-            else rtn += Math.round(r) + '/' + s;
-            rtn += '</td>';
         }
-        return rtn;
-    case 1: // Time to overflow
-        for (var i=0; i < 4; i++){
-            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
-
-            // First we need to find the space remaining
-            var p = prod[i];
-            var c = parseInt(store[i] - (-diff * p));
-            var r = store[(i < 3 ? 4 : 5)] - c;
-            if ((r > 0 && p > 0) || (c > 0 && p < 0)){
-                if (p == 0) rtn += '<td>inf.</td>';
-                else {
-                    if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
-                    else time = Math.floor((c / (-1*p)) * 3600);
-
-                    rtn += '<td style="color:'+(time>7200 && p > 0 ? 'green' : 'red')+'">';
-                    if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
-                    rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
+    }
+    obj.make_header = function(time){
+        // First, find how much time has elapsed since the recorded value
+        var diff = (time - obj.store[6])/3600000; // In hours
+        var rtn = '';
+        switch (obj.rota){
+        default:
+        case 0: // Stored resources
+            for (var i=0; i < 4; i++){
+                var r = parseInt(obj.store[i] - (-diff * obj.prod[i]));
+                var s = obj.store[(i < 3 ? 4 : 5)];
+                rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+                // Turn red if value is decreasing or within two hours of overflowing
+                rtn += '<td style="color:'+ (obj.prod[i] > 0 && (s-r)/obj.prod[i] > 2 ? 'green' : 'red')+'">';
+                // If the value has overflowed, be sure to trim it...
+                if (r > s) r = s;
+                if (Tooltip.resource_kilo_values){
+                    rtn += r > 2000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
+                    rtn += s > 2000 ? Math.round(s/1000)+'k' : s;
                 }
-            } else rtn += '<td style="color:red">0:00</td>'
+                else rtn += Math.round(r) + '/' + s;
+                rtn += '</td>';
+            }
+            return rtn;
+        case 1: // Time to overflow
+            for (var i=0; i < 4; i++){
+                rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+                
+                // First we need to find the space remaining
+                var p = obj.prod[i];
+                var c = parseInt(obj.store[i] - (-diff * p));
+                var r = obj.store[(i < 3 ? 4 : 5)] - c;
+                if ((r > 0 && p > 0) || (c > 0 && p < 0)){
+                    if (p == 0) rtn += '<td>inf.</td>';
+                    else {
+                        if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
+                        else time = Math.floor((c / (-1*p)) * 3600);
+                        
+                        rtn += '<td style="color:'+(time>7200 && p > 0 ? 'green' : 'red')+'">';
+                        if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
+                        rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
+                    }
+                } else rtn += '<td style="color:red">0:00</td>';
+            }
+            return rtn;
+        case 2: // Resource production
+            for (var i=0; i < 4; i++){
+                rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+                rtn += '<td>' + obj.prod[i] + '</td>';
+            }
+            return rtn;
         }
-        return rtn;
-    case 2: // Resource production
-        for (var i=0; i < 4; i++){
-            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
-            rtn += '<td>' + prod[i] + '</td>';
-        }
-        return rtn;
     }
 }
 
@@ -1998,43 +2033,13 @@ Tooltip.convert_info=function(type, index, amount) {
 Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
     var x = document.evaluate('//div[@id="lright1"]/table[@class="f10"]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    var d = new Date();
-    var e_time = new Date();
     // Run through our villages
     for (var i=0; i < x.snapshotLength; i++){
         var vil = x.snapshotItem(i);
         var did = vil.childNodes[0].childNodes[2].href.split('newdid=')[1];
         if (did.indexOf('&') >= 0) did = did.split('&')[0];
-
-        // This contains time/text pairs; the time in the first index for sorting, the text for display
-        // The text is actually html consisting of table cells wrapped in <td> tags.
-        var events = []; 
-
-        // Run through the tasks for each village
-        for (var j in Events.events[did]){
-            var e = Events.events[did][j];
-            if (e[1] < d.getTime()) continue; // Skip if the event is in the past...
-
-            e_time.setTime(e[1]);
-            var txt = '<td vAlign="bottom">';
-            if (Tooltip.relative_time){
-                var diff = e[1] - d.getTime();
-                txt += Math.floor(diff/3600000)+':'+pad2(Math.floor((diff%3600000)/60000)) + '</td>';
-            } else txt += e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
-
-            if (Tooltip.show_info && (e[3] || e[4])) {
-                txt += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td><td>";
-                if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
-                if (e[3]) for (var j=0; j<11; j++) txt+=Tooltip.convert_info(3,j,e[3][j]);
-                txt += '</td>';
-            } else txt += '<td vAlign="bottom" colspan="2" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
-
-            events.push([e[1], txt]);
-        }
-
-        events.sort();
         
-        Tooltip.add(vil, events, did);
+        new Tooltip.tip(vil, did);
     }
 }
 
