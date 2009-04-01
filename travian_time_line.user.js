@@ -1795,6 +1795,7 @@ Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined,
 Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.");
 Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
 Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.");
+Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.");
 
 Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.");
 Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.");
@@ -1813,9 +1814,13 @@ Tooltip.add = function(element, contents, did){
     var prod = Resources.production[did];
     var rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates, 3=troops?
     if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
-        txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
-        txt += Tooltip.make_header(rota, store, prod);
-        txt += '</tr></tbody></table>';
+        txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody>';
+        if (Tooltip.cycle_warehouse_info)
+            txt += Tooltip.make_header(rota, store, prod);
+        else 
+            for (var rota=0; rota<=2; rota++)
+                txt += Tooltip.make_header(rota, store, prod);        
+        txt += '</tbody></table>';
     }
     if (contents.length > 0)
         txt += '<table class="f10" style="font-size:11px"><tbody><tr>'+contents.join('</tr><tr>')+'</tr></tbody></table>';
@@ -1851,14 +1856,15 @@ Tooltip.add = function(element, contents, did){
                     div.style.visibility = 'hidden';
                 }, Tooltip.mouseout_delay);
         }, false);
-    // Add the click listener to the header of each tooltip
-    div.childNodes[0].addEventListener('click', function(e){
-            rota++; // Increment and roll over the rota
-            rota %= 3;
-            // Redraw the text in the <tr>
-            div.childNodes[0].childNodes[0].childNodes[0].innerHTML = Tooltip.make_header(rota, store, prod);
-        }, false);
-
+    if (Tooltip.cycle_warehouse_info) {
+        // Add the click listener to the header of each tooltip
+        div.childNodes[0].addEventListener('click', function(e){
+                rota++; // Increment and roll over the rota
+                rota %= 3;
+                // Redraw the text in the <tr>
+                div.childNodes[0].childNodes[0].childNodes[0].innerHTML = Tooltip.make_header(rota, store, prod);
+            }, false);
+    }
     return div;
 }
 
@@ -1866,7 +1872,7 @@ Tooltip.add = function(element, contents, did){
 Tooltip.make_header = function(rota, store, prod){
     // First, find how much time has elapsed since the recorded value
     var diff = (new Date().getTime() - store[6])/3600000; // In hours
-    var rtn = '';
+    var rtn = '<tr>';
     switch (rota){
     default:
     case 0: // Stored resources
@@ -1914,6 +1920,7 @@ Tooltip.make_header = function(rota, store, prod){
         }
         break;
     }
+    rtn+='</tr>';
     return rtn;
 }
 
