@@ -1837,36 +1837,17 @@ Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined,
 
 Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', true);
 
-// This creates the tooltips
-Tooltip.tip = function(anchor, did){
+Tooltip.village_tip = function(anchor, did){
+    // Set up the basic tooltip properties
     var obj = this;
 
-    // Add the listeners to the original village links
-    anchor.addEventListener('mouseover', function(e){
-            if (obj.timer != undefined) window.clearTimeout(obj.timer);
-            obj.timer = window.setTimeout(function(){
-                    obj.fill(new Date());
-                    obj.display(e);
-                }, Tooltip.mouseover_delay);
-        }, false);
-    anchor.addEventListener('mouseout', function(){
-            if (obj.timer != undefined) window.clearTimeout(obj.timer);
-                    obj.timer = window.setTimeout(function(){
-                            if (obj.div.parentNode != undefined) obj.div.parentNode.removeChild(obj.div);
-                        }, Tooltip.mouseout_delay);
-                }, false);
-
-    obj.did = did;
-    obj.div = document.createElement('div');
-    obj.store = Resources.storage[obj.did];
-    obj.prod = Resources.production[obj.did];
-
-    // This fills in the events array
-    obj.fill = function(d){
+    // This holds all of the village-specific tooltip information
+    obj.fill = function(){
         // This contains time/text pairs; the time in the first index for sorting, the text for display
         // The text is actually html consisting of table cells wrapped in <td> tags.
         // Clear before starting
         obj.events = [];
+        var d = new Date();
         var e_time = new Date();
         // Run through the tasks for each village
         for (var j in Events.events[obj.did]){
@@ -1891,23 +1872,20 @@ Tooltip.tip = function(anchor, did){
         }
 
         obj.events.sort();
-    }
 
-    obj.display = function(e){
         var txt = '';
-        var colour = '#000';
 
         if (Tooltip.show_warehouse_store && obj.store != undefined && obj.prod != undefined){
             var time = new Date().getTime();
             var age = (time - obj.store[6])/3600000; // In hours
+            var colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
             if (age < 12){ // Don't show the header at all for really out-of-date data
-                colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
                 txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
                 var header_txt = obj.make_header(time); // This is needed later...
                 txt += header_txt;
                 txt += '</tr></tbody></table>';
-            } else colour = '#ddd';
-        }
+            }
+        } else var colour = '#000';
 
         if (obj.events.length > 0){
             txt += '<table class="f10" style="font-size:11px"><tbody>';
@@ -1915,22 +1893,8 @@ Tooltip.tip = function(anchor, did){
             txt += '</tbody></table>';
         }
         else txt += 'IDLE!';
-
-        obj.div.setAttribute('style', 'position:absolute; top:'+(e.pageY+2)+'px; left:'+(e.pageX+4)+'px; padding:2px; z-index:200; border:solid 1px '+colour+'; background-color:#fff;');
         obj.div.innerHTML = txt;
-        document.getElementById('ltop1').parentNode.appendChild(obj.div);
-
-        // If we can mouseover the tooltip, we can add buttons and more functionality to it.
-        // Clear the timeout if we mouse over the div
-        obj.div.addEventListener('mouseover', function(e){
-                if (obj.timer != undefined) window.clearTimeout(obj.timer);
-            }, false);
-        obj.div.addEventListener('mouseout', function(e){
-                if (obj.timer != undefined) window.clearTimeout(obj.timer);
-                obj.timer = window.setTimeout(function(){
-                        obj.div.parentNode.removeChild(obj.div);
-                    }, Tooltip.mouseout_delay);
-            }, false);
+        obj.div.style.borderColor = colour;
 
         // Add the click listener to the header of each tooltip
         var header = obj.div.childNodes[0].childNodes[0].childNodes[0];
@@ -1951,7 +1915,7 @@ Tooltip.tip = function(anchor, did){
             obj.events.length > 0 && age < 12){
             // Add the mouseover listener to the events in each tooltip, but only if it's needed
             var x = obj.div.childNodes[1].childNodes[0].childNodes;
-            for (var i = 0; i < x.length; i++){
+            for (var i in x){
                 // If mousing over, change the header to what the value will be at this time
                 // Well, this is slightly better than before; using the local variables of the anon function
                 (function (i){
@@ -1964,6 +1928,7 @@ Tooltip.tip = function(anchor, did){
             }
         }
     }
+
     obj.make_header = function(time){
         // First, find how much time has elapsed since the recorded value
         var diff = (time - obj.store[6])/3600000; // In hours
@@ -2016,6 +1981,54 @@ Tooltip.tip = function(anchor, did){
             return rtn;
         }
     }
+
+    obj.div = Tooltip.make_tip(anchor, obj.fill);
+    obj.did = did;
+    obj.store = Resources.storage[obj.did];
+    obj.prod = Resources.production[obj.did];
+}
+
+// This function creates the tooltip listeners etc.
+// The basic theory here is that when you mouse over 'anchor', a div gets created and filled by the callback and displayed
+// It also adds listeners to prevent the div from disappearing while being moused over
+Tooltip.make_tip = function(anchor, callback, param){
+    var timer;
+    var div = document.createElement('div');
+
+    // This is the intrinsic tooltip-related mouseovers
+    var display = function(e){
+        div.setAttribute('style', 'position:absolute; top:'+(e.pageY+2)+'px; left:'+(e.pageX+4)+'px; padding:2px; z-index:200; border:solid 1px black; background-color:#fff;');
+        document.getElementById('ltop1').parentNode.appendChild(div);
+
+        // If we can mouseover the tooltip, we can add buttons and more functionality to it.
+        // Clear the timeout if we mouse over the div
+        div.addEventListener('mouseover', function(e){
+                if (timer != undefined) window.clearTimeout(timer);
+            }, false);
+        div.addEventListener('mouseout', function(e){
+                if (timer != undefined) window.clearTimeout(timer);
+                timer = window.setTimeout(function(){
+                        div.parentNode.removeChild(div);
+                    }, Tooltip.mouseout_delay);
+            }, false);
+    }
+
+    // Add the listeners to the original village links
+    anchor.addEventListener('mouseover', function(e){
+            if (timer != undefined) window.clearTimeout(timer);
+            timer = window.setTimeout(function(){
+                    display(e);
+                    callback(param);
+                }, Tooltip.mouseover_delay);
+        }, false);
+    anchor.addEventListener('mouseout', function(){
+            if (timer != undefined) window.clearTimeout(timer);
+            timer = window.setTimeout(function(){
+                    if (div.parentNode != undefined) div.parentNode.removeChild(div);
+                }, Tooltip.mouseout_delay);
+        }, false);
+
+    return div;
 }
 
 // This creates the resource info html.
@@ -2049,7 +2062,7 @@ Tooltip.run = function(){
         var did = vil.childNodes[0].childNodes[2].href.split('newdid=')[1];
         if (did.indexOf('&') >= 0) did = did.split('&')[0];
         
-        new Tooltip.tip(vil, did);
+        new Tooltip.village_tip(vil, did);
     }
 }
 
