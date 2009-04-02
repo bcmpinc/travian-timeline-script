@@ -180,9 +180,10 @@ Feature=new Object();
 Feature.list=[];
 Feature.init=nothing;
 Feature.run =nothing;
-Feature.setting=function(name, def_val, type, typedata, description) {
+Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     var s = new Object();
     if (type==undefined) type=Settings.type.none;
+    if (hidden==undefined) hidden=false;
     s.__proto__ = Settings;
     s.fullname = Settings.server+'.'+this.name+'.'+name;
     s.parent = this;
@@ -191,6 +192,7 @@ Feature.setting=function(name, def_val, type, typedata, description) {
     s.type = type;
     s.typedata = typedata;
     s.description = description;
+    s.hidden = hidden;
     s.def_val = def_val;
     s.read();
     this.s[name] = s;
@@ -423,7 +425,7 @@ Settings.config=function(parent_element) {
 Settings.setting("username",     "someone", Settings.type.string,      undefined, "The name you use to log in into your account.");
 Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
 Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.");
-Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined);
+Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined, '', true);
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
@@ -512,6 +514,7 @@ Settings.show=function() {
         var f = Feature.list[Settings.current_tab]; // It starts on this feature... 
         if (f) { // Check if it's a valid feature.
             for (var i in f.s){
+                if (f.s[i].hidden) continue; // Ignore hidden elements
                 f.s[i].read();
                 f.s[i].config(display);
             }
@@ -559,6 +562,7 @@ Settings.show=function() {
 
                 display.innerHTML = ''; // Clear the display section
                 for (var i in f.s){ // And refill it
+                    if (f.s[i].hidden) continue; // Ignore hidden elements
                     f.s[i].read();
                     f.s[i].config(display);
                 }
@@ -1831,6 +1835,8 @@ Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined,
 Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
 Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
+Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', true);
+
 // This creates the tooltips
 Tooltip.tip = function(anchor, did){
     var obj = this;
@@ -1852,7 +1858,6 @@ Tooltip.tip = function(anchor, did){
 
     obj.did = did;
     obj.div = document.createElement('div');
-    obj.rota = 0; // The point in the display rota for the header. 0=stored resources, 1=time left, 2=production rates
     obj.store = Resources.storage[obj.did];
     obj.prod = Resources.production[obj.did];
 
@@ -1930,8 +1935,13 @@ Tooltip.tip = function(anchor, did){
         // Add the click listener to the header of each tooltip
         var header = obj.div.childNodes[0].childNodes[0].childNodes[0];
         obj.div.childNodes[0].addEventListener('click', function(e){
-                obj.rota++; // Increment and roll over the rota
-                obj.rota %= 3;
+                // Increment and roll over the rota
+                Tooltip.header_rotation++;
+                Tooltip.header_rotation %= 3;
+
+                // Save the value...
+                Tooltip.s.header_rotation.write();
+
                 // Redraw the text in the <tr>
                 header_txt = obj.make_header(new Date().getTime());
                 header.innerHTML = header_txt;
@@ -1958,7 +1968,7 @@ Tooltip.tip = function(anchor, did){
         // First, find how much time has elapsed since the recorded value
         var diff = (time - obj.store[6])/3600000; // In hours
         var rtn = '';
-        switch (obj.rota){
+        switch (Tooltip.header_rotation){
         default:
         case 0: // Stored resources
             for (var i=0; i < 4; i++){
