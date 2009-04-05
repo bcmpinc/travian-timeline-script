@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.32
+// @version        0.33
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
  
 // @include        http://*.travian*.*/*.php*
@@ -1837,21 +1837,69 @@ Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined,
 
 Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', true);
 
-Tooltip.village_tip = function(anchor, did){
-    // Set up the basic tooltip properties
-    var obj = this;
+// This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
+Tooltip.overview = function(){
+    if (!Tooltip.show_warehouse_store) return;
 
+    var anchor = document.getElementById('lright1').childNodes[0];
+
+    var div = Tooltip.make_tip(anchor, function(){
+            var txt = '<table class="f10" width="100%" style="font-size:11px; border-bottom: solid black 1px; cursor:pointer"><tbody><tr><td>Summary:</tbody></table><table class="f10" style="font-size:11px;"><tbody>';
+            div.innerHTML = txt+Tooltip.sumarize()+'</tbody></table>';
+
+            div.childNodes[0].addEventListener('click', function(){
+                    Tooltip.header_rotation = (Tooltip.header_rotation+1)%3;
+                    Tooltip.s.header_rotation.write();
+
+                    div.childNodes[1].childNodes[0].innerHTML = Tooltip.sumarize();
+                }, false);
+        });
+}
+
+Tooltip.sumarize = function(){
+    var rtn = '';
+    var total = [0, 0, 0, 0]; // Wood, Clay, Iron, Wheat...
+    var d = new Date().getTime();
+
+    // Cycle through all of the villages
+    for (var did in Resources.storage){
+        var s = Resources.storage[did];
+        // Get the village name... maybe we should just store this somewhere rather than extract it every time?
+        var name = document.evaluate('//a[@href="?newdid='+did+'"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
+
+        rtn += '<tr><td><a href="?newdid='+did+'">'+name+':</a>';
+        var a = Tooltip.make_header(d, did);
+        rtn += a[0];
+        if (Tooltip.header_rotation != 1) for (var i in total) total[i] += a[1][i];
+    }
+
+    if (Tooltip.header_rotation != 1){
+        rtn += '<tr><td colspan="9" style="border-top: solid black 1px;"><tr><td>Total:';
+        for (var i=0; i < 4; i++){
+            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"><td>';
+            if (Tooltip.resource_kilo_values){
+                if (total[i] > 1000000) rtn += Math.round(total[i]/100000)/10+'M';
+                else if (total[i] > 10000) rtn += Math.round(total[i]/1000)+'k';
+                else if (total[i] > 1000) rtn += Math.round(total[i]/100)/10+'k';
+            }
+            else rtn += total[i];
+        }
+    }
+    return rtn;
+}
+
+Tooltip.village_tip = function(anchor, did){
     // This holds all of the village-specific tooltip information
-    obj.fill = function(){
-        // This contains time/text pairs; the time in the first index for sorting, the text for display
+    var fill = function(){
+        // 'events' contains time/text pairs; the time in the first index for sorting, the text for display
         // The text is actually html consisting of table cells wrapped in <td> tags.
         // Clear before starting
-        obj.events = [];
+        var events = [];
         var d = new Date();
         var e_time = new Date();
         // Run through the tasks for each village
-        for (var j in Events.events[obj.did]){
-            var e = Events.events[obj.did][j];
+        for (var j in Events.events[did]){
+            var e = Events.events[did][j];
             if (e[1] < d.getTime()) continue; // Skip if the event is in the past...
 
             e_time.setTime(e[1]);
@@ -1868,37 +1916,37 @@ Tooltip.village_tip = function(anchor, did){
                 txt += '</td>';
             } else txt += '<td vAlign="bottom" colspan="2" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
 
-            obj.events.push([e[1], txt]);
+            events.push([e[1], txt]);
         }
 
-        obj.events.sort();
+        events.sort();
 
         var txt = '';
 
-        if (Tooltip.show_warehouse_store && obj.store != undefined && obj.prod != undefined){
+        if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
             var time = new Date().getTime();
-            var age = (time - obj.store[6])/3600000; // In hours
+            var age = (time - store[6])/3600000; // In hours
             var colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
             if (age < 12){ // Don't show the header at all for really out-of-date data
-                txt += '<table class="f10" style="font-size:11px; cursor:pointer; border-bottom: 1px solid #000"><tbody><tr>';
-                var header_txt = obj.make_header(time); // This is needed later...
+                txt += '<table class="f10" width="100%" style="font-size:11px; cursor:pointer; border-bottom: 1px solid '+colour+'"><tbody><tr>';
+                var header_txt = Tooltip.make_header(time, did)[0]; // This is needed later...
                 txt += header_txt;
                 txt += '</tr></tbody></table>';
             }
         } else var colour = '#000';
 
-        if (obj.events.length > 0){
+        if (events.length > 0){
             txt += '<table class="f10" style="font-size:11px"><tbody>';
-            for (var i in obj.events) txt += '<tr>'+obj.events[i][1]+'</tr>';
+            for (var i in events) txt += '<tr>'+events[i][1]+'</tr>';
             txt += '</tbody></table>';
         }
         else txt += 'IDLE!';
-        obj.div.innerHTML = txt;
-        obj.div.style.borderColor = colour;
+        div.innerHTML = txt;
+        div.style.borderColor = colour;
 
         // Add the click listener to the header of each tooltip
-        var header = obj.div.childNodes[0].childNodes[0].childNodes[0];
-        obj.div.childNodes[0].addEventListener('click', function(e){
+        var header = div.childNodes[0].childNodes[0].childNodes[0];
+        div.childNodes[0].addEventListener('click', function(e){
                 // Increment and roll over the rota
                 Tooltip.header_rotation++;
                 Tooltip.header_rotation %= 3;
@@ -1907,20 +1955,20 @@ Tooltip.village_tip = function(anchor, did){
                 Tooltip.s.header_rotation.write();
 
                 // Redraw the text in the <tr>
-                header_txt = obj.make_header(new Date().getTime());
+                header_txt = Tooltip.make_header(new Date().getTime(), did)[0];
                 header.innerHTML = header_txt;
             }, false);
 
-        if (Tooltip.show_warehouse_store && obj.store != undefined && obj.prod != undefined &&
-            obj.events.length > 0 && age < 12){
+        if (Tooltip.show_warehouse_store && store != undefined && prod != undefined &&
+            events.length > 0 && age < 12){
             // Add the mouseover listener to the events in each tooltip, but only if it's needed
-            var x = obj.div.childNodes[1].childNodes[0].childNodes;
+            var x = div.childNodes[1].childNodes[0].childNodes;
             for (var i in x){
                 // If mousing over, change the header to what the value will be at this time
                 // Well, this is slightly better than before; using the local variables of the anon function
                 (function (i){
                     x[i].addEventListener('mouseover', function(e){
-                            header.innerHTML = obj.make_header(obj.events[i][0]);
+                            header.innerHTML = Tooltip.make_header(events[i][0], did)[0];
                         }, false);
                 })(i);
                 // Reset on mouseout
@@ -1928,64 +1976,69 @@ Tooltip.village_tip = function(anchor, did){
             }
         }
     }
+    var store = Resources.storage[did];
+    var prod = Resources.production[did];
+    var div = Tooltip.make_tip(anchor, fill);
+}
 
-    obj.make_header = function(time){
-        // First, find how much time has elapsed since the recorded value
-        var diff = (time - obj.store[6])/3600000; // In hours
-        var rtn = '';
+Tooltip.make_header = function(time, did){
+    // First, find how much time has elapsed since the recorded value
+    var store = Resources.storage[did];
+    var prod = Resources.production[did];
+    var diff = (time - store[6])/3600000; // In hours
+    var rtn = '';
+    var values = [];
+    for (var i=0; i < 4; i++){
+        rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+
         switch (Tooltip.header_rotation){
         default:
         case 0: // Stored resources
-            for (var i=0; i < 4; i++){
-                var r = parseInt(obj.store[i] - (-diff * obj.prod[i]));
-                var s = obj.store[(i < 3 ? 4 : 5)];
-                rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
-                // Turn red if value is decreasing or within two hours of overflowing
-                rtn += '<td style="color:'+ (obj.prod[i] > 0 && (s-r)/obj.prod[i] > 2 ? 'green' : 'red')+'">';
-                // If the value has overflowed, be sure to trim it...
-                if (r > s) r = s;
-                if (Tooltip.resource_kilo_values){
-                    rtn += r > 2000 ? Math.round(r/1000)+'k/' : Math.round(r)+'/';
-                    rtn += s > 2000 ? Math.round(s/1000)+'k' : s;
-                }
-                else rtn += Math.round(r) + '/' + s;
-                rtn += '</td>';
+            var r = parseInt(store[i] - (-diff * prod[i]));
+            var s = store[(i < 3 ? 4 : 5)];
+            // Turn red if value is decreasing or within two hours of overflowing
+            rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
+            // If the value has overflowed, be sure to trim it...
+            if (r > s) r = s;
+            if (Tooltip.resource_kilo_values){
+                rtn += r > 10000 ? Math.round(r/1000)+'k/' : (r > 1000 ? Math.round(r/100)/10+'k/' : Math.round(r)+'/');
+                rtn += s > 10000 ? Math.round(s/1000)+'k' : (s > 1000 ? Math.round(s/100)/10+'k' : s);
             }
-            return rtn;
+            else rtn += Math.round(r) + '/' + s;
+            rtn += '</td>';
+            values.push(r);
+            break;
         case 1: // Time to overflow
-            for (var i=0; i < 4; i++){
-                rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
-                
-                // First we need to find the space remaining
-                var p = obj.prod[i];
-                var c = parseInt(obj.store[i] - (-diff * p));
-                var r = obj.store[(i < 3 ? 4 : 5)] - c;
-                if ((r > 0 && p > 0) || (c > 0 && p < 0)){
-                    if (p == 0) rtn += '<td>inf.</td>';
-                    else {
-                        if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
-                        else time = Math.floor((c / (-1*p)) * 3600);
+            // First we need to find the space remaining
+            var p = prod[i];
+            var c = parseInt(store[i] - (-diff * p));
+            var r = store[(i < 3 ? 4 : 5)] - c;
+            if ((r > 0 && p > 0) || (c > 0 && p < 0)){
+                if (p == 0){
+                    rtn += '<td>inf.</td>';
+                    values.push(-1);
+                }
+                else {
+                    if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
+                    else time = Math.floor((c / (-1*p)) * 3600);
                         
-                        rtn += '<td style="color:'+(time>7200 && p > 0 ? 'green' : 'red')+'">';
-                        if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
-                        rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
-                    }
-                } else rtn += '<td style="color:red">0:00</td>';
+                    rtn += '<td style="color:'+(time>7200 && p > 0 ? 'green' : 'red')+'">';
+                    if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
+                    rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
+                    values.push(time);
+                }
+            } else {
+                rtn += '<td style="color:red">0:00</td>';
+                values.push(0);
             }
-            return rtn;
+            break;
         case 2: // Resource production
-            for (var i=0; i < 4; i++){
-                rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
-                rtn += '<td>' + obj.prod[i] + '</td>';
-            }
-            return rtn;
+            rtn += '<td>' + prod[i] + '</td>';
+            values.push(prod[i]);
+            break;
         }
     }
-
-    obj.div = Tooltip.make_tip(anchor, obj.fill);
-    obj.did = did;
-    obj.store = Resources.storage[obj.did];
-    obj.prod = Resources.production[obj.did];
+    return [rtn, values]; // Return both the string and the numeric values - for the summary's "total" calculation
 }
 
 // This function creates the tooltip listeners etc.
@@ -2044,14 +2097,12 @@ Tooltip.convert_info=function(type, index, amount) {
     if (amount.constructor == Array) 
         amount=amount[0]+" (-"+amount[1]+")";
     var seperator = Tooltip.seperate_values ? ' | '  : ' ';
-    // We have a lower threshold for armies, given that large resource amounts are more common than equally large armies.
-    if ((type==4 && Tooltip.merchant_kilo_values && amount > 2000) ||
-        (type==3 && Tooltip.army_kilo_values && amount > 2000))
-        return seperator + '<img src="'+img+'"/>' + Math.round(amount/1000) + 'k';
+    if (((type==4 && Tooltip.merchant_kilo_values) ||
+         (type==3 && Tooltip.army_kilo_values)) && amount > 1000)
+        return seperator + '<img src="'+img+'"/>' +
+            (amount > 10000 ? Math.round(amount/1000) + 'k' : Math.round(amount/100)/10 + 'k');
     return seperator + '<img src="'+img+'"/>' + amount;
 };
-
-// TODO: Creating the contents of the popup on-demand, would probably speed up pageloading, and gives more up to date results.
 
 Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
@@ -2062,8 +2113,10 @@ Tooltip.run = function(){
         var did = vil.childNodes[0].childNodes[2].href.split('newdid=')[1];
         if (did.indexOf('&') >= 0) did = did.split('&')[0];
         
-        new Tooltip.village_tip(vil, did);
+        Tooltip.village_tip(vil, did);
     }
+
+    Tooltip.overview();
 }
 
 
