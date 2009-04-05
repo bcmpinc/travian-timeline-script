@@ -1862,16 +1862,19 @@ Tooltip.sumarize = function(){
     var d = new Date().getTime();
 
     // Cycle through all of the villages
+    var vils = []; // Push the html into here for alphabetizing...
     for (var did in Resources.storage){
         var s = Resources.storage[did];
         // Get the village name... maybe we should just store this somewhere rather than extract it every time?
         var name = document.evaluate('//a[@href="?newdid='+did+'"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
 
-        rtn += '<tr><td><a href="?newdid='+did+'">'+name+':</a>';
         var a = Tooltip.make_header(d, did);
-        rtn += a[0];
+        vils.push([name, '<tr><td><a href="?newdid='+did+'">'+name+':</a>'+a[0]]);
         if (Tooltip.header_rotation != 1) for (var i in total) total[i] += a[1][i];
     }
+
+    vils.sort();
+    for (var i in vils) rtn += vils[i][1];
 
     if (Tooltip.header_rotation != 1){
         rtn += '<tr><td colspan="9" style="border-top: solid black 1px;"><tr><td>Total:';
