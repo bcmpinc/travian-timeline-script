@@ -1865,8 +1865,7 @@ Tooltip.sumarize = function(){
     var vils = []; // Push the html into here for alphabetizing...
     for (var did in Resources.storage){
         var s = Resources.storage[did];
-        // Get the village name... maybe we should just store this somewhere rather than extract it every time?
-        var name = document.evaluate('//a[@href="?newdid='+did+'"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue.textContent;
+        var name = vil_names[did];
 
         var a = Tooltip.make_header(d, did);
         vils.push([name, '<tr><td><a href="?newdid='+did+'">'+name+':</a>'+a[0]]);
@@ -2110,11 +2109,15 @@ Tooltip.convert_info=function(type, index, amount) {
 Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
     var x = document.evaluate('//div[@id="lright1"]/table[@class="f10"]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    // Save the names for later
+    vil_names = []; // Well this is a bit of a quirk of the language - in order for this to be accessable later, we can't use 'var'... go figure!
     // Run through our villages
     for (var i=0; i < x.snapshotLength; i++){
         var vil = x.snapshotItem(i);
         var did = vil.childNodes[0].childNodes[2].href.split('newdid=')[1];
         if (did.indexOf('&') >= 0) did = did.split('&')[0];
+
+        vil_names[did] = vil.childNodes[0].childNodes[2].textContent;
         
         Tooltip.village_tip(vil, did);
     }
