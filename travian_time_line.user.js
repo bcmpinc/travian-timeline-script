@@ -183,7 +183,7 @@ Feature.run =nothing;
 Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     var s = new Object();
     if (type==undefined) type=Settings.type.none;
-    if (hidden==undefined) hidden=false;
+    if (hidden==undefined || typeof(hidden) != 'string') hidden='false';
     s.__proto__ = Settings;
     s.fullname = Settings.server+'.'+this.name+'.'+name;
     s.parent = this;
@@ -372,6 +372,7 @@ Settings.config=function(parent_element) {
                     }
                     setting.set(val);
                     setting.write();
+                    Settings.fill(); // Redraw everything, in case a eval condition has changed
                 },false);
             break;
         }
@@ -392,6 +393,7 @@ Settings.config=function(parent_element) {
                     var val=e.target.value-0;
                     setting.set(val);
                     setting.write();
+                    Settings.fill(); // Redraw everything
                 },false);
             break;
         }
@@ -412,6 +414,7 @@ Settings.config=function(parent_element) {
                     s.childNodes[1].innerHTML = val;
                     setting.set(val);
                     setting.write();
+                    Settings.fill(); // Redraw everything
                 },false);
             break;
         }
@@ -425,7 +428,7 @@ Settings.config=function(parent_element) {
 Settings.setting("username",     "someone", Settings.type.string,      undefined, "The name you use to log in into your account.");
 Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
 Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.");
-Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined, '', true);
+Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined, '', 'true');
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
@@ -510,17 +513,7 @@ Settings.show=function() {
         tabbar.style.left  = "-445px";
         tabbar.style.top   = "-200px";
 
-        var display = p.childNodes[0]; // The actual menu elements go here...
-        var f = Feature.list[Settings.current_tab]; // It starts on this feature... 
-        if (f) { // Check if it's a valid feature.
-            for (var i in f.s){
-                if (f.s[i].hidden) continue; // Ignore hidden elements
-                f.s[i].read();
-                f.s[i].config(display);
-            }
-        } else {
-            display.innerHTML="Unknown feature: "+Settings.current_tab+"\nPlease select a tab on the left.";
-        }      
+        Settings.fill();
         
         var notice = add_el('pre'); // Add the copyright
         notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
@@ -560,12 +553,7 @@ Settings.show=function() {
                 el.style.background = "#fff"; // Turn the colour of the clicked element white
                 el.style.borderRight = "none"; // Simulate that the tab is connected to the settings page
 
-                display.innerHTML = ''; // Clear the display section
-                for (var i in f.s){ // And refill it
-                    if (f.s[i].hidden) continue; // Ignore hidden elements
-                    f.s[i].read();
-                    f.s[i].config(display);
-                }
+                Settings.fill();
             }, false);
         }
     } catch (e) {
@@ -573,6 +561,21 @@ Settings.show=function() {
     }
     w.firstChild.addEventListener("click",Settings.close,false);
 };
+
+// This fills/refreshes the display portion of the settings table
+Settings.fill=function(){
+    var disp = Settings.window.childNodes[1].childNodes[0];
+    var f = Feature.list[Settings.current_tab];
+    if (f){
+        disp.innerHTML = '';
+        for (var i in f.s){ // And refill it
+            if (eval(f.s[i].hidden)) continue; // Ignore hidden elements
+            f.s[i].read();
+            f.s[i].config(disp);
+        }
+    }
+}
+
 Settings.close=function(){
     remove(Settings.window);
 };
@@ -1138,6 +1141,8 @@ Events.setting("type", {/* <tag> : [<color> <visible>] */
             recruit : ['rgb(128,128,128)', true]
             }, Settings.type.object, undefined, "List of event types");
 Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
+
+Events.setting("predict_merchants", true, Settings.type.bool, undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
 
 // There is no report type, because there are different types of reports, which can also be divided over the currently
 // available types.
@@ -1836,8 +1841,8 @@ Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined,
 Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
 // These are invisable variables to the user
-Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', true);
-Tooltip.setting("summary_rotation",         0, Settings.type.integer, undefined, '', true);
+Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', 'true');
+Tooltip.setting("summary_rotation",         0, Settings.type.integer, undefined, '', 'true');
 
 Tooltip.header_mapping  = [0, 3, 1, 2]; // These are the types of display that the header will rotate through
 Tooltip.summary_mapping = [0, 3, 1, 2]; // And this is the same thing for the summary
