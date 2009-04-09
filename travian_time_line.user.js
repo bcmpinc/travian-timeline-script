@@ -1142,7 +1142,11 @@ Events.setting("type", {/* <tag> : [<color> <visible>] */
             }, Settings.type.object, undefined, "List of event types");
 Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
-Events.setting("predict_merchants", true, Settings.type.bool, undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
+Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
+Events.setting("merchant_send_trans",  'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+Events.setting("merchant_rcv_trans", 'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+Events.setting("merchant_rtn_trans",    'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+
 
 // There is no report type, because there are different types of reports, which can also be divided over the currently
 // available types.
@@ -1330,20 +1334,62 @@ Events.collector.market=function(){
         var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
         if (ret) Debug.debug("Merchant is returning");
 
-        // Using the time as unique id. If there are multiple with the same time increase event_count.
-        // It's the best I could do.
-        if (last_event_time==t) event_count++;
-        else last_event_time=t;
-        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+        // Extract the transit message
+        var msg = x.childNodes[0].childNodes[3].textContent;
 
-        e[0] = "market";
-        e[1] = t;
-        // Extract the action type
-        e[2] = x.childNodes[0].childNodes[3].textContent;
+        // Skip returning merchants if we're doing predictions - it should have already been caught
+        if (! Events.predict_merchants || ! ret){
+            // Using the time as unique id. If there are multiple with the same time increase event_count.
+            // It's the best I could do.
+            if (last_event_time==t) event_count++;
+            else last_event_time=t;
+            var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+
+            e[0] = "market";
+            e[1] = t;
+            // Extract the action type
+            e[2] = msg;
     
-        // Add resource pictures and amounts (if sending)
-        if (!ret)
-            e[4] = res;
+            // Add resource pictures and amounts (if sending)
+            if (!ret) e[4] = res;
+        }
+
+        // Do event prediction if needed - only done on sending merchants
+        if (Events.predict_merchants && msg.indexOf(Events.merchant_send_trans) >= 0){
+            var vil_name = msg.split(Events.merchant_send_trans+' ')[1];
+
+            // First, deal with the returning merchants, as that is the easiest
+            // What time will the merchants be returning? It takes the same amount of time to return as to go
+            var rtn_time = 2*t - new Date().getTime();
+
+            // Event count doesn't need to be changed here - assuming that every merchant arriving at a given time is of the same type.
+            // If not, no real loss... we'll just get an overly-large event_count.
+            var e_rtn = Events.get_event(Settings.village_id, 'a'+rtn_time+'_'+event_count);
+            e_rtn[0] = 'market';
+            e_rtn[1] = rtn_time;
+            e_rtn[2] = Events.merchant_rtn_trans + ' ' + vil_name;
+
+            // Next, let's deal with the reception village. This is more tricky...
+            // We have to figure out the 'did' of the reception village, given only its name.
+            // This will clearly screw up if you have multiple villages with the same name...
+            /* Screw this, I'll do this later! Goddamn challenging... gah!
+            var vils = document.evaluate('//table[@class="f10"]/tbody/tr/td[@class="nbr"]/a',
+                                         document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+            for (var j=0; j < vils.snapshotLength; j++){
+                if (vils.snapshotItem(j).textContent.indexOf(vil_name) >= 0){
+                    var did = vils.snapshotItem(j).href.split('newdid=')[1];
+                    if (did.indexOf('&') >= 0) did = did.split('&')[0];
+                    break;
+                }
+            }
+            // We might not be sending to ourselves...
+            if (did != undefined){
+                // Ok, this is tricky. Recieving villages have to get indexed by the *sender's id* as well...
+                // This is because if we *do* view the incoming merchants from the other side, we don't want double-reporting...
+                var e_rcv = Events.get_event(did, 'a'+t+'_'+event_count2+'_'+Settings.village_id);
+            }
+            */
+        }
     }
 }
 
