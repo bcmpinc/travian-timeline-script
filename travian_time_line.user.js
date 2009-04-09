@@ -1836,6 +1836,7 @@ Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined,
 Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
 Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', true);
+Tooltip.setting("summary_rotation",         0, Settings.type.integer, undefined, '', true);
 
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
@@ -1848,8 +1849,8 @@ Tooltip.overview = function(){
             div.innerHTML = txt+Tooltip.sumarize()+'</tbody></table>';
 
             div.childNodes[0].addEventListener('click', function(){
-                    Tooltip.header_rotation = (Tooltip.header_rotation+1)%3;
-                    Tooltip.s.header_rotation.write();
+                    Tooltip.summary_rotation = (Tooltip.summary_rotation+1)%3;
+                    Tooltip.s.summary_rotation.write();
 
                     div.childNodes[1].childNodes[0].innerHTML = Tooltip.sumarize();
                 }, false);
@@ -1867,7 +1868,7 @@ Tooltip.sumarize = function(){
         var s = Resources.storage[did];
         var name = vil_names[did];
 
-        var a = Tooltip.make_header(d, did);
+        var a = Tooltip.make_header(Tooltip.summary_rotation, d, did);
         vils.push([name, '<tr><td><a href="?newdid='+did+'">'+name+':</a>'+a[0]]);
         if (Tooltip.header_rotation != 1) for (var i in total) total[i] += a[1][i];
     }
@@ -1875,7 +1876,7 @@ Tooltip.sumarize = function(){
     vils.sort();
     for (var i in vils) rtn += vils[i][1];
 
-    if (Tooltip.header_rotation != 1){
+    if (Tooltip.summary_rotation != 1){
         rtn += '<tr><td colspan="9" style="border-top: solid black 1px;"><tr><td>Total:';
         for (var i=0; i < 4; i++){
             rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"><td>';
@@ -1931,7 +1932,7 @@ Tooltip.village_tip = function(anchor, did){
             var colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
             if (age < 12){ // Don't show the header at all for really out-of-date data
                 txt += '<table class="f10" width="100%" style="font-size:11px; cursor:pointer; border-bottom: 1px solid '+colour+'"><tbody><tr>';
-                var header_txt = Tooltip.make_header(time, did)[0]; // This is needed later...
+                var header_txt = Tooltip.make_header(Tooltip.header_rotation, time, did)[0]; // This is needed later...
                 txt += header_txt;
                 txt += '</tr></tbody></table>';
             }
@@ -1957,7 +1958,7 @@ Tooltip.village_tip = function(anchor, did){
                 Tooltip.s.header_rotation.write();
 
                 // Redraw the text in the <tr>
-                header_txt = Tooltip.make_header(new Date().getTime(), did)[0];
+                header_txt = Tooltip.make_header(Tooltip.header_rotation, new Date().getTime(), did)[0];
                 header.innerHTML = header_txt;
             }, false);
 
@@ -1970,7 +1971,7 @@ Tooltip.village_tip = function(anchor, did){
                 // Well, this is slightly better than before; using the local variables of the anon function
                 (function (i){
                     x[i].addEventListener('mouseover', function(e){
-                            header.innerHTML = Tooltip.make_header(events[i][0], did)[0];
+                            header.innerHTML = Tooltip.make_header(Tooltip.header_rotation, events[i][0], did)[0];
                         }, false);
                 })(i);
                 // Reset on mouseout
@@ -1983,7 +1984,7 @@ Tooltip.village_tip = function(anchor, did){
     var div = Tooltip.make_tip(anchor, fill);
 }
 
-Tooltip.make_header = function(time, did){
+Tooltip.make_header = function(rota, time, did){
     // First, find how much time has elapsed since the recorded value
     var store = Resources.storage[did];
     var prod = Resources.production[did];
@@ -1993,7 +1994,7 @@ Tooltip.make_header = function(time, did){
     for (var i=0; i < 4; i++){
         rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
 
-        switch (Tooltip.header_rotation){
+        switch (rota){
         default:
         case 0: // Stored resources
             var r = parseInt(store[i] - (-diff * prod[i]));
