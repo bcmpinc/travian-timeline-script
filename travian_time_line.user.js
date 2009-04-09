@@ -1839,8 +1839,8 @@ Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined,
 Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', true);
 Tooltip.setting("summary_rotation",         0, Settings.type.integer, undefined, '', true);
 
-Tooltip.header_mapping  = [0, 1, 2]; // These are the types of display that the header will rotate through
-Tooltip.summary_mapping = [0, 1, 2]; // And this is the same thing for the summary
+Tooltip.header_mapping  = [0, 3, 1, 2]; // These are the types of display that the header will rotate through
+Tooltip.summary_mapping = [0, 3, 1, 2]; // And this is the same thing for the summary
 
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
@@ -2001,14 +2001,15 @@ Tooltip.make_header = function(rota, time, did){
         rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
 
         switch (rota){
-        default:
+        default: break;
         case 0: // Stored resources
             var r = parseInt(store[i] - (-diff * prod[i]));
             var s = store[(i < 3 ? 4 : 5)];
-            // Turn red if value is decreasing or within two hours of overflowing
-            rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
             // If the value has overflowed, be sure to trim it...
             if (r > s) r = s;
+
+            // Turn red if value is decreasing or within two hours of overflowing
+            rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
             if (Tooltip.resource_kilo_values){
                 rtn += r > 10000 ? Math.round(r/1000)+'k/' : (r > 1000 ? Math.round(r/100)/10+'k/' : Math.round(r)+'/');
                 rtn += s > 10000 ? Math.round(s/1000)+'k' : (s > 1000 ? Math.round(s/100)/10+'k' : s);
@@ -2044,6 +2045,19 @@ Tooltip.make_header = function(rota, time, did){
         case 2: // Resource production
             rtn += '<td>' + prod[i] + '</td>';
             values.push(prod[i]);
+            break;
+        case 3: // % full
+            var r = parseInt(store[i] - (-diff * prod[i]));
+            var s = store[(i < 3 ? 4 : 5)];
+            var f = Math.round((r / s) * 100);
+            // If the value has overflowed, be sure to trim it...
+            if (f > 100) f = 100;
+
+            // Turn red if value is decreasing or within two hours of overflowing
+            rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
+
+            rtn += f + '%</td>';
+            values.push(f);
             break;
         }
     }
