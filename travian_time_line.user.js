@@ -1835,8 +1835,12 @@ Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined,
 Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
 Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
+// These are invisable variables to the user
 Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', true);
 Tooltip.setting("summary_rotation",         0, Settings.type.integer, undefined, '', true);
+
+Tooltip.header_mapping  = [0, 1, 2]; // These are the types of display that the header will rotate through
+Tooltip.summary_mapping = [0, 1, 2]; // And this is the same thing for the summary
 
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
@@ -1849,7 +1853,7 @@ Tooltip.overview = function(){
             div.innerHTML = txt+Tooltip.sumarize()+'</tbody></table>';
 
             div.childNodes[0].addEventListener('click', function(){
-                    Tooltip.summary_rotation = (Tooltip.summary_rotation+1)%3;
+                    Tooltip.summary_rotation = (Tooltip.summary_rotation+1)%Tooltip.summary_mapping.length;
                     Tooltip.s.summary_rotation.write();
 
                     div.childNodes[1].childNodes[0].innerHTML = Tooltip.sumarize();
@@ -1868,7 +1872,7 @@ Tooltip.sumarize = function(){
         var s = Resources.storage[did];
         var name = vil_names[did];
 
-        var a = Tooltip.make_header(Tooltip.summary_rotation, d, did);
+        var a = Tooltip.make_header(Tooltip.summary_mapping[Tooltip.summary_rotation], d, did);
         vils.push([name, '<tr><td><a href="?newdid='+did+'">'+name+':</a>'+a[0]]);
         if (Tooltip.header_rotation != 1) for (var i in total) total[i] += a[1][i];
     }
@@ -1932,7 +1936,8 @@ Tooltip.village_tip = function(anchor, did){
             var colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
             if (age < 12){ // Don't show the header at all for really out-of-date data
                 txt += '<table class="f10" width="100%" style="font-size:11px; cursor:pointer; border-bottom: 1px solid '+colour+'"><tbody><tr>';
-                var header_txt = Tooltip.make_header(Tooltip.header_rotation, time, did)[0]; // This is needed later...
+                var header_txt = Tooltip.make_header(Tooltip.header_mapping[Tooltip.header_rotation],
+                                                     time, did)[0]; // This is needed later...
                 txt += header_txt;
                 txt += '</tr></tbody></table>';
             }
@@ -1951,14 +1956,14 @@ Tooltip.village_tip = function(anchor, did){
         var header = div.childNodes[0].childNodes[0].childNodes[0];
         div.childNodes[0].addEventListener('click', function(e){
                 // Increment and roll over the rota
-                Tooltip.header_rotation++;
-                Tooltip.header_rotation %= 3;
+                Tooltip.header_rotation = (Tooltip.header_rotation + 1) % Tooltip.header_mapping.length;
 
                 // Save the value...
                 Tooltip.s.header_rotation.write();
 
                 // Redraw the text in the <tr>
-                header_txt = Tooltip.make_header(Tooltip.header_rotation, new Date().getTime(), did)[0];
+                header_txt = Tooltip.make_header(Tooltip.header_mapping[Tooltip.header_rotation],
+                                                 new Date().getTime(), did)[0];
                 header.innerHTML = header_txt;
             }, false);
 
@@ -1971,7 +1976,8 @@ Tooltip.village_tip = function(anchor, did){
                 // Well, this is slightly better than before; using the local variables of the anon function
                 (function (i){
                     x[i].addEventListener('mouseover', function(e){
-                            header.innerHTML = Tooltip.make_header(Tooltip.header_rotation, events[i][0], did)[0];
+                            header.innerHTML = Tooltip.make_header(Tooltip.header_mapping[Tooltip.header_rotation],
+                                                                   events[i][0], did)[0];
                         }, false);
                 })(i);
                 // Reset on mouseout
