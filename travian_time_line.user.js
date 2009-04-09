@@ -1865,6 +1865,7 @@ Tooltip.sumarize = function(){
     var rtn = '';
     var total = [0, 0, 0, 0]; // Wood, Clay, Iron, Wheat...
     var d = new Date().getTime();
+    var rota = Tooltip.summary_mapping[Tooltip.summary_rotation];
 
     // Cycle through all of the villages
     var vils = []; // Push the html into here for alphabetizing...
@@ -1872,7 +1873,7 @@ Tooltip.sumarize = function(){
         var s = Resources.storage[did];
         var name = vil_names[did];
 
-        var a = Tooltip.make_header(Tooltip.summary_mapping[Tooltip.summary_rotation], d, did);
+        var a = Tooltip.make_header(rota, d, did);
         vils.push([name, '<tr><td><a href="?newdid='+did+'">'+name+':</a>'+a[0]]);
         if (Tooltip.header_rotation != 1) for (var i in total) total[i] += a[1][i];
     }
@@ -1880,7 +1881,7 @@ Tooltip.sumarize = function(){
     vils.sort();
     for (var i in vils) rtn += vils[i][1];
 
-    if (Tooltip.summary_rotation != 1){
+    if (rota != 1 && rota != 3){
         rtn += '<tr><td colspan="9" style="border-top: solid black 1px;"><tr><td>Total:';
         for (var i=0; i < 4; i++){
             rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"><td>';
