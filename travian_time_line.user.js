@@ -435,8 +435,9 @@ Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined
 Settings.run=function() {
     // First, test to see if this is the login page. If it is, extract the login name and prefix it to all variables
     if (location.href.indexOf('/login.php') > 0){
-        document.getElementsByName('ef85998')[0].addEventListener('change', function(e){
-                var name = e.target.value;
+        var login = document.evaluate('//input[@class="fm fm110"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        login.addEventListener('change', function(e){
+                var name = e.target.value.toLowerCase();
                 if (name == undefined) return;
                 // We have to do this the manual way, because we can't figure out the namespace to extract username from until we know the username...
                 GM_setValue(Settings.server+'.Settings.username', name);
