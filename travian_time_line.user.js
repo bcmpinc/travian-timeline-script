@@ -185,7 +185,7 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     if (type==undefined) type=Settings.type.none;
     if (hidden==undefined || typeof(hidden) != 'string') hidden='false';
     s.__proto__ = Settings;
-    s.fullname = Settings.server+'.'+this.name+'.'+name;
+    s.fullname = Settings.server+'.'+Settings.username+'.'+this.name+'.'+name;
     s.parent = this;
     s.name = name;
     this[name] = def_val;
@@ -251,6 +251,10 @@ Settings.server=function(){
     if (url[1]=='speed') a='x';
     if (url[1]=='speed2') a='y';
     return url[3]+a;
+}();
+// This has to come after we know what Settings.server is
+Settings.username=function(){
+    return GM_getValue(Settings.server+'.Settings.username');
 }();
 // Get the value of this setting.
 // Note that (for example)
@@ -425,11 +429,20 @@ Settings.config=function(parent_element) {
         GM_log(e);
     }
 };
-Settings.setting("username",     "someone", Settings.type.string,      undefined, "The name you use to log in into your account.");
 Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
 Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.");
 Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined, '', 'true');
 Settings.run=function() {
+    // First, test to see if this is the login page. If it is, extract the login name and prefix it to all variables
+    if (location.href.indexOf('/login.php') > 0){
+        document.getElementsByName('ef85998')[0].addEventListener('change', function(e){
+                var name = e.target.value;
+                if (name == undefined) return;
+                // We have to do this the manual way, because we can't figure out the namespace to extract username from until we know the username...
+                GM_setValue(Settings.server+'.Settings.username', name);
+            }, false);
+        return;
+    }
     // Create link for opening the settings menu.
     var div = document.createElement("div");
     div.style.position = "absolute";
