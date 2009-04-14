@@ -14,8 +14,8 @@ Timeline Events,Look&Feel:
 - Add option of what market event text should be prefered?
 
 Settings: 
++ Seperate GM_values etc for different accounts on the same server (ie sitters).
 - Add support for per element and order editing of lists.
-- Seperate GM_values etc for different accounts on the same server (ie sitters).
 - Add color settingstype
 - Add color preview
 - Add color picker
@@ -43,11 +43,11 @@ Tool Tip:
 + Add latest warehouse info to the village tool tips
 + Have buttons to cycle tooltip header between stored values, prod. rates, overflow times, and troop levels?
 + Create tooltips on demand
++ Add tooltip to the "Villages" bar, giving a summary of production etc of all villages.
 - Update tooltip event mouseovers to take merchant arrivals into consideration?
 - Keep track of the most recently completed task/building for each village, and provide link to it
 - Add list of all units currently in the village to header
 - Add buttons next to listed events, to delete mistakes/changes event?
-- Add tooltip to the "Villages" bar, giving a summary of production etc of all villages.
 - Overwrite the "Your builders are already working" message on single building pages with what they're working on, and when it's done?
 
 Other Features
