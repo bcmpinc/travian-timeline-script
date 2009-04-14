@@ -661,6 +661,7 @@ Lines.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             extra: ["rgba(128,128,128,0.5)", true],
             farms: ["rgba(255,255,255,0.5)", true],
             ban: ["rgba(0,0,0,0.5)", false],
+            natar: ["rgba(128,64,0,0.5)", false],
             other: ["rgba(255,0,255,0.5)", true]
             }, Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
 Lines.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");
