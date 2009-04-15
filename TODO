@@ -45,6 +45,7 @@ Tool Tip:
 + Have buttons to cycle tooltip header between stored values, prod. rates, overflow times, and troop levels?
 + Create tooltips on demand
 + Add tooltip to the "Villages" bar, giving a summary of production etc of all villages.
++ Add a buildings page to the summary
 - Update tooltip event mouseovers to take merchant arrivals into consideration?
 - Keep track of the most recently completed task/building for each village, and provide link to it
 - Add list of all units currently in the village to header

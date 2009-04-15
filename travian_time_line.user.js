@@ -1951,10 +1951,11 @@ Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined,
 
 // These are invisable variables to the user
 Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', 'true');
-Tooltip.setting("summary_rotation",         0, Settings.type.integer, undefined, '', 'true');
+Tooltip.setting("summary_rotation_type",    0, Settings.type.integer, undefined, '', 'true');
+Tooltip.setting("summary_rotation",    [0, 0], Settings.type.object,  undefined, '', 'true');
 
-Tooltip.header_mapping  = [0, 3, 1, 2]; // These are the types of display that the header will rotate through
-Tooltip.summary_mapping = [0, 3, 1, 2]; // And this is the same thing for the summary
+Tooltip.header_mapping   = [0, 3, 1, 2]; // These are the types of display that the header will rotate through
+Tooltip.summary_mapping  = [[0, 3, 1, 2], [4]]; // And this is the same thing for the summary
 
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
@@ -1963,23 +1964,37 @@ Tooltip.overview = function(){
     var anchor = document.getElementById('lright1').childNodes[0];
 
     var div = Tooltip.make_tip(anchor, function(){
-            var txt = '<table class="f10" width="100%" style="font-size:11px; border-bottom: solid black 1px; cursor:pointer"><tbody><tr><td>Summary:</tbody></table><table class="f10" style="font-size:11px;"><tbody>';
-            div.innerHTML = txt+Tooltip.sumarize()+'</tbody></table>';
+            var txt = '<table class="f10" width="100%" style="font-size:11px; border-bottom: solid black 1px; cursor:pointer"><tbody><tr>';
+            txt += '<td width="15px"><img src="img/un/r/5.gif">';
+            txt += '<td width="15px"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAANCAYAAACdKY9CAAAABGdBTUEAALGPC/xhBQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFBSURBVChTY/wPBAxAcO3aNYZHjx4xXLp0iaGsrAwkhB2ANIBAVlbW/8+fP/8PDw//f+fOHZgwBs0AEmloaPi/e/dusKSWlhZOxWDXgIiwsLD/f/7+/Z8cFfX//uvX+DWATN60aRNYUZOh4f8cU9P/n/BoYZg2bdr/379//88qKvrfam39f396+v9oEZH/jz98wKqNwdjY+P/Pnz//29vb/y8sK/sfrqT0/zSQThUU/L8V6i9knQwgxcDw+3/r1i2weEph4X8Paen/Z6qr/1dISf2fN2kSik1gT3///h1FcOXmzf9VWFj+n66q+t+qrv6/FWgIDIA1YAOPXrwA23wgP///XAeH/wlmZmBlODWAJH/++/dfSkzs/0JgZO6Iiflf5eeHXwPMZglFxf9Tvbz+G6iqEqcBpDE0Nvb/qjVr/gMACNfxY8xFq7QAAAAASUVORK5CYII=">';
+            txt += '<td>';
+            txt += '</tbody></table><table class="f10" style="font-size:11px;"><tbody>';
+            var type = Tooltip.summary_rotation_type;
+            var rota = Tooltip.summary_rotation[type];
+            div.innerHTML = txt+Tooltip.sumarize(Tooltip.summary_mapping[type][rota])+'</tbody></table>';
 
-            div.childNodes[0].addEventListener('click', function(){
-                    Tooltip.summary_rotation = (Tooltip.summary_rotation+1)%Tooltip.summary_mapping.length;
+            var sel = div.childNodes[0].childNodes[0].childNodes[0].childNodes;
+            var disp = div.childNodes[1].childNodes[0];
+            var on_click = function(type){
+                if (Tooltip.summary_rotation_type == type){ // Increase the type only if we're already on this type
+                    Tooltip.summary_rotation[type] = (Tooltip.summary_rotation[type]+1)%Tooltip.summary_mapping[type].length;
                     Tooltip.s.summary_rotation.write();
+                } else { // We need to save it
+                    Tooltip.summary_rotation_type = type;
+                    Tooltip.s.summary_rotation_type.write();
+                }
 
-                    div.childNodes[1].childNodes[0].innerHTML = Tooltip.sumarize();
-                }, false);
+                disp.innerHTML = Tooltip.sumarize(Tooltip.summary_mapping[type][Tooltip.summary_rotation[type]]);
+            }
+            sel[0].addEventListener('click', function(){on_click(0)}, false);
+            sel[1].addEventListener('click', function(){on_click(1)}, false);
         });
 }
 
-Tooltip.sumarize = function(){
+Tooltip.sumarize = function(rota){
     var rtn = '';
     var total = [0, 0, 0, 0]; // Wood, Clay, Iron, Wheat...
     var d = new Date().getTime();
-    var rota = Tooltip.summary_mapping[Tooltip.summary_rotation];
 
     // Cycle through all of the villages
     var vils = []; // Push the html into here for alphabetizing...
@@ -1995,7 +2010,7 @@ Tooltip.sumarize = function(){
     vils.sort();
     for (var i in vils) rtn += vils[i][1];
 
-    if (rota != 1 && rota != 3){
+    if (rota != 1 && rota != 3 && rota != 4){
         rtn += '<tr><td colspan="9" style="border-top: solid black 1px;"><tr><td>Total:';
         for (var i=0; i < 4; i++){
             rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"><td>';
@@ -2010,6 +2025,25 @@ Tooltip.sumarize = function(){
     return rtn;
 }
 
+// This extracts and parses all the data from an event in a useful fashion
+Tooltip.parse_event = function(e, time){
+    var e_time = new Date();
+    e_time.setTime(e[1]);
+    var rtn = '<td vAlign="bottom">';
+    if (Tooltip.relative_time){
+        var diff = e[1] - time;
+        rtn += Math.floor(diff/3600000)+':'+pad2(Math.floor((diff%3600000)/60000)) + '</td>';
+    } else rtn += e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
+
+    if (Tooltip.show_info && (e[3] || e[4])) {
+        rtn += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td><td>";
+        if (e[4]) for (var j=0; j< 4; j++) rtn+=Tooltip.convert_info(4,j,e[4][j]);
+        if (e[3]) for (var j=0; j<11; j++) rtn+=Tooltip.convert_info(3,j,e[3][j]);
+        rtn += '</td>';
+    } else rtn += '<td vAlign="bottom" colspan="2" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
+    return rtn;
+}
+
 Tooltip.village_tip = function(anchor, did){
     // This holds all of the village-specific tooltip information
     var fill = function(){
@@ -2018,27 +2052,12 @@ Tooltip.village_tip = function(anchor, did){
         // Clear before starting
         var events = [];
         var d = new Date();
-        var e_time = new Date();
         // Run through the tasks for each village
         for (var j in Events.events[did]){
             var e = Events.events[did][j];
             if (e[1] < d.getTime()) continue; // Skip if the event is in the past...
 
-            e_time.setTime(e[1]);
-            var txt = '<td vAlign="bottom">';
-            if (Tooltip.relative_time){
-                var diff = e[1] - d.getTime();
-                txt += Math.floor(diff/3600000)+':'+pad2(Math.floor((diff%3600000)/60000)) + '</td>';
-            } else txt += e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
-
-            if (Tooltip.show_info && (e[3] || e[4])) {
-                txt += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td><td>";
-                if (e[4]) for (var j=0; j< 4; j++) txt+=Tooltip.convert_info(4,j,e[4][j]);
-                if (e[3]) for (var j=0; j<11; j++) txt+=Tooltip.convert_info(3,j,e[3][j]);
-                txt += '</td>';
-            } else txt += '<td vAlign="bottom" colspan="2" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td>";
-
-            events.push([e[1], txt]);
+            events.push([e[1], Tooltip.parse_event(e, d.getTime())]);
         }
 
         events.sort();
@@ -2112,70 +2131,89 @@ Tooltip.make_header = function(rota, time, did){
     var diff = (time - store[6])/3600000; // In hours
     var rtn = '';
     var values = [];
-    for (var i=0; i < 4; i++){
-        rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
+    switch (rota){
+    default:
+        for (var i=0; i < 4; i++){
+            rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"/></td>';
 
-        switch (rota){
-        default: break;
-        case 0: // Stored resources
-            var r = parseInt(store[i] - (-diff * prod[i]));
-            var s = store[(i < 3 ? 4 : 5)];
-            // If the value has overflowed, be sure to trim it...
-            if (r > s) r = s;
+            switch (rota){
+            default: break;
+            case 0: // Stored resources
+                var r = parseInt(store[i] - (-diff * prod[i]));
+                var s = store[(i < 3 ? 4 : 5)];
+                // If the value has overflowed, be sure to trim it...
+                if (r > s) r = s;
 
-            // Turn red if value is decreasing or within two hours of overflowing
-            rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
-            if (Tooltip.resource_kilo_values){
-                rtn += r > 10000 ? Math.round(r/1000)+'k/' : (r > 1000 ? Math.round(r/100)/10+'k/' : Math.round(r)+'/');
-                rtn += s > 10000 ? Math.round(s/1000)+'k' : (s > 1000 ? Math.round(s/100)/10+'k' : s);
-            }
-            else rtn += Math.round(r) + '/' + s;
-            rtn += '</td>';
-            values.push(r);
-            break;
-        case 1: // Time to overflow
-            // First we need to find the space remaining
-            var p = prod[i];
-            var c = parseInt(store[i] - (-diff * p));
-            var r = store[(i < 3 ? 4 : 5)] - c;
-            if ((r > 0 && p > 0) || (c > 0 && p < 0)){
-                if (p == 0){
-                    rtn += '<td>inf.</td>';
-                    values.push(-1);
+                // Turn red if value is decreasing or within two hours of overflowing
+                rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
+                if (Tooltip.resource_kilo_values){
+                    rtn += r > 10000 ? Math.round(r/1000)+'k/' : (r > 1000 ? Math.round(r/100)/10+'k/' : Math.round(r)+'/');
+                    rtn += s > 10000 ? Math.round(s/1000)+'k' : (s > 1000 ? Math.round(s/100)/10+'k' : s);
                 }
-                else {
-                    if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
-                    else time = Math.floor((c / (-1*p)) * 3600);
+                else rtn += Math.round(r) + '/' + s;
+                rtn += '</td>';
+                values.push(r);
+                break;
+            case 1: // Time to overflow
+                // First we need to find the space remaining
+                var p = prod[i];
+                var c = parseInt(store[i] - (-diff * p));
+                var r = store[(i < 3 ? 4 : 5)] - c;
+                if ((r > 0 && p > 0) || (c > 0 && p < 0)){
+                    if (p == 0){
+                        rtn += '<td>inf.</td>';
+                        values.push(-1);
+                    }
+                    else {
+                        if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
+                        else time = Math.floor((c / (-1*p)) * 3600);
                         
-                    rtn += '<td style="color:'+(time>7200 && p > 0 ? 'green' : 'red')+'">';
-                    if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
-                    rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
-                    values.push(time);
+                        rtn += '<td style="color:'+(time>7200 && p > 0 ? 'green' : 'red')+'">';
+                        if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
+                        rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
+                        values.push(time);
+                    }
+                } else {
+                    rtn += '<td style="color:red">0:00</td>';
+                    values.push(0);
                 }
-            } else {
-                rtn += '<td style="color:red">0:00</td>';
-                values.push(0);
-            }
-            break;
-        case 2: // Resource production
-            rtn += '<td>' + prod[i] + '</td>';
-            values.push(prod[i]);
-            break;
-        case 3: // % full
-            var r = parseInt(store[i] - (-diff * prod[i]));
-            var s = store[(i < 3 ? 4 : 5)];
-            var f = Math.round((r / s) * 100);
-            // If the value has overflowed, be sure to trim it...
-            if (f > 100) f = 100;
+                break;
+            case 2: // Resource production
+                rtn += '<td>' + prod[i] + '</td>';
+                values.push(prod[i]);
+                break;
+            case 3: // % full
+                var r = parseInt(store[i] - (-diff * prod[i]));
+                var s = store[(i < 3 ? 4 : 5)];
+                var f = Math.round((r / s) * 100);
+                // If the value has overflowed, be sure to trim it...
+                if (f > 100) f = 100;
+                
+                // Turn red if value is decreasing or within two hours of overflowing
+                rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
 
-            // Turn red if value is decreasing or within two hours of overflowing
-            rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
-
-            rtn += f + '%</td>';
-            values.push(f);
-            break;
+                rtn += f + '%</td>';
+                values.push(f);
+                break;
+            };
         }
-    }
+        break;
+    case 4: // Building
+        // There should only be one building in the future... get it!
+        for (var i in Events.events[did]){
+            var e = Events.events[did][i];
+            if (e[1] < time) continue; // Ignore past events
+            if (e[0] == "building"){
+                rtn += Tooltip.parse_event(e, time);
+                break;
+            }
+        }
+        if (rtn == ''){
+            rtn += '<td colspan="2">IDLE!</td>';
+        }
+        break;
+    };
+
     return [rtn, values]; // Return both the string and the numeric values - for the summary's "total" calculation
 }
 
