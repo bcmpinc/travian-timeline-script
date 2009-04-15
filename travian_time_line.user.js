@@ -180,7 +180,8 @@ Feature=new Object();
 Feature.list=[];
 Feature.init=nothing;
 Feature.run =nothing;
-Feature.setting=function(name, def_val, type, typedata, description, hidden) {
+// This is used to create a basic setting
+Feature.setting=function(name, def_val, type, typedata, description, hidden, parent_el) {
     var s = new Object();
     if (type==undefined) type=Settings.type.none;
     if (hidden==undefined || typeof(hidden) != 'string') hidden='false';
@@ -193,8 +194,33 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     s.typedata = typedata;
     s.description = description;
     s.hidden = hidden;
+    if (parent_el != undefined) s.parent_el = parent_el;
     s.def_val = def_val;
     s.read();
+    this.s[name] = s;
+    return s;
+};
+// This adds a given element directly
+Feature.direct=function(type, hidden){
+    var s = new Object();
+    s.__proto__ = Settings;
+    s.el = document.createElement(type);
+    if (hidden==undefined || typeof(hidden) != 'string') hidden='false';
+    s.hidden = hidden;
+    
+    // Create a new, unique index for it to be stored in
+    s.type = type;
+    for (var i=0; this.s[s.type+i] != undefined; i++);
+    var name = s.type + i;
+
+    // Overwrite the normal functions... we want different behaviour for this guy...
+    s.config = function(parent_element){
+        while (s.el.childNodes.length > 0) s.el.removeChild(s.el.childNodes[0]);
+        parent_element.appendChild(s.el);
+    };
+    s.read = nothing;
+    s.write = nothing;
+
     this.s[name] = s;
     return s;
 };
@@ -424,7 +450,15 @@ Settings.config=function(parent_element) {
         }
         }
         // Insert the element.
-        parent_element.appendChild(s);
+        if (setting.parent_el){ // If we have an expressed parent element
+            if (setting.parent_el.type == 'table'){ // create the tr's and td's
+                var tr = document.createElement('tr');
+                var td = document.createElement('td');
+                td.appendChild(s);
+                tr.appendChild(td);
+                setting.parent_el.el.appendChild(tr);
+            } else setting.parent_el.el.appendChild(s);
+        } else parent_element.appendChild(s); // Default if we have no given parent
     } catch (e) {
         GM_log(e);
     }
@@ -1893,15 +1927,25 @@ Timeline.run=function() {
 Feature.create("Tooltip");
 Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
 Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
-Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.");
-Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.");
-Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.");
-Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.");
 
-Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.");
-Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.");
-Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.");
+Tooltip.direct('br', '! Events.enabled');
+Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');
+var ttp_1 = Tooltip.direct('table');
+ttp_1.el.style.borderStyle = 'none';
+ttp_1.el.style.paddingLeft = '10px';
+Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 
+Tooltip.direct('br', '! Resources.enabled');
+Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.", '! Resources.enabled');
+var ttp_2 = Tooltip.direct('table');
+ttp_2.el.style.borderStyle = 'none';
+ttp_2.el.style.paddingLeft = '10px';
+Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
+Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
+
+Tooltip.direct('br');
 Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
 Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 

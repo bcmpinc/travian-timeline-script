@@ -15,6 +15,7 @@ Timeline Events,Look&Feel:
 
 Settings: 
 + Seperate GM_values etc for different accounts on the same server (ie sitters).
++ Add ability to further customize the settings pannel, and make it dynamic
 - Add support for per element and order editing of lists.
 - Add color settingstype
 - Add color preview
