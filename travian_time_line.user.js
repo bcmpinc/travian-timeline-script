@@ -2000,10 +2000,10 @@ Tooltip.sumarize = function(rota){
     var vils = []; // Push the html into here for alphabetizing...
     for (var did in Resources.storage){
         var s = Resources.storage[did];
-        var name = vil_names[did];
+        var name = Settings.village_names[did];
 
         var a = Tooltip.make_header(rota, d, did);
-        vils.push([name, '<tr><td><a href="?newdid='+did+'">'+name+':</a>'+a[0]]);
+        vils.push([name, '<tr><td><a href="?newdid='+did+Tooltip.href_postfix+'">'+name+':</a>'+a[0]]);
         if (Tooltip.header_rotation != 1) for (var i in total) total[i] += a[1][i];
     }
 
@@ -2141,8 +2141,9 @@ Tooltip.make_header = function(rota, time, did){
             case 0: // Stored resources
                 var r = parseInt(store[i] - (-diff * prod[i]));
                 var s = store[(i < 3 ? 4 : 5)];
-                // If the value has overflowed, be sure to trim it...
+                // If the value has overflowed or underflowed, be sure to trim it...
                 if (r > s) r = s;
+                if (r < 0) r = 0;
 
                 // Turn red if value is decreasing or within two hours of overflowing
                 rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
@@ -2186,8 +2187,9 @@ Tooltip.make_header = function(rota, time, did){
                 var r = parseInt(store[i] - (-diff * prod[i]));
                 var s = store[(i < 3 ? 4 : 5)];
                 var f = Math.round((r / s) * 100);
-                // If the value has overflowed, be sure to trim it...
+                // If the value has overflowed or underflowed, be sure to trim it...
                 if (f > 100) f = 100;
+                if (f < 0) f = 0;
                 
                 // Turn red if value is decreasing or within two hours of overflowing
                 rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
@@ -2283,16 +2285,16 @@ Tooltip.convert_info=function(type, index, amount) {
 Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
     var x = document.evaluate('//div[@id="lright1"]/table[@class="f10"]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    // Save the names for later
-    vil_names = []; // Well this is a bit of a quirk of the language - in order for this to be accessable later, we can't use 'var'... go figure!
+    Tooltip.href_postfix = '';
     // Run through our villages
     for (var i=0; i < x.snapshotLength; i++){
         var vil = x.snapshotItem(i);
         var did = vil.childNodes[0].childNodes[2].href.split('newdid=')[1];
-        if (did.indexOf('&') >= 0) did = did.split('&')[0];
+        if (did.indexOf('&') >= 0){
+            if (i == 0) Tooltip.href_postfix = did.match('&.*'); // This is the same for all - take from the first for simplicity
+            did = did.split('&')[0];
+        }
 
-        vil_names[did] = vil.childNodes[0].childNodes[2].textContent;
-        
         Tooltip.village_tip(vil, did);
     }
 
