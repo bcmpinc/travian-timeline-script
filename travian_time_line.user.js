@@ -1957,6 +1957,16 @@ Tooltip.setting("summary_rotation",    [0, 0], Settings.type.object,  undefined,
 Tooltip.header_mapping   = [0, 3, 1, 2]; // These are the types of display that the header will rotate through
 Tooltip.summary_mapping  = [[0, 3, 1, 2], [4]]; // And this is the same thing for the summary
 
+Tooltip.image = [];
+Tooltip.image[0] = 'img/un/r/4.gif';
+// Clock
+Tooltip.image[1] = 'data:image/gif;base64,R0lGODlhFAAUAMZbAAAAAAEAAAIAAAMAAAABAQEBAQEBAgECAgICAgICAwIDAwIDBDIAADMAADQAADUAADIBATYBAWQAAGUAAGYAAGgBAZcAAJkAAJsBAQAzMwI1NQI1NskAAMsAAMwAAM0BATIyMjMzMzQ0NDQ1NTU1NTU1NjMzZjM0ZjQ0ZzQ1Z5kzMzJkZDNmZvwyMjVoaP0yMv4yMv8zMzNmmTRnmmRkZGVlZWZmZmhoaGZmmWdom2SXl2aZmWeam2aZzGeZzWeazZeXl5eYmJmZmZeXyZiZy5mZzJmazZmZ/5fKypnMzJfK/ZjK/ZnL/pnM/5rM/8nJycrKyszMzMvM/szM/8v9/cz///v7+/z8/P39/f7+/v7//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////yH5BAEKAH8ALAAAAAAUABQAAAe0gFuCg4IAHjEAhIqEBYmKNiGLgzGSk4tVU01NUYtRVU1HR5FbU5iaR1sUMasAmqChgk1TmasxkJkAqw2hqFs9TbkCs7NCmZqrsIINtlXNUyyyxk07tpM2VYOms67TiFsxDdjZmdvcMR7f183rU0nlrtRCtsOYxO+ulPPD+0Xc+On7hvlzleubrYGairTC5yhGCBsIF2o6RMghRITHKClaZcOGRGA2VlWqUOuCqlqVvqVUOSgQADs=';
+Tooltip.image[2] = 'img/un/r/5.gif';
+// Percent
+Tooltip.image[3] = 'data:image/gif;base64,R0lGODdhDAASAKUAAAAAAAMDAxAQEBcXFyAgICMjIycnJzY2Njc3Nzo6Oj09PT8/P0ZGRklJSUtLS1JSUlVVVWFhYXNzc3V1dXh4eH19fYWFhYmJiY2NjZSUlJ6enqampqioqKmpqaqqqqurq7CwsLGxsbKysrW1tbe3t7m5ub29vb+/v8DAwMLCwsfHx8jIyNDQ0NHR0dLS0tXV1dnZ2dzc3N3d3eDg4OXl5enp6ezs7O3t7e/v7/T09PX19ff39/n5+f39/f///wAAACwAAAAADAASAAAGakCfcEgsGoswX2/Yqw1BiAZm+NAIcQcVaSBMQYatwowG8K0Sr6GMsCmVFRyiDQYAZG4GHwpw2g11PgweJgA8Ah1EIxI+FgE+ABdDLA4+MRRlABNDCxVCKBEiBC5COR9EIQkoR6usra6vREEAOw=='
+// Hammer
+Tooltip.image[4] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAANCAYAAACdKY9CAAAABGdBTUEAALGPC/xhBQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFBSURBVChTY/wPBAxAcO3aNYZHjx4xXLp0iaGsrAwkhB2ANIBAVlbW/8+fP/8PDw//f+fOHZgwBs0AEmloaPi/e/dusKSWlhZOxWDXgIiwsLD/f/7+/Z8cFfX//uvX+DWATN60aRNYUZOh4f8cU9P/n/BoYZg2bdr/379//88qKvrfam39f396+v9oEZH/jz98wKqNwdjY+P/Pnz//29vb/y8sK/sfrqT0/zSQThUU/L8V6i9knQwgxcDw+3/r1i2weEph4X8Paen/Z6qr/1dISf2fN2kSik1gT3///h1FcOXmzf9VWFj+n66q+t+qrv6/FWgIDIA1YAOPXrwA23wgP///XAeH/wlmZmBlODWAJH/++/dfSkzs/0JgZO6Iiflf5eeHXwPMZglFxf9Tvbz+G6iqEqcBpDE0Nvb/qjVr/gMACNfxY8xFq7QAAAAASUVORK5CYII=';
+
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
     if (!Tooltip.show_warehouse_store) return;
@@ -1964,18 +1974,21 @@ Tooltip.overview = function(){
     var anchor = document.getElementById('lright1').childNodes[0];
 
     var div = Tooltip.make_tip(anchor, function(){
-            var txt = '<table class="f10" width="100%" style="font-size:11px; border-bottom: solid black 1px; cursor:pointer"><tbody><tr>';
-            txt += '<td width="15px"><img src="img/un/r/5.gif">';
-            txt += '<td width="15px"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAANCAYAAACdKY9CAAAABGdBTUEAALGPC/xhBQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFBSURBVChTY/wPBAxAcO3aNYZHjx4xXLp0iaGsrAwkhB2ANIBAVlbW/8+fP/8PDw//f+fOHZgwBs0AEmloaPi/e/dusKSWlhZOxWDXgIiwsLD/f/7+/Z8cFfX//uvX+DWATN60aRNYUZOh4f8cU9P/n/BoYZg2bdr/379//88qKvrfam39f396+v9oEZH/jz98wKqNwdjY+P/Pnz//29vb/y8sK/sfrqT0/zSQThUU/L8V6i9knQwgxcDw+3/r1i2weEph4X8Paen/Z6qr/1dISf2fN2kSik1gT3///h1FcOXmzf9VWFj+n66q+t+qrv6/FWgIDIA1YAOPXrwA23wgP///XAeH/wlmZmBlODWAJH/++/dfSkzs/0JgZO6Iiflf5eeHXwPMZglFxf9Tvbz+G6iqEqcBpDE0Nvb/qjVr/gMACNfxY8xFq7QAAAAASUVORK5CYII=">';
-            txt += '<td>';
-            txt += '</tbody></table><table class="f10" style="font-size:11px;"><tbody>';
             var type = Tooltip.summary_rotation_type;
             var rota = Tooltip.summary_rotation[type];
+            var txt = '<table class="f10" width="100%" style="font-size:11px; border-bottom: solid black 1px; cursor:pointer"><tbody><tr>';
+            for (var i in Tooltip.summary_mapping){
+                txt += '<td width="15px"><img src="';
+                txt += Tooltip.image[Tooltip.summary_mapping[i][Tooltip.summary_rotation[i]]];
+                txt += '">';
+            }
+            txt += '<td>';
+            txt += '</tbody></table><table class="f10" style="font-size:11px;"><tbody>';
             div.innerHTML = txt+Tooltip.sumarize(Tooltip.summary_mapping[type][rota])+'</tbody></table>';
 
             var sel = div.childNodes[0].childNodes[0].childNodes[0].childNodes;
             var disp = div.childNodes[1].childNodes[0];
-            var on_click = function(type){
+            var on_click = function(e, type){
                 if (Tooltip.summary_rotation_type == type){ // Increase the type only if we're already on this type
                     Tooltip.summary_rotation[type] = (Tooltip.summary_rotation[type]+1)%Tooltip.summary_mapping[type].length;
                     Tooltip.s.summary_rotation.write();
@@ -1983,11 +1996,12 @@ Tooltip.overview = function(){
                     Tooltip.summary_rotation_type = type;
                     Tooltip.s.summary_rotation_type.write();
                 }
-
-                disp.innerHTML = Tooltip.sumarize(Tooltip.summary_mapping[type][Tooltip.summary_rotation[type]]);
+                var result = Tooltip.summary_mapping[type][Tooltip.summary_rotation[type]];
+                e.target.src = Tooltip.image[result];
+                disp.innerHTML = Tooltip.sumarize(result);
             }
-            sel[0].addEventListener('click', function(){on_click(0)}, false);
-            sel[1].addEventListener('click', function(){on_click(1)}, false);
+            sel[0].addEventListener('click', function(e){on_click(e, 0)}, false);
+            sel[1].addEventListener('click', function(e){on_click(e, 1)}, false);
         });
 }
 
