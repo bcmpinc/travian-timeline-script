@@ -1960,12 +1960,12 @@ Tooltip.summary_mapping  = [[0, 3, 1, 2], [4]]; // And this is the same thing fo
 Tooltip.image = [];
 Tooltip.image[0] = 'img/un/r/4.gif';
 // Clock
-Tooltip.image[1] = 'data:image/gif;base64,R0lGODlhFAAUAMZbAAAAAAEAAAIAAAMAAAABAQEBAQEBAgECAgICAgICAwIDAwIDBDIAADMAADQAADUAADIBATYBAWQAAGUAAGYAAGgBAZcAAJkAAJsBAQAzMwI1NQI1NskAAMsAAMwAAM0BATIyMjMzMzQ0NDQ1NTU1NTU1NjMzZjM0ZjQ0ZzQ1Z5kzMzJkZDNmZvwyMjVoaP0yMv4yMv8zMzNmmTRnmmRkZGVlZWZmZmhoaGZmmWdom2SXl2aZmWeam2aZzGeZzWeazZeXl5eYmJmZmZeXyZiZy5mZzJmazZmZ/5fKypnMzJfK/ZjK/ZnL/pnM/5rM/8nJycrKyszMzMvM/szM/8v9/cz///v7+/z8/P39/f7+/v7//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////yH5BAEKAH8ALAAAAAAUABQAAAe0gFuCg4IAHjEAhIqEBYmKNiGLgzGSk4tVU01NUYtRVU1HR5FbU5iaR1sUMasAmqChgk1TmasxkJkAqw2hqFs9TbkCs7NCmZqrsIINtlXNUyyyxk07tpM2VYOms67TiFsxDdjZmdvcMR7f183rU0nlrtRCtsOYxO+ulPPD+0Xc+On7hvlzleubrYGairTC5yhGCBsIF2o6RMghRITHKClaZcOGRGA2VlWqUOuCqlqVvqVUOSgQADs=';
+Tooltip.image[1] = 'data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA/////////////v7+/v7+rq6uTExMREREPDw8PDw8PDw8QEBAi4uL/////v7+////////////AAD////////////9/f2pqalDQ0N+fn75+fn////x8fHc3NyCgoI7OzuKior///////////////8AAP///////////6SkpEhISJubm/39/f39/f39/f////7+/v7+/o2NjURERKGhof///////////wAA////////////SkpKjY2N7e3t/////v7+/f39/v7+////9/f3WlpaU1NTSUlJ////////////AAD///////////9BQUHc3Nz7+/v+/v7+/v79/f3///9SUlJbW1vx8fG+vr47Ozv///////////8AAP///////////zw8PNnZ2f////39/f7+/v///ysrK+vr6/z8/P7+/vn5+TMzM////////////wAA////////////QUFB/////////f39/f39////Li4u/////f39/v7+/Pz8ODg4////////////AAD///////////83NzePj4/39/f+/v79/f3///9QUFD////+/v7+/v67u7s7Ozv///////////8AAP///////////2BgYERERJeXl/////7+/v///1JSUv////7+/v///1tbW0FBQf///////////wAA////////////////T09PVlZW9fX1+fn5////T09P////+/v7W1tbOzs7l5eX////////////AAD////////////9/f339/dPT09UVFSBgYH///9LS0vc3NxSUlI8PDyBgYH+/v7///////////8AAP////////////7+/v39/f///25ubkpKSklJSUNDQ0pKSjs7O2hoaP39/f7+/v///////////wAA';
 Tooltip.image[2] = 'img/un/r/5.gif';
 // Percent
-Tooltip.image[3] = 'data:image/gif;base64,R0lGODdhDAASAKUAAAAAAAMDAxAQEBcXFyAgICMjIycnJzY2Njc3Nzo6Oj09PT8/P0ZGRklJSUtLS1JSUlVVVWFhYXNzc3V1dXh4eH19fYWFhYmJiY2NjZSUlJ6enqampqioqKmpqaqqqqurq7CwsLGxsbKysrW1tbe3t7m5ub29vb+/v8DAwMLCwsfHx8jIyNDQ0NHR0dLS0tXV1dnZ2dzc3N3d3eDg4OXl5enp6ezs7O3t7e/v7/T09PX19ff39/n5+f39/f///wAAACwAAAAADAASAAAGakCfcEgsGoswX2/Yqw1BiAZm+NAIcQcVaSBMQYatwowG8K0Sr6GMsCmVFRyiDQYAZG4GHwpw2g11PgweJgA8Ah1EIxI+FgE+ABdDLA4+MRRlABNDCxVCKBEiBC5COR9EIQkoR6usra6vREEAOw=='
+Tooltip.image[3] = 'data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////AAD////////////////////Y2NhNTU23t7f////m5uZbW1s/Pz9QUFCCgoL39/f///////////8AAP///////////////////////7W1tUpKSuPj49LS0ioqKq2trZaWlkJCQvHx8f///////////wAA////////////////////////+Pj4SEhIkpKS1NTUMjIytbW1nZ2dNzc38fHx////////////AAD////////////////Ozs6YmJijo6POzs5MTEy+vr5xcXFFRUU/Pz+Ghob7+/v///////////8AAP///////////+Xl5VtbW1BQUD4+Po+Pj6GhoUVFRd7e3tPT09vb2/7+/v///////////////wAA////////////0tLSKioqwsLCh4eHQkJC5OTkUlJSjIyM/v7+////////////////////////AAD////////////V1dUyMjK0tLSQkJBQUFDx8fHa2tpeXl7Y2Nj///////////////////////8AAP////////////Ly8oCAgEREREBAQJeXl/v7+/7+/p6enlZWVtvb2////////////////////wAA////////////////8fHx0tLS29vb////////////+Pj42NjY////////////////////////AAD///////////////////////////////////////////////////////////////////////8AAP///////////////////////////////////////////////////////////////////////wAA';
 // Hammer
-Tooltip.image[4] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAANCAYAAACdKY9CAAAABGdBTUEAALGPC/xhBQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFBSURBVChTY/wPBAxAcO3aNYZHjx4xXLp0iaGsrAwkhB2ANIBAVlbW/8+fP/8PDw//f+fOHZgwBs0AEmloaPi/e/dusKSWlhZOxWDXgIiwsLD/f/7+/Z8cFfX//uvX+DWATN60aRNYUZOh4f8cU9P/n/BoYZg2bdr/379//88qKvrfam39f396+v9oEZH/jz98wKqNwdjY+P/Pnz//29vb/y8sK/sfrqT0/zSQThUU/L8V6i9knQwgxcDw+3/r1i2weEph4X8Paen/Z6qr/1dISf2fN2kSik1gT3///h1FcOXmzf9VWFj+n66q+t+qrv6/FWgIDIA1YAOPXrwA23wgP///XAeH/wlmZmBlODWAJH/++/dfSkzs/0JgZO6Iiflf5eeHXwPMZglFxf9Tvbz+G6iqEqcBpDE0Nvb/qjVr/gMACNfxY8xFq7QAAAAASUVORK5CYII=';
+Tooltip.image[4] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kEEhY1JQfrF6AAAAFYSURBVCjPlZI7a8IAFEY/K1UCBn+AiwZpwVVwCMFNguJQHOvgUIQ4FEQoUjNVCiIFN6GbU0CdujWrdNPBdggOoqGgHZSCQRE1hdvZt571Xg738YF2oGkaSZJE2WyWTuUCGyyXS8iyDJ7n0e120e/3cQpbolgsBlEUwbIsjOkUHMedLzIMA1arFT6fD2/lMl4KBZzKmkgURQiCAIfTievxGO/pNNRaDX/niHRdh2mamM/nSCaT+HW74bDZoJVKUPJ5fI9GmAyHx0UejwfFYhGqquIukcBNLoemaWJqscDWaqGaSuGz3d4/0uYbG40GrVYrIiL66nToKZOhqMtFSjhMz8EgVSuVne/HsXxMZjN6UxS6YllSolEqh0L0GI9v9VmIiI4dkgDogwFuAwFIfj8uAfwwDB7q9f2rHWKxWJDAcfQaiRDv9R5O9iHsdjs+ej00GQb3srxW+wd+q1O9w+tuqQAAAABJRU5ErkJggg==';
 
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
@@ -1978,7 +1978,7 @@ Tooltip.overview = function(){
             var rota = Tooltip.summary_rotation[type];
             var txt = '<table class="f10" width="100%" style="font-size:11px; border-bottom: solid black 1px; cursor:pointer"><tbody><tr>';
             for (var i in Tooltip.summary_mapping){
-                txt += '<td width="15px"><img src="';
+                txt += '<td width="20px"><img src="';
                 txt += Tooltip.image[Tooltip.summary_mapping[i][Tooltip.summary_rotation[i]]];
                 txt += '">';
             }
@@ -2159,8 +2159,8 @@ Tooltip.make_header = function(rota, time, did){
                 if (r > s) r = s;
                 if (r < 0) r = 0;
 
-                // Turn red if value is decreasing or within two hours of overflowing
-                rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
+                // Turn red if value is decreasing or overflowing, or orange if within two hours of overflowing
+                rtn += '<td style="color:'+(prod[i] < 0 || s==r ? 'red' : (s-r)/prod[i] < 2 ? 'orange' : 'green')+'">';
                 if (Tooltip.resource_kilo_values){
                     rtn += r > 10000 ? Math.round(r/1000)+'k/' : (r > 1000 ? Math.round(r/100)/10+'k/' : Math.round(r)+'/');
                     rtn += s > 10000 ? Math.round(s/1000)+'k' : (s > 1000 ? Math.round(s/100)/10+'k' : s);
@@ -2183,7 +2183,8 @@ Tooltip.make_header = function(rota, time, did){
                         if (p > 0) time = Math.floor((r / p) * 3600); // In seconds
                         else time = Math.floor((c / (-1*p)) * 3600);
                         
-                        rtn += '<td style="color:'+(time>7200 && p > 0 ? 'green' : 'red')+'">';
+                        // Turn red if value is decreasing or overflowing, or orange if within two hours of overflowing
+                        rtn += '<td style="color:'+(p < 0 ? 'red' : time < 7200 ? 'orange' : 'green')+'">';
                         if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
                         rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
                         values.push(time);
@@ -2205,8 +2206,8 @@ Tooltip.make_header = function(rota, time, did){
                 if (f > 100) f = 100;
                 if (f < 0) f = 0;
                 
-                // Turn red if value is decreasing or within two hours of overflowing
-                rtn += '<td style="color:'+ (prod[i] > 0 && (s-r)/prod[i] > 2 ? 'green' : 'red')+'">';
+                // Turn red if value is decreasing or overflowing, or orange if within two hours of overflowing
+                rtn += '<td style="color:'+ (prod[i] < 0 || r >= s ? 'red' : (s-r)/prod[i] < 2 ? 'orange' : 'green')+'">';
 
                 rtn += f + '%</td>';
                 values.push(f);
