@@ -1194,10 +1194,8 @@ Events.setting("type", {/* <tag> : [<color> <visible>] */
             }, Settings.type.object, undefined, "List of event types");
 Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
-Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
-Events.setting("merchant_send_trans",  'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-Events.setting("merchant_rcv_trans", 'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-Events.setting("merchant_rtn_trans",    'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+Events.setting("merchant_rcv_trans", 'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. For aesthetic purposes only");
+Events.setting("merchant_rtn_trans",    'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. For aesthetic purposes only");
 
 
 // There is no report type, because there are different types of reports, which can also be divided over the currently
@@ -1231,10 +1229,7 @@ Events.setting("merchant_rtn_trans",    'Return from', Settings.type.string, und
    In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
 */
 
-// village = id of the village.
-// id = The consistent unique event identifier.
-// overwrite = optionally overwrite any matching events
-Events.get_event=function(village, id, overwrite) {
+Events.test_event=function(village, id){
     var e = Events.events[village];
     if (e == undefined) {
         e = {};
@@ -1242,7 +1237,16 @@ Events.get_event=function(village, id, overwrite) {
         Debug.debug("Added village: "+village);
     }
     e = Events.events[village][id];
-    if (e == undefined || overwrite === true) {
+    if (e == undefined) return false;
+    return e;
+};
+
+// village = id of the village.
+// id = The consistent unique event identifier.
+// overwrite = optionally overwrite any matching events
+Events.get_event=function(village, id, overwrite) {
+    var e = Events.test_event(village, id);
+    if (e == false || overwrite === true) {
         e = [];
         Events.events[village][id]=e;
         Debug.debug("Created element: "+id);
@@ -1361,16 +1365,72 @@ Events.collector.market=function(){
     if (location.href.indexOf('build.php')<=0) return;
     if (document.forms[0] == undefined) return;
     // And there is an OK button
-    if (document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')<=0) return;
+    var html = document.forms[0].innerHTML;
+    if (html.indexOf('/b/ok1.gif" onmousedown="btm1(')<=0) return;
     // Then this must be the market! (in a language-insensitive manner :D)
 
     var last_event_time=0;
     var event_count=0;
 
-    var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    for (var i=0; i < shipment.snapshotLength; i++){
+    // How many merchants are in the market at the moment, and how big are they
+    // Format is [size, remaining, total].
+    // Beyond screws with this page *so* much, this is the only way I can think of doing this safely...
+    var merchant_data = html.match(' (\\d\\d?)/(\\d\\d?)');
+    // If this fails, we're likely on the confirm-send page and can just exit, because we got here by way of
+    // a normal market page that would pick it up then...
+    if (merchant_data == undefined) return;
+        
+    var size = html.match('<b>(\\d\\d\\d\\d?)</b>');
+    // If this is null, it's likely because we *just* sent merchants (post-confirm) - we have a different page formatting for some reason
+    if (size == undefined) merchant_data[0] = html.match('\\((\\d\\d\\d\\d?)\\)')[1];
+    else merchant_data[0] = size[1];
+
+    Debug.debug('Initial data: ['+merchant_data.join(', ')+']');
+
+    var update_merchants = function(res){
+        var total = 0;
+        for (var j in res) total -= -res[j];
+        merchant_data[1] -= -Math.ceil(total/merchant_data[0]); // Always have to round up...
+    }
+
+    // The theory goes: cycle through the merchant events in *reverse* *order*, because the ordering is 'from', then 'to', then 'return'.
+    // First, ignore all greyed-out merchants (if predicting) because they'll be caught on the sender's side.
+    // Second, for each 'to' merchant subtract the number of merchants that would be needed to carry the cargo from the total remaining.
+    // Third, when this is count is depleted, everything else must be a 'from' merchant.
+    var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (var i=shipment.snapshotLength-1; i >= 0; i--){
         var x = shipment.snapshotItem(i);
         var d = new tl_date();
+
+        // Extract the value of the shipment
+        var res = x.childNodes[4].childNodes[1].textContent.split(' | ');
+
+        Debug.debug('Data: ['+merchant_data.join(', ')+']');
+
+        // Check if merchant is returning
+        var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
+        if (ret){
+            // If we haven't saved the 'return' message, we could do so here?
+            // We need to count returning merchants in calculating the local merchant count, too...
+            update_merchants(res);
+            continue; // Skip all returnees - they're always caught on sending
+        }
+
+        // Extract the transit message
+        var msg = x.childNodes[0].childNodes[3].textContent;
+        Debug.debug(msg);
+
+        // Is the merchant incoming or outgoing? Outgoing if there are still missing merchants
+        var out = parseInt(merchant_data[1]) < parseInt(merchant_data[2]);
+
+        // Is this internal or external trade? (trade with one of our own villages, or someone elses?)
+        var internal = false;
+        for (var did in Settings.village_names){
+            if (msg.indexOf(Settings.village_names[did]) >= 0){
+                internal = true;
+                break;
+            }
+        }
 
         // Extract the arrival time
         d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
@@ -1378,70 +1438,61 @@ Events.collector.market=function(){
         // Extract and adjust by the duration of the shipment
         var t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
 
-        // Extract the value of the shipment
-        var res = x.childNodes[4].childNodes[1].textContent.split(' | ');
-        Debug.debug("Merchant carrying "+res);
+        // We need to distinguish between four types of events here, all of which could occur at the same time at the same village simultaneously
+        // Type 1: External 'send' - need to add 'from' and 'return' events
+        // Type 2: External 'rcv'  - need to add a 'from' event
+        // Type 3: Internal 'send' - need to add 'from', 'return', and 'to' events
+        // Type 4: Internal 'rcv'  - always caught elsewhere, in the sender - is the 'to' of type 3
+        // All of these could occur simultaneously, to make things worse... but we don't want to capture the same event twice, either.
 
-        // Check if merchant is returning
-        var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
-        if (ret) Debug.debug("Merchant is returning");
+        Debug.debug('out = '+out+', internal = '+internal);
 
-        // Extract the transit message
-        var msg = x.childNodes[0].childNodes[3].textContent;
+        // Skip type 4 events, we caught them elsewhere when they were type 3.
+        if (out === false && internal) continue;
 
-        // Skip returning merchants if we're doing predictions - it should have already been caught
-        if (! Events.predict_merchants || ! ret){
-            // Using the time as unique id. If there are multiple with the same time increase event_count.
-            // It's the best I could do.
-            if (last_event_time==t) event_count++;
-            else last_event_time=t;
-            var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+        // Using the time as unique id. If there are multiple with the same time increase event_count.
+        // It's the best I could do.
+        if (last_event_time==t) event_count++;
+        else last_event_time=t;
 
-            e[0] = "market";
-            e[1] = t;
-            // Extract the action type
-            e[2] = msg;
-    
-            // Add resource pictures and amounts (if sending)
-            if (!ret) e[4] = res;
-        }
+        // Update the merchant count for all outgoing merchants
+        if (out !== false) update_merchants(res);
 
-        // Do event prediction if needed - only done on sending merchants
-        if (Events.predict_merchants && msg.indexOf(Events.merchant_send_trans) >= 0){
-            var vil_name = msg.split(Events.merchant_send_trans+' ')[1];
+        // If we've already caught this event, skip it. From here on, all events are fresh - ie they haven't been caught yet
+        if (Events.test_event(Settings.village_id, 'a'+t+'_'+event_count) !== false) continue;
 
-            // First, deal with the returning merchants, as that is the easiest
-            // What time will the merchants be returning? It takes the same amount of time to return as to go
-            var rtn_time = 2*t - new Date().getTime();
+        // Add a 'from' event
+        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+        e[0] = "market";
+        e[1] = t;
+        e[2] = msg;
+        e[4] = res;
 
-            // Event count doesn't need to be changed here - assuming that every merchant arriving at a given time is of the same type.
-            // If not, no real loss... we'll just get an overly-large event_count.
-            var e_rtn = Events.get_event(Settings.village_id, 'a'+rtn_time+'_'+event_count);
-            e_rtn[0] = 'market';
-            e_rtn[1] = rtn_time;
-            e_rtn[2] = Events.merchant_rtn_trans + ' ' + vil_name;
+        // Do event predictions and data adjustments if needed - type 1 and type 3 only, so filter type 2
+        if (out === false) continue;
 
-            // Next, let's deal with the reception village. This is more tricky...
-            // We have to figure out the 'did' of the reception village, given only its name.
-            // This will clearly screw up if you have multiple villages with the same name...
-            /* Screw this, I'll do this later! Goddamn challenging... gah!
-            var vils = document.evaluate('//table[@class="f10"]/tbody/tr/td[@class="nbr"]/a',
-                                         document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-            for (var j=0; j < vils.snapshotLength; j++){
-                if (vils.snapshotItem(j).textContent.indexOf(vil_name) >= 0){
-                    var did = vils.snapshotItem(j).href.split('newdid=')[1];
-                    if (did.indexOf('&') >= 0) did = did.split('&')[0];
-                    break;
-                }
-            }
-            // We might not be sending to ourselves...
-            if (did != undefined){
-                // Ok, this is tricky. Recieving villages have to get indexed by the *sender's id* as well...
-                // This is because if we *do* view the incoming merchants from the other side, we don't want double-reporting...
-                var e_rcv = Events.get_event(did, 'a'+t+'_'+event_count2+'_'+Settings.village_id);
-            }
-            */
-        }
+        // Add a 'return' event
+        // What time will the merchants be returning? It takes the same amount of time to return as to go
+        var rtn_time = 2*t - new Date().getTime();
+
+        // Event count doesn't need to be changed here - assuming that every merchant arriving at a given time is of the same type.
+        // We don't need to worry about repeat event captures, because we already ensured freshness earlier
+        // We figured out the 'did' when we calculated 'internal'
+        var e_rtn = Events.get_event(Settings.village_id, 'a'+rtn_time+'_'+event_count);
+        e_rtn[0] = 'market';
+        e_rtn[1] = rtn_time;
+        e_rtn[2] = Events.merchant_rtn_trans + ' ' + Settings.village_names[did]; // How do we get rid of these language dependencies???
+
+        // Let's deal with the recieving village. Internal merchants only - ie filter out type 1, leave type 3
+        if (internal === false) continue;
+
+        // Add a 'to' event
+        // They will be arriving there at the same time recorded here... they'll be type 4 over there, so they'll always get skipped.
+        var e_rcv = Events.get_event(did, 'a'+t+'_'+event_count);
+        e_rcv[0] = 'market';
+        e_rcv[1] = t;
+        e_rcv[2] = Events.merchant_rcv_trans + ' ' + Settings.village_names[Settings.village_id];
+        e_rcv[4] = res;
     }
 }
 
