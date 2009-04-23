@@ -1425,7 +1425,7 @@ Events.collector.market=function(){
         var e = Events.get_event(did, 'a'+t+'_'+event_count);
         e[0] = 'market';
         e[1] = t;
-        e[2] = Events.merchant_receive + msg.split(Events.merchant_send)[1];
+        e[2] = Events.merchant_receive + ' ' + Settings.village_names[Settings.village_id];
         e[4] = res;
     }
 
@@ -2140,24 +2140,24 @@ Tooltip.village_tip = function(anchor, did){
         div.innerHTML = txt;
         div.style.borderColor = colour;
 
-        // Add the click listener to the header of each tooltip
-        var header = div.childNodes[0].childNodes[0].childNodes[0];
-        div.childNodes[0].addEventListener('click', function(e){
-                // Increment and roll over the rota
-                Tooltip.header_rotation = (Tooltip.header_rotation + 1) % Tooltip.header_mapping.length;
+        if (Tooltip.show_warehouse_store && store != undefined && prod != undefined && age < 12){
+            // Add the click listener to the header of each tooltip
+            var header = div.childNodes[0].childNodes[0].childNodes[0];
+            div.childNodes[0].addEventListener('click', function(e){
+                    // Increment and roll over the rota
+                    Tooltip.header_rotation = (Tooltip.header_rotation + 1) % Tooltip.header_mapping.length;
 
-                // Save the value...
-                Tooltip.s.header_rotation.write();
+                    // Save the value...
+                    Tooltip.s.header_rotation.write();
 
-                // Redraw the text in the <tr>
-                header_txt = Tooltip.make_header(Tooltip.header_mapping[Tooltip.header_rotation],
-                                                 new Date().getTime(), did)[0];
-                header.innerHTML = header_txt;
-            }, false);
+                    // Redraw the text in the <tr>
+                    header_txt = Tooltip.make_header(Tooltip.header_mapping[Tooltip.header_rotation],
+                                                     new Date().getTime(), did)[0];
+                    header.innerHTML = header_txt;
+                }, false);
 
-        if (Tooltip.show_warehouse_store && store != undefined && prod != undefined &&
-            events.length > 0 && age < 12){
             // Add the mouseover listener to the events in each tooltip, but only if it's needed
+            if (events.length == 0) return;
             var x = div.childNodes[1].childNodes[0].childNodes;
             for (var i in x){
                 // If mousing over, change the header to what the value will be at this time
@@ -2183,6 +2183,18 @@ Tooltip.make_header = function(rota, time, did){
     var store = Resources.storage[did];
     var prod = Resources.production[did];
     var diff = (time - store[6])/3600000; // In hours
+
+    // Find all *incoming* merchants who arrive before *time* but after the latest visit to the village, and add their values
+    var arrival = [0, 0, 0, 0];
+    if ((rota == 0 || rota == 1 || rota == 3) && Events.predict_merchants){ // Only for some types
+        for (var i in Events.events[did]){
+            var e = Events.events[did][i];
+            if (e[2].indexOf(Events.merchant_receive) < 0) continue;
+            if (e[1] < store[6] || e[1] > time) continue;
+            for (var j in e[4]) arrival[j] -= e[4][j];
+        }
+    }
+
     var rtn = '';
     var values = [];
     switch (rota){
@@ -2193,7 +2205,7 @@ Tooltip.make_header = function(rota, time, did){
             switch (rota){
             default: break;
             case 0: // Stored resources
-                var r = parseInt(store[i] - (-diff * prod[i]));
+                var r = parseInt(store[i] - (-diff * prod[i]) - arrival[i]);
                 var s = store[(i < 3 ? 4 : 5)];
                 // If the value has overflowed or underflowed, be sure to trim it...
                 if (r > s) r = s;
@@ -2212,7 +2224,7 @@ Tooltip.make_header = function(rota, time, did){
             case 1: // Time to overflow
                 // First we need to find the space remaining
                 var p = prod[i];
-                var c = parseInt(store[i] - (-diff * p));
+                var c = parseInt(store[i] - (-diff * p) - arrival[i]);
                 var r = store[(i < 3 ? 4 : 5)] - c;
                 if ((r > 0 && p > 0) || (c > 0 && p < 0)){
                     if (p == 0){
@@ -2239,7 +2251,7 @@ Tooltip.make_header = function(rota, time, did){
                 values.push(prod[i]);
                 break;
             case 3: // % full
-                var r = parseInt(store[i] - (-diff * prod[i]));
+                var r = parseInt(store[i] - (-diff * prod[i]) - arrival[i]);
                 var s = store[(i < 3 ? 4 : 5)];
                 var f = Math.round((r / s) * 100);
                 // If the value has overflowed or underflowed, be sure to trim it...
