@@ -36,6 +36,7 @@ Event Capture:
 - Make colors customizable, 
 + Capture resource generation and amounts
 + Migrate support for parties
++ Support merchant prediction (based on languages... :( )
 - Capture troops in the village (from rally point and dorf1.php?)
 
 Tool Tip:
