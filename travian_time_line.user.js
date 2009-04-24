@@ -135,11 +135,22 @@ function tl_date(){
  
         this.date.setDate(this.date.getDate() + Math.floor(duration[1]/24));
  
+        // We also want to deal with am/pm here... :(
+        if (Settings.time_format == 1 || Settings.time_format == 2){
+            var d = new Date();
+            var hours = (d.getHours() - (-duration[1]))%24;
+            if (duration[2] != undefined) hours += Math.floor((d.getMinutes() - (-duration[2]))/60);
+            Debug.debug('Using 12-hour time; event is in pm');
+            if (hours%24 >= 12 && this.date.getHours() < 12){
+                this.date.setHours(this.date.getHours() - (-12));
+            }
+        }
+ 
         // Cover the wrap-around cases. If an event has a duration, then it must be in the future. Hence, if the time we've set for it
         // is in the past, we've done something wrong and it's probably a midnight error.
         // This check needs to be done carefully, or some events will get pushed 24 hours father into the future than they should be.
         if (this.date.getTime() < this.start_time-600000) this.date.setDate(this.date.getDate() + 1);
- 
+
         Debug.debug('time is: '+this.date);
  
         return this.date.getTime();
@@ -466,6 +477,7 @@ Settings.config=function(parent_element) {
 Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
 Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.");
 Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined, '', 'true');
+Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
 Settings.run=function() {
     // First, test to see if this is the login page. If it is, extract the login name and prefix it to all variables
     if (location.href.indexOf('/login.php') > 0){
