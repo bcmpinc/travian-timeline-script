@@ -49,7 +49,7 @@ Tool Tip:
 + Add a buildings page to the summary
 + Update tooltip event mouseovers to take merchant arrivals into consideration?
 - Keep track of the most recently completed task/building for each village, and provide link to it
-- Add list of all units currently in the village to header
++ Add list of all units currently in the village to header
 - Add buttons next to listed events, to delete mistakes/changes event?
 - Overwrite the "Your builders are already working" message on single building pages with what they're working on, and when it's done?
 

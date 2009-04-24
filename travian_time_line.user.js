@@ -1064,6 +1064,7 @@ Resources.setting("display", true, Settings.type.bool, undefined, "Turn the reso
 Resources.setting("market", {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
 Resources.setting("production", {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
 Resources.setting("storage", {}, Settings.type.object, undefined, "An array of length 7 containing the stored values of wood, clay, iron and grain, the size of the warehouse, the size of the granary, and then a timestamp indicating when this was taken.");
+Resources.setting('troops', {}, Settings.type.object, undefined, '', 'true');
 
 Resources.show=function() {
     var head = document.getElementById("lres0");
@@ -1124,9 +1125,29 @@ Resources.update=function() {
     }
     // Timestamp. We don't need to worry about time offset because it's only used to compare with itself.
     Resources.storage[Settings.village_id][6] = new Date().getTime();
+
+    // Get troops - either from main page, or from rally point(TBD)
+    if (location.href.indexOf('dorf1.php') >= 0){
+        // We're going to overwright whatever was there in the first place
+        Resources.troops[Settings.village_id] = {};
+
+        // Grab the troop table
+        var x = document.getElementById('ltrm').childNodes[2].childNodes[0].childNodes;
+
+        // We can identify the troops based on their image
+        for (var i in x){
+            var type;
+            if (x[i].childNodes[0].childNodes[0].childNodes[0].src.indexOf('hero') >= 0) type = 'hero';
+            else type = x[i].childNodes[0].childNodes[0].childNodes[0].src.match('/(\\d\\d?)\\.')[1];
+            var amount = x[i].childNodes[1].textContent;
+
+            Resources.troops[Settings.village_id][type] = parseInt(amount);
+        }
+    }
     // Save the values
     Resources.s.storage.write();
     Resources.s.production.write();
+    Resources.s.troops.write();
 };
 
 
@@ -1983,7 +2004,6 @@ Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined,
 Tooltip.direct('br', '! Events.enabled');
 Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');
 var ttp_1 = Tooltip.direct('table');
-ttp_1.el.style.borderStyle = 'none';
 ttp_1.el.style.paddingLeft = '10px';
 Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
@@ -1992,21 +2012,23 @@ Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined,
 Tooltip.direct('br', '! Resources.enabled');
 Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.", '! Resources.enabled');
 var ttp_2 = Tooltip.direct('table');
-ttp_2.el.style.borderStyle = 'none';
 ttp_2.el.style.paddingLeft = '10px';
 Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
 Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
+
+Tooltip.direct('br', '! Resources.enabled');
+Tooltip.setting('show_troops',           true, Settings.type.bool,    undefined, "Show stored values for troops in the header.", '! Resources.enabled');
 
 Tooltip.direct('br');
 Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
 Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
 // These are invisable variables to the user
-Tooltip.setting("header_rotation",          0, Settings.type.integer, undefined, '', 'true');
+Tooltip.setting("header_rotation",     [0, 0], Settings.type.object,  undefined, '', 'true');
 Tooltip.setting("summary_rotation_type",    0, Settings.type.integer, undefined, '', 'true');
 Tooltip.setting("summary_rotation",    [0, 0], Settings.type.object,  undefined, '', 'true');
 
-Tooltip.header_mapping   = [0, 3, 1, 2]; // These are the types of display that the header will rotate through
+Tooltip.header_mapping   = [[0, 3, 1, 2], [5]]; // These are the types of display that the header will rotate through
 Tooltip.summary_mapping  = [[0, 3, 1, 2], [4]]; // And this is the same thing for the summary
 
 Tooltip.image = [];
@@ -2060,6 +2082,7 @@ Tooltip.overview = function(){
 Tooltip.sumarize = function(rota){
     var rtn = '';
     var total = [0, 0, 0, 0]; // Wood, Clay, Iron, Wheat...
+    var totalable = rota != 1 && rota != 3 && rota != 4 && rota != 5;
     var d = new Date().getTime();
 
     // Cycle through all of the villages
@@ -2070,13 +2093,13 @@ Tooltip.sumarize = function(rota){
 
         var a = Tooltip.make_header(rota, d, did);
         vils.push([name, '<tr><td><a href="?newdid='+did+Tooltip.href_postfix+'">'+name+':</a>'+a[0]]);
-        if (Tooltip.header_rotation != 1) for (var i in total) total[i] += a[1][i];
+        if (totalable) for (var i in total) total[i] += a[1][i];
     }
 
     vils.sort();
     for (var i in vils) rtn += vils[i][1];
 
-    if (rota != 1 && rota != 3 && rota != 4){
+    if (totalable){
         rtn += '<tr><td colspan="9" style="border-top: solid black 1px;"><tr><td>Total:';
         for (var i=0; i < 4; i++){
             rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"><td>';
@@ -2129,19 +2152,32 @@ Tooltip.village_tip = function(anchor, did){
         events.sort();
 
         var txt = '';
-
-        if (Tooltip.show_warehouse_store && store != undefined && prod != undefined){
-            var time = new Date().getTime();
-            var age = (time - store[6])/3600000; // In hours
-            var colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : '#ddd'));
-            if (age < 12){ // Don't show the header at all for really out-of-date data
-                txt += '<table class="f10" width="100%" style="font-size:11px; cursor:pointer; border-bottom: 1px solid '+colour+'"><tbody><tr>';
-                var header_txt = Tooltip.make_header(Tooltip.header_mapping[Tooltip.header_rotation],
-                                                     time, did)[0]; // This is needed later...
-                txt += header_txt;
+        var time = new Date().getTime();
+        var age = (time - store[6])/3600000; // In hours
+        var colour = age < 1 ? '#000' : (age < 2 ? '#444' : (age < 4 ? '#777' : age < 8 ? '#aaa' : age < 12 ? '#ddd' : '#000'));
+        if (age < 12){
+            var show_res = Tooltip.show_warehouse_store && store != undefined && prod != undefined;
+            var show_troops = Tooltip.show_troops && Resources.troops[did] != undefined;
+            var temp = false;
+            if (show_troops){
+                for (var i in Resources.troops[did]){temp=true; break;}
+                show_troops = temp;
+            }
+            if (show_res || show_troops) txt += '<table width="100%" style="border-bottom: 1px solid '+colour+';"><tbody>';
+            if (show_res){
+                txt += '<tr><td><table style="font-size:11px; cursor:pointer;"><tbody><tr>';
+                var header_txt = Tooltip.make_header(Tooltip.header_mapping[0][Tooltip.header_rotation[0]], time, did)[0];
+                txt += header_txt; // This var is needed later...
                 txt += '</tr></tbody></table>';
             }
-        } else var colour = '#000';
+            if (show_troops){
+                txt += '<tr><td><table style="font-size:11px;"><tbody><tr>';
+                var troop_txt = Tooltip.make_header(Tooltip.header_mapping[1][Tooltip.header_rotation[1]], time, did)[0];
+                txt += troop_txt; // If we ever want to modify troops on mouseover, we'll need this var too...
+                txt += '<td></tr></tbody></table>';
+            }
+            if (show_res || show_troops) txt += '</tbody></table>';
+        }
 
         if (events.length > 0){
             txt += '<table class="f10" style="font-size:11px"><tbody>';
@@ -2152,18 +2188,18 @@ Tooltip.village_tip = function(anchor, did){
         div.innerHTML = txt;
         div.style.borderColor = colour;
 
-        if (Tooltip.show_warehouse_store && store != undefined && prod != undefined && age < 12){
+        if (age < 12 && show_res){
             // Add the click listener to the header of each tooltip
-            var header = div.childNodes[0].childNodes[0].childNodes[0];
-            div.childNodes[0].addEventListener('click', function(e){
+            var header = div.childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[0];
+            div.childNodes[0].childNodes[0].childNodes[0].addEventListener('click', function(e){
                     // Increment and roll over the rota
-                    Tooltip.header_rotation = (Tooltip.header_rotation + 1) % Tooltip.header_mapping.length;
+                    Tooltip.header_rotation[0] = (Tooltip.header_rotation[0] + 1) % Tooltip.header_mapping[0].length;
 
                     // Save the value...
                     Tooltip.s.header_rotation.write();
 
                     // Redraw the text in the <tr>
-                    header_txt = Tooltip.make_header(Tooltip.header_mapping[Tooltip.header_rotation],
+                    header_txt = Tooltip.make_header(Tooltip.header_mapping[0][Tooltip.header_rotation[0]],
                                                      new Date().getTime(), did)[0];
                     header.innerHTML = header_txt;
                 }, false);
@@ -2176,7 +2212,7 @@ Tooltip.village_tip = function(anchor, did){
                 // Well, this is slightly better than before; using the local variables of the anon function
                 (function (i){
                     x[i].addEventListener('mouseover', function(e){
-                            header.innerHTML = Tooltip.make_header(Tooltip.header_mapping[Tooltip.header_rotation],
+                            header.innerHTML = Tooltip.make_header(Tooltip.header_mapping[0][Tooltip.header_rotation[0]],
                                                                    events[i][0], did)[0];
                         }, false);
                 })(i);
@@ -2291,6 +2327,12 @@ Tooltip.make_header = function(rota, time, did){
         }
         if (rtn == ''){
             rtn += '<td colspan="2">IDLE!</td>';
+        }
+        break;
+    case 5: // Troops! Not distinguishing between which vil owns what...
+        for (var i in Resources.troops[did]){
+            rtn += '<td width="16px"><img src="img/un/u/'+i+'.gif"></td>';
+            rtn += '<td>'+Resources.troops[did][i]+' </td>';
         }
         break;
     };
