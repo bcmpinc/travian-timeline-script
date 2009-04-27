@@ -1134,14 +1134,17 @@ Resources.update=function() {
         // Grab the troop table
         var x = document.getElementById('ltrm').childNodes[2].childNodes[0].childNodes;
 
-        // We can identify the troops based on their image
-        for (var i in x){
-            var type;
-            if (x[i].childNodes[0].childNodes[0].childNodes[0].src.indexOf('hero') >= 0) type = 'hero';
-            else type = x[i].childNodes[0].childNodes[0].childNodes[0].src.match('/(\\d\\d?)\\.')[1];
-            var amount = x[i].childNodes[1].textContent;
+        // Only continue if there are troops present
+        if (x[0].childNodes.length > 1){
+            // We can identify the troops based on their image
+            for (var i in x){
+                var type;
+                if (x[i].childNodes[0].childNodes[0].childNodes[0].src.indexOf('hero') >= 0) type = 'hero';
+                else type = x[i].childNodes[0].childNodes[0].childNodes[0].src.match('/(\\d\\d?)\\.')[1];
+                var amount = x[i].childNodes[1].textContent;
 
-            Resources.troops[Settings.village_id][type] = parseInt(amount);
+                Resources.troops[Settings.village_id][type] = parseInt(amount);
+            }
         }
     }
     // Save the values
@@ -1468,13 +1471,9 @@ Events.collector.market=function(){
 
         // Categorize the event
         var send = msg.indexOf(Events.merchant_send) >= 0;
-        var internal = false;
-        for (var did in Settings.village_names){
-            if (msg.indexOf(Settings.village_names[did]) >= 0){
-                internal = true;
-                break;
-            }
-        }
+        var internal = x.childNodes[0].childNodes[1].textContent.toLowerCase() == GM_getValue(Settings.server+'.Settings.username');
+        if (internal) for (var did in Settings.village_names) if (msg.indexOf(Settings.village_names[did]) >= 0) break;
+
         Debug.debug(msg + ' | send='+send+' internal='+internal);
 
         // Add these in layers... if type 3), return
@@ -1928,6 +1927,9 @@ Timeline.draw=function() {
             // Check if this type of event is visible
             if (!(t[1])) continue;
             if (isNaN(y)) continue;
+
+            // If we're differentiating merchant types, don't show the message being sent
+            if (Events.predict_merchants && p[0] == 'market' && p[2].indexOf(Events.merchant_send) >= 0) continue;
         
             // Draw the line
             g.strokeStyle = t[0];
@@ -2420,292 +2422,6 @@ Tooltip.run = function(){
     }
 
     Tooltip.overview();
-}
-
-
-/****************************************
- * CURRENT END OF REDESING ATTEMPT
- ****************************************/
-
-
-//////////////////////////////////////////
-// TIMELINE //
-//////////////////////////////////////////
-
-function tl_main(){
-
-    // Get the active village
-    // TODO: replace in code.
-    var active_vil = Settings.village_name;
-
-    // Reports
-    if (location.href.indexOf("berichte.php?id")>0) {
-        try {
-            res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null );
-            x = res.singleNodeValue;
-            if (x != undefined) {
-                if (x.innerHTML.indexOf("\n<tbody><tr class=\"cbg1\">\n")>0) {
-                    d = new tl_date();
-
-                    time = x.childNodes[2].childNodes[3].textContent.match("(\\d\\d?)[/.](\\d\\d)[/.](\\d\\d) [ a-zA-Z]+ (\\d\\d?):(\\d\\d):(\\d\\d)");
-                    d.set_time(time.slice(3, 7)); // The first element in the array passed is ignored...
-                    t = d.set_day(time.slice(1, 4));
-                    where = x.childNodes[0].childNodes[3].innerHTML;
-        
-                    e = tl_get_event(t,where);
-                    e[12] = where;
-        
-                    // army composition + losses
-                    x = x.childNodes[6].childNodes[1];
-                    dualrow=false;
-                    if (x.childNodes[2]==undefined) {
-                        x = x.childNodes[1].childNodes[1];
-                    } else {
-                        x = x.childNodes[2].childNodes[1];
-                        dualrow=true;
-                    }
-
-                    for (var j = 1; j<12; j++) {
-                        y1 = x.childNodes[3].childNodes[j];
-                        if (dualrow) y2 = x.childNodes[4].childNodes[j];
-                        if (y1!=undefined) {
-                            if (dualrow && y2.textContent>0)
-                                e[j] = [y1.textContent - 0, y2.textContent - 0];
-                            else
-                                e[j] = y1.textContent - 0;
-                        }
-                    }
-        
-                    // profit
-                    if (dualrow) {
-                        if (x.childNodes[5].childNodes[3] != undefined) {
-                            y = x.childNodes[5].childNodes[3].textContent.split(" ");
-                            for (var j = 1; j<5; j++) {
-                                e[j + 12] = y[j - 1] - 0;
-                            }
-                        }
-                    } else {
-                        if (x.childNodes[4].childNodes[3] != undefined) {
-                            y = x.childNodes[4].childNodes[3].textContent.split(" ");
-                            e[16] = 0-y[0];
-                        }
-                    }
-                    e[0] = TYPE_REPORT;
-                }
-            }
-        } catch (er){
-            if (er != "ERR_EVENT_OVERWRITE") throw er;
-        }
-    } else if (location.href.indexOf('build.php')>0){ // If we're on an individual building page
-    
-        // Party events! Still a building...
-        // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
-        // This should be exclusive for Town Halls.
-        x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
-                              document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-        if (x.snapshotLength == 1){
-            x = x.snapshotItem(0).parentNode;
-            d = new tl_date();
-
-            Debug.info("Found a party event!");
-
-            d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
-            t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-
-            msg = x.childNodes[1].textContent;
-            Debug.debug('Type = '+msg);
-
-            try {
-                e = tl_get_event(t, msg, active_vil);
-                e[0] = TYPE_PARTY;
-            } catch (er){
-                if (er != 'ERR_EVENT_OVERWRITE') throw er;
-                Debug.info('An event already exists at this time!');
-            }
-        }
-    
-        // Research Events
-        // Ok, the idea here is to look for a building with a table of class 'tbg' that has its first
-        // td with width=6%. For a baracks training troops, it would be 5%. Markets et al don't
-        // explicitly specify a width. It's a bit of a hack, but the simplest I can come up with...
-        // This is still inside the if(building) statement
-        try {
-            x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
-                                  document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-            if (x.snapshotLength == 1){
-                x = x.snapshotItem(0).parentNode;
-                d = new tl_date();
-
-                d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-                t = d.adjust_day(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
-
-                // Extract the unit being upgraded
-                type = x.childNodes[3].textContent;
-                Debug.debug("Upgrading "+type);
-
-                // Extract the name of the building where the upgrade is occuring
-                // y is the table above the research-in-progress table
-                y = x.parentNode.parentNode.previousSibling.previousSibling.childNodes[1];
-                building = y.childNodes[0].childNodes[1].textContent;
-                Debug.debug("Upgrading at the "+building);
-
-                // Extract the level upgrading to - not for the acadamy!
-                // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
-                // in there could create compatibility problems... so keep it remote with textContent.
-                for (var i=0; i < y.childNodes.length; i++){
-                    level = y.childNodes[i].childNodes[1].textContent.match(type+' ([(][A-Z][a-z]* )(\\d\\d?)([)])');
-                    if (level){
-                        level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
-                        level = level[1]+level[2]+level[3];
-                        Debug.debug("Upgrading to "+level);
-                        break;
-                    }
-                }
-
-                // And now throw all of this information into an event
-                // Don't throw in the level information if we're researching a new unit at the acadamy... because there isn't any!
-                e = tl_get_event(t, building+': '+type+(level ? ' '+level : ''), active_vil);
-                e[0] = TYPE_RESEARCH;
-
-            } else if (x.snapshotLength > 1) alert ("Something's wrong. Found "+x.snapshotLength+" matches for xpath search");
-        } catch (er){
-            if (er != "ERR_EVENT_OVERWRITE") throw er;
-        }
-    }
-
-} /* Timeline.enabled */
-
-
-//////////////////////////////////////////
-// COLLECT SOME INFO //
-//////////////////////////////////////////
-
-function storeInfo(){
-    // Meaning of GM Values: (Some of the variable names are in dutch, to stay compatible with older scripts)
-    //
-    // ALLIANCE:
-    // dictionary (map) mapping the names of your ally's members to a list of it's villages.
-
-    // Load ally data
-    //function captureAllianceData(){
-    try {
-        ally = eval(GM_getValue(prefix("ALLIANCE"), "{}"));
-        if (ally==undefined) ally = {};
-    } catch (e) {
-        alert(e);
-        ally = { };
-    }
-    if (ally==undefined) ally2={};
-
-    // Store list of your alliance members.
-    if (location.href.indexOf("allianz")>0 && location.href.indexOf("s=")<0) {
-        var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-        if (res.snapshotLength>0) {
-            ally2= ally;
-            ally = {}
-            for ( var i=0 ; i < res.snapshotLength; i++ ){
-                x = res.snapshotItem(i);
-                name = x.textContent;
-                id = x.href.match("\\d+")[0];
-                cnt = x.parentNode.parentNode.childNodes[5].textContent;
-                if (ally2[name] != undefined) {
-                    y = ally2[name];
-                    y[0] = id;
-                    y[1] = cnt;
-                    ally[name] = y;
-                } else {
-                    // [id, pop, {city1: [city1,x,y],city2: [city2,x,y],...} ]
-                    ally[name] = [id, cnt, {}];
-                }
-            }
-            GM_setValue(prefix("ALLIANCE"), uneval(ally));
-        }
-    }
-
-    // Get alliance member data
-    if (location.href.indexOf("spieler")>0) {
-        who = document.body.innerHTML.match("<td class=\"rbg\" colspan=\"3\">[A-Z][a-z]+ ([^<]+)</td>");
-        if (who) {
-            who = who[1];
-            if (ally[who] != undefined || who == Settings.username) {
-                var res = document.evaluate( "//td[@class='s7']/a", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-                cities = {};
-                for ( var i=0 ; i < res.snapshotLength; i++ ){
-                    x = res.snapshotItem(i);
-                    name = x.textContent;
-                    y = x.parentNode.parentNode.childNodes[4].textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
-                    y[0] = name;none = "0,0,0,0";
-
-                    y[1] -= 0;
-                    y[2] -= 0;
-                    cities[name] = y;
-                }
-                if (ally[who]==undefined) ally[who]=[0,0,{}];
-                ally[who][2] = cities;
-                GM_setValue(prefix("ALLIANCE"), uneval(ally));
-            }
-        }
-    }
-}
-
-//////////////////////////////////////////
-//  VILLAGE TOOL TIP                    //
-//////////////////////////////////////////
-// This could cause problems with single-village accounts at the moment...
-function vtt_main(){
-
-    // This creates a tooltip. Each element of list e is a new line
-    function vtt_tooltip(e, id, contents){
-        id = "TTL_TTP_"+id;
-        div = document.createElement('div');
-        div.setAttribute('id', id);
-        
-        div.setAttribute('style', 'position:absolute; top:120px; left:720px; padding:1px; z-index:200; border:solid 1px #000000; background-color:#FFFFFF; visibility:hidden;');
-        div.innerHTML = contents.join('<br>');
-        document.getElementById('ltop1').parentNode.appendChild(div);
-        var timer;
-
-        delay_mouseover = function (e){
-            if (timer != undefined) window.clearTimeout(timer);
-            timer = window.setTimeout(function(){
-                    x = document.getElementById(id);
-                    x.style.visibility = 'visible';
-                    x.style.left = (e.pageX+1)+'px';
-                    x.style.top = (e.pageY+1)+'px';
-                }, 1000);
-        }
-        delay_mouseout = function (){
-            if (timer != undefined) window.clearTimeout(timer);
-            timer = window.setTimeout(function(){
-                    document.getElementById(id).style.visibility = 'hidden';
-                }, 500);
-        }
-
-        e.addEventListener('mouseover', delay_mouseover, false);
-        e.addEventListener('mouseout', delay_mouseout, false);
-    }
-
-    // Get the village list first
-    x = document.getElementById('lright1').childNodes[1].childNodes[0].childNodes;
-    village_event_list = new Array(); // This holds the events still to be done in the future, for each village
-
-    for (e in events){
-        if (e < new Date().getTime() + TIME_DIFFERENCE*3600000) continue; // If this event is in the past, ignore it
-
-        for (i in x){
-            y = x[i].childNodes[0].childNodes[2];
-            if (events[e][17] == y.textContent){
-                d = new Date();
-                d.setTime(e);
-                if (village_event_list[i] == undefined) village_event_list[i] = [];
-                village_event_list[i].push(d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+' '+events[e][12]);
-            }
-        }
-    }
-
-    for (i in x){
-        if (village_event_list[i] != undefined) vtt_tooltip(x[i], i, village_event_list[i]);
-    }
 }
  
 }catch(e){

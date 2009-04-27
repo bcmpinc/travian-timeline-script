@@ -2,15 +2,12 @@
 
 Timeline Events,Look&Feel:
 + Change the warp feature to use arcsinh. (And draw a nicer scalebar)
++ Fix overlapping of market send & receive events 
 - Figure out a way to filter the events by village - still need now that we have tooltips?
 - Add filter to disable the displaying of some events (based on type)
   - and/or add a way of disabling the capture of certain event types
 - Capture warehouse/granary full events
 ~ Add the colour of events to the options menu (might need to rework the options menu somewhat, it's getting kinda big...)
-- Fix overlapping of market send & receive events 
-    (reciever==current village => use receive message (ex. "Transport from ...")) 
-    (sender  ==current village => use send    message (ex. "Transport to ..."))
-    otherwise use the send message (or whats prefered by the user)
 - Add option of what market event text should be prefered?
 
 Settings: 
@@ -37,7 +34,7 @@ Event Capture:
 + Capture resource generation and amounts
 + Migrate support for parties
 + Support merchant prediction (based on languages... :( )
-- Capture troops in the village (from rally point and dorf1.php?)
++ Capture troops in the village (from rally point and dorf1.php?)
 
 Tool Tip:
 + Add images
