@@ -15,7 +15,7 @@
 // @author         arandia
 // @license        GPL 3 or any later version
 // ==/UserScript==
- 
+
 /*****************************************************************************
  * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
  *
@@ -1235,6 +1235,7 @@ Events.setting("merchant_send",        'Transport to', Settings.type.string, und
 Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
 Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
 
+Events.setting('send_twice',  false, Settings.type.bool, undefined, '', 'true');
 
 // There is no report type, because there are different types of reports, which can also be divided over the currently
 // available types.
@@ -1476,15 +1477,21 @@ Events.collector.market=function(){
 
         Debug.debug(msg + ' | send='+send+' internal='+internal);
 
-        // Add these in layers... if type 3), return
-        //if (!send && internal) return;
-
         // Ensure an event of this type doesn't already exists at this time
         if (Events.test_event(Settings.village_id, 'a'+t+'_'+event_count)) return;
 
         if (send || !internal) type_A();
         if (send)              type_B();
         if (send && internal)  type_C(did);
+
+        if (send && Events.send_twice){
+            t = 3*t - 2*(new Date().getTime()); // Move forward to the return time
+            type_A();
+            type_B();
+            if (internal) type_C(did);
+            Events.send_twice = false; // Eat the 'go twice' signal
+            Events.s.send_twice.write();
+        }
     }
 
     var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -1514,6 +1521,24 @@ Events.collector.market=function(){
 
         if (Events.predict_merchants) predict();
         else type_A(); // by default
+    }
+
+    if (Events.predict_merchants){
+        var x2 = document.getElementsByName('x2')[0];
+        if (x2 != undefined){
+            // If the 'go twice' button is checked the first time, doesn't mean it's meaningful the second; wait again.
+            // Because of this, this has to run *after* the rest of the merchant collector
+            Events.send_twice = false;
+            Events.s.send_twice.write();
+
+            // Wait for the click on the 'ok' button
+            x2.parentNode.nextSibling.childNodes[0].addEventListener('click', function(){
+                    if (x2.checked){
+                        Events.send_twice = true;
+                        Events.s.send_twice.write();
+                    }
+                }, false);
+        }
     }
 }
 
