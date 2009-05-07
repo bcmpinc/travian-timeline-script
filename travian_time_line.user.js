@@ -1409,6 +1409,7 @@ Events.collector.market=function(){
 
     var last_event_time=0;
     var event_count=0;
+    var now = new Date().getTime();
 
     /* GENERAL MARKET PREDICTION THEORY
     ==========================================================
@@ -1449,7 +1450,7 @@ Events.collector.market=function(){
 
     // Local Return - sending only
     var type_B = function(){
-        var rtn_t = 2*t - new Date().getTime();
+        var rtn_t = 2*t - now;
 
         var e = Events.get_event(Settings.village_id, 'a'+rtn_t+'_'+event_count);
         e[0] = 'market';
@@ -1485,7 +1486,9 @@ Events.collector.market=function(){
         if (send && internal)  type_C(did);
 
         if (send && Events.send_twice){
-            t = 3*t - 2*(new Date().getTime()); // Move forward to the return time
+            var then = now;
+            now = 2*t - now;
+            t = 3*t - 2*(then); // Move forward to the return time
             type_A();
             type_B();
             if (internal) type_C(did);
