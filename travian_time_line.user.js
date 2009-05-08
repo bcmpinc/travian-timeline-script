@@ -1332,24 +1332,24 @@ Events.collector={};
 Events.collector.building=function(){
     // Checking if data is available
     if (location.href.indexOf("dorf")<=0) return;
-    var build = document.evaluate('//div[@id="building_contract"]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var build = document.evaluate('//div[starts-with(@id, "building_contract")]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     if (build == undefined) return;
 
     // Collecting
     for (var nn = 0; nn < build.snapshotLength; nn++){
         var x = build.snapshotItem(nn);
-        var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
+        var id = 'b'+x.childNodes[1].childNodes[0].href.match('\\?d=(\\d+)&')[1];
         var e = Events.get_event(Settings.village_id, id);
 
         e[0]="building";
     
         // TODO: get timing more accurate.
         var d = new tl_date();
-        d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var duration = x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+        d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+        var duration = x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
         d.adjust_day(duration);
         e[1] = d.set_seconds(duration);
-        e[2] = x.childNodes[1].textContent;
+        e[2] = x.childNodes[3].textContent;
 
         Debug.debug("Time set to "+e[1]);
     }
