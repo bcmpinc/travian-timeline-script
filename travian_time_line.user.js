@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.33
+// @version        0.34
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
  
 // @include        http://*.travian*.*/*.php*
@@ -518,7 +518,7 @@ Settings.run=function() {
     Settings.village_name = "";
     Settings.village_id = 0;
     try {
-        var village_link = document.evaluate('//a[@class="active_vl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        var village_link = document.evaluate('//tr[@class="sel"]/td[@class="text"]/a', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
         Settings.village_name = village_link.textContent;
         Settings.village_id=village_link.href.match("newdid=(\\d+)")[1]-0;
     } catch (e) {
@@ -913,7 +913,7 @@ Lines.tag_tool=function() {
 };
 Lines.run=function() {
     if (Lines.list_extra_villages) {
-        Lines.village_list = document.evaluate( "//div[@id='lright1']/table/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+        Lines.village_list = document.evaluate( "//div[@id='vlist']/table[@class='vlist']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
         if (Lines.village_list) {
             Lines.append_villages();
         } else {
@@ -1132,16 +1132,17 @@ Resources.update=function() {
         Resources.troops[Settings.village_id] = {};
 
         // Grab the troop table
-        var x = document.getElementById('ltrm').childNodes[2].childNodes[0].childNodes;
+        var x = document.evaluate('//div[@id="troop_village"]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
 
         // Only continue if there are troops present
-        if (x[0].childNodes.length > 1){
-            // We can identify the troops based on their image
-            for (var i in x){
+        if (x.snapshotItem(0).childNodes.length > 1){
+            // We can identify the troops based on their class
+            for (var i = 0; i < x.snapshotLength; i++){
+                var row = x.snapshotItem(i);
                 var type;
-                if (x[i].childNodes[0].childNodes[0].childNodes[0].src.indexOf('hero') >= 0) type = 'hero';
-                else type = x[i].childNodes[0].childNodes[0].childNodes[0].src.match('/(\\d\\d?)\\.')[1];
-                var amount = x[i].childNodes[1].textContent;
+                if (row.childNodes[1].innerHTML.indexOf('unit uhero') >= 0) type = 'hero';
+                else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
+                var amount = row.childNodes[3].textContent;
 
                 Resources.troops[Settings.village_id][type] = parseInt(amount);
             }
@@ -1331,18 +1332,15 @@ Events.collector={};
 Events.collector.building=function(){
     // Checking if data is available
     if (location.href.indexOf("dorf")<=0) return;
-    var build = document.getElementById("lbau1");
-    if (build == undefined)
-        build = document.getElementById("lbau2");
+    var build = document.evaluate('//div[@id="building_contract"]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     if (build == undefined) return;
 
     // Collecting
-    build = build.childNodes[1].childNodes[0];
-    for (var nn in build.childNodes) {
-        var x = build.childNodes[nn];
+    for (var nn = 0; nn < build.snapshotLength; nn++){
+        var x = build.snapshotItem(nn);
         var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
         var e = Events.get_event(Settings.village_id, id);
-        //if (e[0]) continue;
+
         e[0]="building";
     
         // TODO: get timing more accurate.
@@ -1359,41 +1357,44 @@ Events.collector.building=function(){
 
 // Travelling armies (rally point)
 Events.collector.attack=function(){
-    var x = document.getElementById("lmid2");
-    if (x==null) return;
-    if (x.innerHTML.indexOf("warsim.php")<=0) return;
-    var res = document.evaluate( "//table[@class='tbg']/tbody", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
+    if (location.href.indexOf('build.php') < 0) return;
+    // These are both constant, and the only ways of reaching the rally point...
+    if (location.href.indexOf('gid=16') < 0 && location.href.indexof('id=39') < 0) return;
+
+    var res = document.evaluate('//table[@class="std troop_details"]//th[@colspan]/a[starts-with(@href, "karte.php")]', document,
+                                null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     var last_event_time=0;
     var event_count=0;
 
     for ( var i=0 ; i < res.snapshotLength; i++ ) {
-        x = res.snapshotItem(i);
-        // var what = x.childNodes[3].childNodes[0].innerHTML;
-        // if (what == "Aankomst") {
+        // The top of the table
+        x = res.snapshotItem(i).parentNode.parentNode.parentNode.parentNode;
         // Instead of checking if this is the correct line, just act as if it's correct
         // If it isn't this will certainly fail.
-        try {
-            var d = new tl_date();
-            d.set_time(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[3].textContent.match("(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)"));
-            var t = d.adjust_day(x.childNodes[3].childNodes[1].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+        var d = new tl_date();
+        d.set_time(x.childNodes[3].textContent.split('\n')[3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
+        var t = d.adjust_day(x.childNodes[3].textContent.split('\n')[2].match('(\\d\\d?):\\d\\d:\\d\\d'));
 
-            // Using the time as unique id. If there are multiple with the same time increase event_count.
-            // It's the best I could do.
-            if (last_event_time==t) event_count++;
-            else last_event_time=t;
-            var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
-            e[0] = "attack";
-            e[1] = t;
-            e[2] = x.childNodes[0].childNodes[2].textContent;
-            e[3] = [];
-            for (var j = 0; j<11; j++) {
-                var y = x.childNodes[2].childNodes[j+1];
-                if (y!=undefined)
-                    e[3][j] = y.textContent - 0;
-            }
+        var y = res.snapshotItem(i).parentNode;
+        var dest = y.previousSibling.textContent;
+        var attacking = false;
+        for (var j in Settings.village_names) if (dest.indexOf(Settings.village_names[j]) >= 0){ attacking = true; break;}
+        var msg = y.textContent;
+        if (!attacking) msg = dest+' : '+msg;
 
-        } catch (e) {
-            // So it probably wasn't the correct line.
+        // Using the time as unique id. If there are multiple with the same time increase event_count.
+        // It's the best I could do.
+        if (last_event_time==t) event_count++;
+        else last_event_time=t;
+        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+        e[0] = "attack";
+        e[1] = t;
+        e[2] = msg;
+        e[3] = [];
+        for (var j = 0; j<11; j++) {
+            var y = x.childNodes[2].childNodes[1].childNodes[j+1];
+            if (y!=undefined)
+                e[3][j] = y.textContent - 0;
         }
     }
 }
@@ -1402,9 +1403,8 @@ Events.collector.attack=function(){
 Events.collector.market=function(){
     // Make sure we're on an individual building page
     if (location.href.indexOf('build.php')<=0) return;
-    if (document.forms[0] == undefined) return;
-    // And there is an OK button
-    if (document.forms[0].innerHTML.indexOf('/b/ok1.gif" onmousedown="btm1(')<=0) return;
+    // If there is an OK button
+    if (document.getElementById('btn_ok') == undefined) return;
     // Then this must be the market! (in a language-insensitive manner :D)
 
     var last_event_time=0;
@@ -2075,7 +2075,7 @@ Tooltip.image[4] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAA
 Tooltip.overview = function(){
     if (!Tooltip.show_warehouse_store) return;
 
-    var anchor = document.getElementById('lright1').childNodes[0];
+    var anchor = document.getElementById('vlist').childNodes[0];
 
     var div = Tooltip.make_tip(anchor, function(){
             var type = Tooltip.summary_rotation_type;
@@ -2380,7 +2380,7 @@ Tooltip.make_tip = function(anchor, callback, param){
     // This is the intrinsic tooltip-related mouseovers
     var display = function(e){
         div.setAttribute('style', 'position:absolute; top:'+(e.pageY+2)+'px; left:'+(e.pageX+4)+'px; padding:2px; z-index:200; border:solid 1px black; background-color:#fff;');
-        document.getElementById('ltop1').parentNode.appendChild(div);
+        document.body.appendChild(div);
 
         // If we can mouseover the tooltip, we can add buttons and more functionality to it.
         // Clear the timeout if we mouse over the div
@@ -2435,12 +2435,12 @@ Tooltip.convert_info=function(type, index, amount) {
 
 Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
-    var x = document.evaluate('//div[@id="lright1"]/table[@class="f10"]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var x = document.evaluate('//div[@id="vlist"]/table[@class="vlist"]/tbody/tr/td[@class="text"]/a', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     Tooltip.href_postfix = '';
     // Run through our villages
     for (var i=0; i < x.snapshotLength; i++){
         var vil = x.snapshotItem(i);
-        var did = vil.childNodes[0].childNodes[2].href.split('newdid=')[1];
+        var did = vil.href.split('newdid=')[1];
         if (did.indexOf('&') >= 0){
             if (i == 0) Tooltip.href_postfix = did.match('&.*'); // This is the same for all - take from the first for simplicity
             did = did.split('&')[0];
