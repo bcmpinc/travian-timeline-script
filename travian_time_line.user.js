@@ -1227,7 +1227,7 @@ Events.setting("type", {/* <tag> : [<color> <visible>] */
             market : ['rgb(0,128,0)', true],
             research: ['rgb(0,0,255)', true],
             party : ['rgb(255,128,128)', true],
-            recruit : ['rgb(128,128,128)', true]
+            demolish : ['rgb(128,128,128)', true]
             }, Settings.type.object, undefined, "List of event types");
 Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
@@ -1399,7 +1399,7 @@ Events.collector.attack=function(){
                 e[3][j] = y.textContent - 0;
         }
     }
-}
+};
 
 // Market Deliveries
 Events.collector.market=function(){
@@ -1545,7 +1545,7 @@ Events.collector.market=function(){
                 }, false);
         }
     }
-}
+};
 
 Events.collector.research = function(){
     // Make sure we're on a building page
@@ -1557,7 +1557,6 @@ Events.collector.research = function(){
 
     var tr = x.snapshotItem(1).childNodes[1];
     var d = new tl_date();
-    Debug.debug(tr.childNodes[3].textContent);
  
     d.set_time(tr.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
     var t = d.adjust_day(tr.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
@@ -1593,7 +1592,7 @@ Events.collector.research = function(){
     e[0] = 'research';
     e[1] = t;
     e[2] = building + ': '+type+(level ? ' '+level : '');
-}
+};
 
 Events.collector.party = function(){
     // Make sure we're on a building page
@@ -1620,7 +1619,33 @@ Events.collector.party = function(){
     e[0] = 'party';
     e[1] = t;
     e[2] = msg;
-}
+};
+
+Events.collector.demolish = function(){
+    // Are we on the main building page?
+    if (location.href.indexOf('build.php') < 0) return;
+    // Look for a 'cancel' image, as is used to cancel the demolishion
+    var x = document.evaluate('//img[@class="del"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+    if (x == undefined) return;
+
+    x = x.parentNode.parentNode.parentNode;
+    var d = new tl_date();
+
+    d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+    var t = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+
+    // The target getting demolished
+    var msg = x.childNodes[1].textContent;
+
+    // Put in a message prefix...
+    var msg = x.parentNode.parentNode.previousSibling.previousSibling.previousSibling.previousSibling.previousSibling.textContent + ' ' + msg;
+
+    // We can just index this by the time - only one thing can be demoed at any given time
+    var e = Events.get_event(Settings.village_id, t);
+    e[0] = 'demolish';
+    e[1] = t;
+    e[2] = msg;
+};
 
 /****************************************
  * TIMELINE
