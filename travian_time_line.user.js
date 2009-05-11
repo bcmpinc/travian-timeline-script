@@ -1335,21 +1335,23 @@ Events.collector.building=function(){
     var build = document.evaluate('//div[starts-with(@id, "building_contract")]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     if (build == undefined) return;
 
+    var center = location.href.indexOf('dorf2.php') >= 0;
+
     // Collecting
     for (var nn = 0; nn < build.snapshotLength; nn++){
         var x = build.snapshotItem(nn);
-        var id = 'b'+x.childNodes[1].childNodes[0].href.match('\\?d=(\\d+)&')[1];
+        var id = 'b'+x.childNodes[center ? 1 : 0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
         var e = Events.get_event(Settings.village_id, id);
 
         e[0]="building";
     
         // TODO: get timing more accurate.
         var d = new tl_date();
-        d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var duration = x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+        d.set_time(x.childNodes[center ? 7 : 3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+        var duration = x.childNodes[center ? 5 : 2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
         d.adjust_day(duration);
         e[1] = d.set_seconds(duration);
-        e[2] = x.childNodes[3].textContent;
+        e[2] = x.childNodes[center ? 3 : 1].textContent;
 
         Debug.debug("Time set to "+e[1]);
     }
