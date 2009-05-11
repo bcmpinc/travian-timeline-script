@@ -1361,7 +1361,7 @@ Events.collector.building=function(){
 Events.collector.attack=function(){
     if (location.href.indexOf('build.php') < 0) return;
     // These are both constant, and the only ways of reaching the rally point...
-    if (location.href.indexOf('gid=16') < 0 && location.href.indexof('id=39') < 0) return;
+    if (location.href.indexOf('gid=16') < 0 && location.href.indexOf('id=39') < 0) return;
 
     var res = document.evaluate('//table[@class="std troop_details"]//th[@colspan]/a[starts-with(@href, "karte.php")]', document,
                                 null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -1550,32 +1550,34 @@ Events.collector.market=function(){
 Events.collector.research = function(){
     // Make sure we're on a building page
     if (location.href.indexOf('build.php') < 0) return;
-    var x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class)]/td[(@width="6%") and (position()<2)]',
-                              document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    // If we have a research in progress...
-    if (x.snapshotLength != 1) return;
 
-    x = x.snapshotItem(0).parentNode;
+    // For now, assume that if we have two tables of class "std building_details", it means we're on a research building
+    var x = document.evaluate('//table[@class="std build_details"]/tbody', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (x.snapshotLength < 2) return;
+
+    var tr = x.snapshotItem(1).childNodes[1];
     var d = new tl_date();
+    Debug.debug(tr.childNodes[3].textContent);
  
-    d.set_time(x.childNodes[7].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-    var t = d.adjust_day(x.childNodes[5].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+    d.set_time(tr.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+    var t = d.adjust_day(tr.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
  
     // Extract the unit being upgraded
-    var type = x.childNodes[3].textContent;
+    var type = tr.childNodes[1].childNodes[3].textContent;
     Debug.debug("Upgrading "+type);
  
     // Extract the name of the building where the upgrade is occuring
-    // y is the table above the research-in-progress table
-    var y = x.parentNode.parentNode.previousSibling.previousSibling.childNodes[1];
-    var building = y.childNodes[0].childNodes[1].textContent;
+    var building = x.snapshotItem(0).previousSibling.previousSibling.childNodes[1].childNodes[1].textContent;
     Debug.debug("Upgrading at the "+building);
- 
+
     // Extract the level upgrading to - not for the acadamy!
     // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
     // in there could create compatibility problems... so keep it remote with textContent.
-    for (var i=0; i < y.childNodes.length; i++){
-        var level = y.childNodes[i].childNodes[1].textContent.match(type+' ([(][A-Z][a-z]* )(\\d\\d?)([)])');
+    for (var i in x.snapshotItem(0).childNodes){
+        var y = x.snapshotItem(0).childNodes[i];
+        if (y.childNodes.length == 0) continue;
+
+        var level = y.childNodes[1].textContent.match(type+' (\\([A-Z][a-z]* )(\\d\\d?)(\\))');
         if (level){
             level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
             level = level[1]+level[2]+level[3];
