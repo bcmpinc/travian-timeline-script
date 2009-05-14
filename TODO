@@ -1,28 +1,18 @@
 == TODO ==
 
 Timeline Events,Look&Feel:
-+ Change the warp feature to use arcsinh. (And draw a nicer scalebar)
-+ Fix overlapping of market send & receive events 
-- Figure out a way to filter the events by village - still need now that we have tooltips?
 - Add filter to disable the displaying of some events (based on type)
   - and/or add a way of disabling the capture of certain event types
-- Capture warehouse/granary full events
-~ Add the colour of events to the options menu (might need to rework the options menu somewhat, it's getting kinda big...)
 - Add option of what market event text should be prefered?
+- fix the images to account for v3.5
 
 Settings: 
-+ Seperate GM_values etc for different accounts on the same server (ie sitters).
-+ Add ability to further customize the settings pannel, and make it dynamic
 - Add support for per element and order editing of lists.
 - Add color settingstype
 - Add color preview
 - Add color picker
 
 Lines:
-+ Add support for categories 
-++ Add categories: you, ally-members, allies ally, nav, (war) enemy, farms, 9-crop, 15-crop, extra-villages, other
-++ Add parameters: description, color, visible
-+ Add scale parameter 
 - Add linethickness parameters
 - Make the square optional
 - Repair Ally-lines' ally determination algorithm
@@ -31,27 +21,15 @@ Lines:
 
 Event Capture:
 - Make colors customizable, 
-+ Capture resource generation and amounts
-+ Migrate support for parties
-+ Support merchant prediction (based on languages... :( )
-+ Capture troops in the village (from rally point and dorf1.php?)
+- Capture warehouse/granary full events
+- Capture info/events off of the dorf3.php page (either natural data, or after a Beyond scan??)
+- Keep track of merchants in each village
+- Remove the event if you cancel it (eg for buildings or demolitions) or gold it.
 
 Tool Tip:
-+ Add images
-+ If mouseover the tooltip itself, don't hide it
-+ Add latest warehouse info to the village tool tips
-+ Have buttons to cycle tooltip header between stored values, prod. rates, overflow times, and troop levels?
-+ Create tooltips on demand
-+ Add tooltip to the "Villages" bar, giving a summary of production etc of all villages.
-+ Add a buildings page to the summary
-+ Update tooltip event mouseovers to take merchant arrivals into consideration?
 - Keep track of the most recently completed task/building for each village, and provide link to it
-+ Add list of all units currently in the village to header
 - Add buttons next to listed events, to delete mistakes/changes event?
-- Overwrite the "Your builders are already working" message on single building pages with what they're working on, and when it's done?
-
-Other Features
-~ Add warehouse full events, (such that they show up in the tooltip and timeline) - partial, now kinda supported by the tooltip
+- Fix the images to account for v3.5
 
 New Features:
 - Modify all the links for more robust navigation
@@ -61,5 +39,4 @@ New Features:
 ? Add a 'scan all villages' option, to automatically (and non-deterministically) visit all your villages and exract pertinent information
 
 BUGS:
-+ Tooltip: seems to drop the occasional event? confirmed + fixed
 - tl_date: events far in the future (>48 hours) tend to drop a day or two from their arrival time...
