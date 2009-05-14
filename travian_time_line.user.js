@@ -289,9 +289,8 @@ Settings.server=function(){
     if (url[1]=='speed2') a='y';
     return url[3]+a;
 }();
-// This has to come after we know what Settings.server is
 Settings.username=function(){
-    return GM_getValue(Settings.server+'.Settings.username');
+    return document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.textContent.match(/uid=(\d+)/)[1];
 }();
 // Get the value of this setting.
 // Note that (for example)
@@ -479,20 +478,6 @@ Settings.setting("village_names",{},        Settings.type.object,      undefined
 Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined, '', 'true');
 Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
 Settings.run=function() {
-    // First, test to see if this is the login page. If it is, extract the login name and prefix it to all variables
-    if (location.href.indexOf('/login.php') > 0){
-        var login = document.evaluate('//input[(@class="fm fm110") and (@type="text")]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-        var name = login.value;
-        if (name == undefined) name = 'someone';
-        GM_setValue(Settings.server+'.Settings.username', name);
-        login.addEventListener('change', function(e){
-                var name = e.target.value.toLowerCase();
-                if (name == undefined) return;
-                // We have to do this the manual way, because we can't figure out the namespace to extract username from until we know the username...
-                GM_setValue(Settings.server+'.Settings.username', name);
-            }, false);
-        return;
-    }
     // Create link for opening the settings menu.
     var div = document.createElement("div");
     div.style.position = "absolute";
@@ -1475,7 +1460,8 @@ Events.collector.market=function(){
 
         // Categorize the event
         var send = msg.indexOf(Events.merchant_send) >= 0;
-        var internal = x.childNodes[0].childNodes[1].textContent.toLowerCase() == GM_getValue(Settings.server+'.Settings.username');
+
+        var internal = x.childNodes[0].childNodes[1].childNodes[0].href.match(/uid=(\d+)/)[1] == Settings.username;
         if (internal) for (var did in Settings.village_names) if (msg.indexOf(Settings.village_names[did]) >= 0) break;
 
         Debug.debug(msg + ' | send='+send+' internal='+internal);
