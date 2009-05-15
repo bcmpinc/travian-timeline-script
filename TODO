@@ -5,6 +5,7 @@ Timeline Events,Look&Feel:
   - and/or add a way of disabling the capture of certain event types
 - Add option of what market event text should be prefered?
 - fix the images to account for v3.5
+- Timeline updating needs to be fixed
 
 Settings: 
 - Add support for per element and order editing of lists.
@@ -21,7 +22,6 @@ Lines:
 
 Event Capture:
 - Make colors customizable, 
-- Capture warehouse/granary full events
 - Capture info/events off of the dorf3.php page (either natural data, or after a Beyond scan??)
 - Keep track of merchants in each village
 - Remove the event if you cancel it (eg for buildings or demolitions) or gold it.
@@ -36,6 +36,7 @@ New Features:
 - Add event synchronization between multiple browsers
 - Add quicklinks (for quickly building/upgrading something in a given village) (maybe something in combination with the tool tip)
 - Add task queue functionality
+- If run on a non-travian webpage, still have it display the timeline
 ? Add a 'scan all villages' option, to automatically (and non-deterministically) visit all your villages and exract pertinent information
 
 BUGS:
