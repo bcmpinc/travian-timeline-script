@@ -10,6 +10,7 @@
 // @exclude        http://shop.travian*.*
 // @exclude        http://help.travian*.*
 // @exclude        http://*.travian*.*/manual.php*
+// @exclude        http://*.travian*.*/login.php
  
 // @author         bcmpinc
 // @author         arandia
@@ -290,7 +291,8 @@ Settings.server=function(){
     return url[3]+a;
 }();
 Settings.username=function(){
-    return document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.textContent.match(/uid=(\d+)/)[1];
+    var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    if (uid != undefined) return uid.textContent.match(/uid=(\d+)/)[1];
 }();
 // Get the value of this setting.
 // Note that (for example)
@@ -1093,6 +1095,9 @@ Resources.update=function() {
         Resources.s.market.write();
     }
 
+    // Capture these from the title of the resource bar
+    Resources.res_names = [];
+
     // Store the warehouse and production values - always available in the header bar!
     Resources.storage[Settings.village_id] = [];
     Resources.production[Settings.village_id] = [];
@@ -1104,6 +1109,9 @@ Resources.update=function() {
         Resources.storage[Settings.village_id][i] = parseInt(e.textContent.split('/')[0]);
         // Capture current production rates
         Resources.production[Settings.village_id][i] = parseInt(e.title);
+
+        // The translations of the resources in the server's native language
+        Resources.res_names[i] = e.previousSibling.previousSibling.childNodes[0].title;
 
         // Capture storage sizes
         if (i >= 2) Resources.storage[Settings.village_id][i+2] = parseInt(e.textContent.split('/')[1]);
@@ -1139,6 +1147,41 @@ Resources.update=function() {
     Resources.s.troops.write();
 };
 
+// This calculates what the resource values will be for a given village at a given time
+Resources.at_time = function(time, did){
+    if (did == undefined) did = Settings.village_id;
+
+    // Input...
+    var store = Resources.storage[did];
+    var prod = Resources.production[did];
+    var diff = (time - store[6])/3600000; // In hours
+
+    // Output...
+    var out = [0, 0, 0, 0, store[4], store[5]];
+
+    // If we're predicting merchants, look for all incoming that will arive between 'now' and 'time'
+    var arriving = [0, 0, 0, 0];
+    if (Events.predict_merchants){
+        for (var i in Events.events[did]){
+            var e = Events.events[did][i];
+            if (e[2].indexOf(Events.merchant_receive) < 0) continue;
+            if (e[1] < store[6] || e[1] > time) continue;
+            for (var j in e[4]) arriving[j] -= e[4][j];
+        }
+    }
+
+    for (var i = 0; i < 4; i++){
+        // Calculate the output
+        out[i] = Math.round(store[i] - (-diff * prod[i]) - arriving[i]);
+
+        // Crop it...
+        var cap = store[i < 3 ? 4 : 5];
+        if (out[i] < 0) out[i] = 0;
+        else if (out[i] > cap) out[i] = cap;
+    }
+
+    return out;
+};
 
 Resources.run=function(){
     Resources.update();
@@ -1212,7 +1255,8 @@ Events.setting("type", {/* <tag> : [<color> <visible>] */
             market : ['rgb(0,128,0)', true],
             research: ['rgb(0,0,255)', true],
             party : ['rgb(255,128,128)', true],
-            demolish : ['rgb(128,128,128)', true]
+            demolish : ['rgb(128,128,128)', true],
+            overflow : ['rgb(100,0,100)', true]
             }, Settings.type.object, undefined, "List of event types");
 Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
@@ -1631,6 +1675,36 @@ Events.collector.demolish = function(){
     e[0] = 'demolish';
     e[1] = t;
     e[2] = msg;
+};
+
+Events.collector.overflow = function(){
+    // These events are *not* indexed by the time of their occurence, unlike all the other ones...
+    if (Resources.enabled == false) return; // This depends on resources being collected
+
+    var stor = Resources.storage[Settings.village_id];
+    var prod = Resources.production[Settings.village_id];
+
+    // Calculate the overflow/empty time
+    for (var i=0; i < 4; i++){
+        var s = stor[i];
+        var p = prod[i];
+        var size = i==3 ? stor[5] : stor[4];
+
+        var t; // This starts off in 'hours from now'
+        // Deal with special cases
+        if (p>0) t = (size - s)/p;
+        else if (p==0) t = -1;
+        else t = s/(-p);
+
+        // Convert 'hours from now' to the absolute time
+        var time = Math.round(new Date().getTime() + t*3600000);
+
+        // Create the event
+        var e = Events.get_event(Settings.village_id, 'overflow'+i, true);
+        e[0] = 'overflow';
+        e[1] = time;
+        e[2] = Resources.res_names[i];
+    }
 };
 
 /****************************************
@@ -2272,21 +2346,8 @@ Tooltip.village_tip = function(anchor, did){
 }
 
 Tooltip.make_header = function(rota, time, did){
-    // First, find how much time has elapsed since the recorded value
-    var store = Resources.storage[did];
     var prod = Resources.production[did];
-    var diff = (time - store[6])/3600000; // In hours
-
-    // Find all *incoming* merchants who arrive before *time* but after the latest visit to the village, and add their values
-    var arrival = [0, 0, 0, 0];
-    if ((rota == 0 || rota == 1 || rota == 3) && Events.predict_merchants){ // Only for some types
-        for (var i in Events.events[did]){
-            var e = Events.events[did][i];
-            if (e[2].indexOf(Events.merchant_receive) < 0) continue;
-            if (e[1] < store[6] || e[1] > time) continue;
-            for (var j in e[4]) arrival[j] -= e[4][j];
-        }
-    }
+    if (rota == 0 || rota == 1 || rota == 3) var store = Resources.at_time(time, did);
 
     var rtn = '';
     var values = [];
@@ -2298,11 +2359,8 @@ Tooltip.make_header = function(rota, time, did){
             switch (rota){
             default: break;
             case 0: // Stored resources
-                var r = parseInt(store[i] - (-diff * prod[i]) - arrival[i]);
-                var s = store[(i < 3 ? 4 : 5)];
-                // If the value has overflowed or underflowed, be sure to trim it...
-                if (r > s) r = s;
-                if (r < 0) r = 0;
+                var r = store[i];
+                var s = store[i < 3 ? 4 : 5];
 
                 // Turn red if value is decreasing or overflowing, or orange if within two hours of overflowing
                 rtn += '<td style="color:'+(prod[i] < 0 || s==r ? 'red' : (s-r)/prod[i] < 2 ? 'orange' : 'green')+'">';
@@ -2317,7 +2375,7 @@ Tooltip.make_header = function(rota, time, did){
             case 1: // Time to overflow
                 // First we need to find the space remaining
                 var p = prod[i];
-                var c = parseInt(store[i] - (-diff * p) - arrival[i]);
+                var c = store[i];
                 var r = store[(i < 3 ? 4 : 5)] - c;
                 if ((r > 0 && p > 0) || (c > 0 && p < 0)){
                     if (p == 0){
@@ -2344,15 +2402,12 @@ Tooltip.make_header = function(rota, time, did){
                 values.push(prod[i]);
                 break;
             case 3: // % full
-                var r = parseInt(store[i] - (-diff * prod[i]) - arrival[i]);
+                var r = store[i];
                 var s = store[(i < 3 ? 4 : 5)];
                 var f = Math.round((r / s) * 100);
-                // If the value has overflowed or underflowed, be sure to trim it...
-                if (f > 100) f = 100;
-                if (f < 0) f = 0;
                 
                 // Turn red if value is decreasing or overflowing, or orange if within two hours of overflowing
-                rtn += '<td style="color:'+ (prod[i] < 0 || r >= s ? 'red' : (s-r)/prod[i] < 2 ? 'orange' : 'green')+'">';
+                rtn += '<td style="color:'+ (prod[i] < 0 || r == s ? 'red' : (s-r)/prod[i] < 2 ? 'orange' : 'green')+'">';
 
                 rtn += f + '%</td>';
                 values.push(f);
