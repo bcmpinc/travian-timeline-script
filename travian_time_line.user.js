@@ -1248,6 +1248,7 @@ Market.run=function(){
 
 Feature.create("Events");
 Events.setting("enabled", true, Settings.type.bool, undefined, "Enable the event data collector");
+Events.direct('br');
 Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
 Events.setting("type", {/* <tag> : [<color> <visible>] */
         building: ['rgb(0,0,0)', true],
@@ -1256,14 +1257,25 @@ Events.setting("type", {/* <tag> : [<color> <visible>] */
             research: ['rgb(0,0,255)', true],
             party : ['rgb(255,128,128)', true],
             demolish : ['rgb(128,128,128)', true],
-            overflow : ['rgb(100,0,100)', true]
-            }, Settings.type.object, undefined, "List of event types");
-Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
+            overflow : ['rgb(150,0,150)', true]
+            }, Settings.type.object, undefined, "List of event types", 'true');
+Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.", 'true');
 
+Events.direct('br');
 Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
 Events.setting("merchant_send",        'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
 Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
 Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+
+Events.direct('br');
+display_options = ['Timeline & Tooltip', 'Timeline', 'Tooltip', 'Neither'];
+Events.setting('building',   0, Settings.type.enumeration, display_options, 'Keep track of what you build [from village center and overview]');
+Events.setting('attack',     0, Settings.type.enumeration, display_options, 'Keep track of all incoming and outgoing troops [from the rally point]');
+Events.setting('market',     0, Settings.type.enumeration, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
+Events.setting('research',   0, Settings.type.enumeration, display_options, 'Keep track of what is being researched [from the Acadamy, Blacksmith and Armoury]');
+Events.setting('party',      0, Settings.type.enumeration, display_options, 'Keep track of parties [from the town hall]');
+Events.setting('demolish',   0, Settings.type.enumeration, display_options, 'Keep track of demolished buildings [from the main building]');
+Events.setting('overflow',   0, Settings.type.enumeration, display_options, 'Keep track of resource overflows [from every page]');
 
 Events.setting('send_twice',  false, Settings.type.bool, undefined, '', 'true');
 
@@ -2044,6 +2056,7 @@ Timeline.draw=function() {
             // Check if this type of event is visible
             if (!(t[1])) continue;
             if (isNaN(y)) continue;
+            if (Events[p[0]] >=2) continue;
 
             // If we're differentiating merchant types, don't show the message being sent
             if (Events.predict_merchants && p[0] == 'market' && p[2].indexOf(Events.merchant_send) >= 0) continue;
@@ -2264,6 +2277,7 @@ Tooltip.village_tip = function(anchor, did){
         for (var j in Events.events[did]){
             var e = Events.events[did][j];
             if (e[1] < d.getTime()) continue; // Skip if the event is in the past...
+            if (Events[e[0]]%2 != 0) continue; // Skip it if its display setting is off
 
             events.push([e[1], Tooltip.parse_event(e, d.getTime())]);
         }
