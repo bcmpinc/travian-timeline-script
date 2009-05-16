@@ -179,7 +179,7 @@ function tl_date(){
         return this.date.getTime();
     }
 }
- 
+
 function nothing(){}
  
 /****************************************
@@ -281,18 +281,39 @@ Feature.forall=function(fn_name, once) {
 
 Feature.create("Settings");
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
+// Are we on a natural include/exclude, or one created by the user?
+Settings.natural_run = (location.href.match(/travian/) &&
+                        !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
+                        !location.href.match(/travian.*\..*\/((manual)|(login))\.php/));
 Settings.server=function(){
+    if (!Settings.natural_run) return GM_getValue('last_server', 'unknown');
+    GM_setValue('absolute_server', location.href.match('http://[.a-z0-9]*')+'');
     // This should give the server id as used by travian analyzer.
     var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
     if (!url) return "unknown";
     var a=url[2];
     if (url[1]=='speed') a='x';
     if (url[1]=='speed2') a='y';
+    GM_setValue('last_server', url[3]+a);
     return url[3]+a;
 }();
 Settings.username=function(){
-    var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-    if (uid != undefined) return uid.textContent.match(/uid=(\d+)/)[1];
+    if (Settings.natural_run){
+        var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        if (uid == undefined) {
+            Debug.fatal("Could not extract the UID for the user.");
+            throw "Could not extract the UID of the user";
+        }
+        uid = uid.textContent.match(/uid=(\d+)/)[1];
+        GM_setValue('last_uid', uid);
+        return uid;
+    }
+    var uid = GM_getValue('last_uid')
+    if (uid == undefined) {
+        Debug.fatal("Have no record of any UID.");
+        throw "Could not find any previous UID";
+    }
+    return uid;
 }();
 // Get the value of this setting.
 // Note that (for example)
@@ -476,7 +497,7 @@ Settings.config=function(parent_element) {
     }
 };
 Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
-Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.");
+Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.", 'true');
 Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined, '', 'true');
 Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
 Settings.run=function() {
@@ -1338,11 +1359,13 @@ Events.get_event=function(village, id, overwrite) {
 Events.update_data=function() {
     Events.s.events.read(); // Make sure the variable data is up to date.
     // Collect new stuff
-    for (var c in Events.collector) {
-        try {
-            Events.collector[c]();
-        } catch (e) {
-            Debug.exception("Events.collector."+c,e);
+    if (Settings.natural_run){
+        for (var c in Events.collector) {
+            try {
+                Events.collector[c]();
+            } catch (e) {
+                Debug.exception("Events.collector."+c,e);
+            }
         }
     }
 
@@ -1887,18 +1910,19 @@ Timeline.create_button=function() {
 
 Timeline.load_images=function() {
     // TODO: A special images feature?
+    var base = GM_getValue('absolute_server', '')+'/';
     Timeline.img_unit = new Array(11);
     for (i=0; i<10; i++) {
         Timeline.img_unit[i] = new Image();
-        Timeline.img_unit[i].src = "img/un/u/"+(Settings.race*10+i+1)+".gif";
+        Timeline.img_unit[i].src = base + "img/un/u/"+(Settings.race*10+i+1)+".gif";
     }
     Timeline.img_unit[10] = new Image();
-    Timeline.img_unit[10].src = "img/un/u/hero.gif";
+    Timeline.img_unit[10].src = base + "img/un/u/hero.gif";
 
     Timeline.img_res = new Array(4);
     for (i=0; i<4; i++) {
         Timeline.img_res[i] = new Image();
-        Timeline.img_res[i].src = "img/un/r/"+(i+1)+".gif";
+        Timeline.img_res[i].src = base + "img/un/r/"+(i+1)+".gif";
     }
 };
 
@@ -2117,8 +2141,10 @@ Timeline.draw=function() {
 };
 
 Timeline.run=function() {
-    tp1 = document.getElementById("tp1");
-    if (!tp1) return;
+    if (Settings.natural_run){
+        tp1 = document.getElementById("tp1");
+        if (!tp1) return;
+    }
 
     Timeline.create_canvas();
     Timeline.create_button();
@@ -2544,4 +2570,16 @@ Tooltip.run = function(){
 }
  
 Feature.forall('init',true);
-window.addEventListener('load', function() { Feature.forall('run',true); }, false); // Run everything after the DOM loads!
+window.addEventListener('load', function() {
+        // Filter out the natural includes/excludes - these always run everything
+        if (Settings.natural_run){
+            Feature.forall('run',true);
+        }
+        // Unnatural (user-created) includes will only run the timeline
+        else {
+            // To run the timeline on a non-Travian page, we need to know the server and user ID
+            // These are both saved in persistent data
+            Events.run();
+            Timeline.run();
+        }
+    }, false); // Run everything after the DOM loads!

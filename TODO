@@ -36,7 +36,6 @@ New Features:
 - Add event synchronization between multiple browsers
 - Add quicklinks (for quickly building/upgrading something in a given village) (maybe something in combination with the tool tip)
 - Add task queue functionality
-- If run on a non-travian webpage, still have it display the timeline
 ? Add a 'scan all villages' option, to automatically (and non-deterministically) visit all your villages and exract pertinent information
 
 BUGS:
