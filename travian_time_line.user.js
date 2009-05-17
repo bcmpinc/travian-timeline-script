@@ -1540,8 +1540,10 @@ Events.collector.market=function(){
         // Categorize the event
         var send = msg.indexOf(Events.merchant_send) >= 0;
 
-        var internal = x.childNodes[0].childNodes[1].childNodes[0].href.match(/uid=(\d+)/)[1] == Settings.username;
-        if (internal) for (var did in Settings.village_names) if (msg.indexOf(Settings.village_names[did]) >= 0) break;
+        var internal = false;
+        if (x.childNodes[0].childNodes[1].childNodes[0].href.match(/uid=(\d+)/)[1] == Settings.username){
+            for (var did in Settings.village_names) if (msg.indexOf(Settings.village_names[did]) >= 0){ internal = true; break;}
+        }
 
         Debug.debug(msg + ' | send='+send+' internal='+internal);
 
