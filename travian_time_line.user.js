@@ -10,7 +10,8 @@
 // @exclude        http://shop.travian*.*
 // @exclude        http://help.travian*.*
 // @exclude        http://*.travian*.*/manual.php*
-// @exclude        http://*.travian*.*/login.php
+// @exclude        http://*.travian*.*/login.php*
+// @exclude        http://*.travian*.*/logout.php*
  
 // @author         bcmpinc
 // @author         arandia
@@ -284,7 +285,7 @@ Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool
 // Are we on a natural include/exclude, or one created by the user?
 Settings.natural_run = (location.href.match(/travian/) &&
                         !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
-                        !location.href.match(/travian.*\..*\/((manual)|(login))\.php/));
+                        !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/));
 Settings.server=function(){
     if (!Settings.natural_run) return GM_getValue('last_server', 'unknown');
     GM_setValue('absolute_server', location.href.match('http://[.a-z0-9]*')+'');
@@ -301,8 +302,13 @@ Settings.username=function(){
     if (Settings.natural_run){
         var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
         if (uid == undefined) {
-            Debug.fatal("Could not extract the UID for the user.");
-            throw "Could not extract the UID of the user";
+            // If we run into an error, use the stored version. This also helps us if this accidentally runs before the DOM loads.
+            uid = GM_getValue('last_uid');
+            if (uid == undefined) {
+                GM_log("Have no record of any UID.");
+                throw "Could not find any previous UID";
+            }
+            return uid;
         }
         uid = uid.textContent.match(/uid=(\d+)/)[1];
         GM_setValue('last_uid', uid);
@@ -310,7 +316,7 @@ Settings.username=function(){
     }
     var uid = GM_getValue('last_uid')
     if (uid == undefined) {
-        Debug.fatal("Have no record of any UID.");
+        GM_log("Have no record of any UID.");
         throw "Could not find any previous UID";
     }
     return uid;
@@ -1920,6 +1926,7 @@ Timeline.create_button=function() {
     button.style.textAlign = "center";
     button.style.color = "#fff";
     button.style.fontWeight = "bold";
+    button.style.fontSize = '12px';
     button.style.MozBorderRadiusBottomleft = "6px";
     button.style.cursor = "pointer";
     button.addEventListener('click',Timeline.toggle,false);
