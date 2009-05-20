@@ -2288,9 +2288,12 @@ Tooltip.sumarize = function(rota){
         for (var i=0; i < 4; i++){
             rtn += '<td><img src="img/un/r/'+(i+1)+'.gif"><td>';
             if (Tooltip.resource_kilo_values){
-                if (total[i] > 1000000) rtn += Math.round(total[i]/100000)/10+'M';
-                else if (total[i] > 10000) rtn += Math.round(total[i]/1000)+'k';
-                else if (total[i] > 1000) rtn += Math.round(total[i]/100)/10+'k';
+                var x = Math.abs(total[i]);
+                if (x > 1000000) rtn += Math.round(total[i]/100000)/10+'M';
+                else if (x > 100000) rtn += Math.round(total[i]/1000)+'k';
+                else if (x > 10000) rtn += Math.round(total[i]/100)/10+'k';
+                else if (x > 1000) rtn += Math.round(total[i]/10)/100+'k';
+                else rtn += total[i];
             }
             else rtn += total[i];
         }
