@@ -2634,6 +2634,7 @@ Tooltip.run = function(){
 if (Settings.natural_run){
     Feature.forall('init',true);
 } else {
+    Settings.init();
     Events.init();
     Timeline.init();
 }
