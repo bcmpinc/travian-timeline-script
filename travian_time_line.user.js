@@ -1335,7 +1335,7 @@ Events.init=function(){
     Events.setting('research',   0, Settings.type.enumeration, display_options, 'Keep track of what is being researched [from the Acadamy, Blacksmith and Armoury]');
     Events.setting('party',      0, Settings.type.enumeration, display_options, 'Keep track of parties [from the town hall]');
     Events.setting('demolish',   0, Settings.type.enumeration, display_options, 'Keep track of demolished buildings [from the main building]');
-    Events.setting('overflow',   0, Settings.type.enumeration, display_options, 'Keep track of resource overflows [from every page]');
+    Events.setting('overflow',   1, Settings.type.enumeration, display_options, 'Keep track of resource overflows [from every page]');
 
     Events.persist('send_twice',  false);
 };
