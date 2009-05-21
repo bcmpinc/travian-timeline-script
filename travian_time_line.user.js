@@ -526,10 +526,12 @@ Settings.config=function(parent_element) {
         GM_log(e);
     }
 };
-Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
-Settings.setting("village_names",{},        Settings.type.object,      undefined,"The names of the villages.", 'true');
-Settings.setting("current_tab",  "Settings",Settings.type.string,      undefined, '', 'true');
-Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
+Settings.init=function(){
+    Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+    Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
+    Settings.persist("village_names",{});
+    Settings.persist("current_tab",  "Settings");
+};
 Settings.run=function() {
     // Create link for opening the settings menu.
     var div = document.createElement("div");
@@ -704,7 +706,7 @@ Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which ca
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
 Debug.print =GM_log;
 Debug.lineshift = function(){
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-577; } // Keep the number in this line equal to it's line number. Don't modify anything else.
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-709; } // Keep the number in this line equal to it's line number. Don't modify anything else.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
@@ -747,34 +749,36 @@ Debug.info("Running on server: "+Settings.server);
  ****************************************/
 
 Feature.create("Lines");
-Lines.setting("enabled", true, Settings.type.bool, undefined, "Enable the map lines");
-Lines.setting("update_owned", true, Settings.type.bool, undefined, "Automatically create and remove lines to your villages.");
-Lines.setting("update_ally", true, Settings.type.bool, undefined, "Automatically create and remove lines to ally members.");
-Lines.setting("update_allies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of allied alliances.");
-Lines.setting("update_naps", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of nap-alliances.");
-Lines.setting("update_enemies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of alliances, with which your ally is at war.");
-Lines.setting("update_crop", true, Settings.type.bool, undefined, "Automatically create and remove lines to 9- and 15-croppers.");
-Lines.setting("list_extra_villages", true, Settings.type.bool, undefined, "Append villages in the 'extra' category to the villages list.");
-Lines.setting("analyze_neighbourhood", true, Settings.type.bool, undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
-Lines.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
-Lines.persist("categories", { /* <tag>: [ <color> , <drawline> ], */
-        none: ["",false], // ie. remove from 'locations'.
-            owned: ["rgba(192,128,0,1.0)", true],
-            ally: ["rgba(0,0,255,0.5)", true],
-            allies: ["rgba(0,255,0,0.5)", true],
-            naps: ["rgba(0,255,255,0.5)", false],
-            enemies: ["rgba(255,0,0,0.5)", true],
-            crop9: ["rgba(255,128,0.5)", true],
-            crop15: ["rgba(255,128,1.0)", true],
-            extra: ["rgba(128,128,128,0.5)", true],
-            farms: ["rgba(255,255,255,0.5)", true],
-            ban: ["rgba(0,0,0,0.5)", false],
-            natar: ["rgba(128,64,0,0.5)", false],
-            other: ["rgba(255,0,255,0.5)", true]
-            });
-Lines.persist("locations", {});
-// A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
-// name is optional.
+Lines.init=function(){
+    Lines.setting("enabled", true, Settings.type.bool, undefined, "Enable the map lines");
+    Lines.setting("update_owned", true, Settings.type.bool, undefined, "Automatically create and remove lines to your villages.");
+    Lines.setting("update_ally", true, Settings.type.bool, undefined, "Automatically create and remove lines to ally members.");
+    Lines.setting("update_allies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of allied alliances.");
+    Lines.setting("update_naps", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of nap-alliances.");
+    Lines.setting("update_enemies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of alliances, with which your ally is at war.");
+    Lines.setting("update_crop", true, Settings.type.bool, undefined, "Automatically create and remove lines to 9- and 15-croppers.");
+    Lines.setting("list_extra_villages", true, Settings.type.bool, undefined, "Append villages in the 'extra' category to the villages list.");
+    Lines.setting("analyze_neighbourhood", true, Settings.type.bool, undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
+    Lines.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
+    Lines.persist("categories", { /* <tag>: [ <color> , <drawline> ], */
+            none: ["",false], // ie. remove from 'locations'.
+                owned: ["rgba(192,128,0,1.0)", true],
+                ally: ["rgba(0,0,255,0.5)", true],
+                allies: ["rgba(0,255,0,0.5)", true],
+                naps: ["rgba(0,255,255,0.5)", false],
+                enemies: ["rgba(255,0,0,0.5)", true],
+                crop9: ["rgba(255,128,0.5)", true],
+                crop15: ["rgba(255,128,1.0)", true],
+                extra: ["rgba(128,128,128,0.5)", true],
+                farms: ["rgba(255,255,255,0.5)", true],
+                ban: ["rgba(0,0,0,0.5)", false],
+                natar: ["rgba(128,64,0,0.5)", false],
+                other: ["rgba(255,0,255,0.5)", true]
+                });
+    Lines.persist("locations", {});
+    // A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
+    // name is optional.
+};
 
 Lines.new_table_cell=function(innerhtml) {
     cell = document.createElement("td");
@@ -979,49 +983,50 @@ Lines.run=function() {
  ****************************************/
 
 Feature.create("Sidebar");
-Sidebar.setting("enabled", true, Settings.type.bool, undefined, "Cutomize the sidebar");
-Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
-Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
-Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
-Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
-Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
+Sidebar.init=function(){
+    Sidebar.setting("enabled", true, Settings.type.bool, undefined, "Cutomize the sidebar");
+    Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
+    Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
+    Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
+    Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
+    Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
 
+    // Numbers for original sidebar links
+    //-1: -- break --
+    // 0: Home
+    // 1: Instructions
+    // 2: Profile
+    // 3: Log out
+    // 4: Forum
+    // 5: Chat
+    // 6: Travian Plus
+    // 7: Support
 
-// Numbers for original sidebar links
-//-1: -- break --
-// 0: Home
-// 1: Instructions
-// 2: Profile
-// 3: Log out
-// 4: Forum
-// 5: Chat
-// 6: Travian Plus
-// 7: Support
-
-// Original sidebar links
-// Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
-// TODO: make configureable?
-Sidebar.persist("links",
-                [
-                 1,
-                 ["FAQ", "http://help.travian.nl/"],
-                 ["Travian Forum", "http://forum.travian.nl"],
-                 ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
-                 -1,
-                 2,
-                 ["Alliance Forum", "/allianz.php?s=2"],
-                 //["Alliantie Forum", "http://www.external-travian-forum.com/"],
-                 ["Alliance Overview", "allianz.php"],
-                 -1,
-                 ["Barracks", "/build.php?gid=19"],
-                 ["Stable", "/build.php?gid=20"],
-                 ["Workshop", "/build.php?gid=21"],
-                 ["Marketplace", "/build.php?gid=17"],
-                 ["Rally Point", "/build.php?gid=16"],
-                 -1,
-                 6,
-                 7
-                 ]);
+    // Original sidebar links
+    // Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
+    // TODO: make configureable?
+    Sidebar.persist("links",
+                    [
+                     1,
+                     ["FAQ", "http://help.travian.nl/"],
+                     ["Travian Forum", "http://forum.travian.nl"],
+                     ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
+                     -1,
+                     2,
+                     ["Alliance Forum", "/allianz.php?s=2"],
+                     //["Alliantie Forum", "http://www.external-travian-forum.com/"],
+                     ["Alliance Overview", "allianz.php"],
+                     -1,
+                     ["Barracks", "/build.php?gid=19"],
+                     ["Stable", "/build.php?gid=20"],
+                     ["Workshop", "/build.php?gid=21"],
+                     ["Marketplace", "/build.php?gid=17"],
+                     ["Rally Point", "/build.php?gid=16"],
+                     -1,
+                     6,
+                     7
+                     ]);
+};
     
 Sidebar.add=function(text, target) {
     var el;
@@ -1096,12 +1101,14 @@ Sidebar.run=function() {
  ****************************************/
     
 Feature.create("Resources");
-Resources.setting("enabled", true, Settings.type.bool, undefined, "Turn on resource and resource rate collection.");
-Resources.setting("display", true, Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off");
-Resources.persist("market", {});
-Resources.persist("production", {});
-Resources.persist("storage", {});
-Resources.persist('troops', {});
+Resources.init=function(){
+    Resources.setting("enabled", true, Settings.type.bool, undefined, "Turn on resource and resource rate collection.");
+    Resources.setting("display", true, Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off");
+    Resources.persist("market", {});
+    Resources.persist("production", {});
+    Resources.persist("storage", {});
+    Resources.persist('troops', {});
+};
 
 Resources.show=function() {
     var head = document.getElementById("lres0");
@@ -1297,40 +1304,41 @@ Market.run=function(){
  ****************************************/
 
 Feature.create("Events");
-Events.setting("enabled", true, Settings.type.bool, undefined, "Enable the event data collector");
-Events.direct('br');
-Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
-Events.setting("type", {/* <tag> : [<color> <visible>] */
-        building: ['rgb(0,0,0)', true],
-            attack : ['rgb(255,0,0)', true],
-            market : ['rgb(0,128,0)', true],
-            research: ['rgb(0,0,255)', true],
-            party : ['rgb(255,128,128)', true],
-            demolish : ['rgb(128,128,128)', true],
-            overflow : ['rgb(150,0,150)', true]
-            }, Settings.type.object, undefined, "List of event types", 'true');
-Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.", 'true');
+Events.init=function(){
+    Events.setting("enabled", true, Settings.type.bool, undefined, "Enable the event data collector");
+    Events.direct('br');
+    Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
+    Events.setting("type", {/* <tag> : [<color> <visible>] */
+            building: ['rgb(0,0,0)', true],
+                attack : ['rgb(255,0,0)', true],
+                market : ['rgb(0,128,0)', true],
+                research: ['rgb(0,0,255)', true],
+                party : ['rgb(255,128,128)', true],
+                demolish : ['rgb(128,128,128)', true],
+                overflow : ['rgb(150,0,150)', true]
+                }, Settings.type.object, undefined, "List of event types", 'true');
+    Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.", 'true');
 
-Events.direct('br');
-Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
-var ev_1 = Events.direct('table');
-ev_1.el.style.marginLeft = '10px';
-Events.setting("merchant_send",        'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
-Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
-Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
+    Events.direct('br');
+    Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
+    var ev_1 = Events.direct('table');
+    ev_1.el.style.marginLeft = '10px';
+    Events.setting("merchant_send",        'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
+    Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
+    Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
 
-Events.direct('br');
-display_options = ['Timeline & Tooltip', 'Timeline', 'Tooltip', 'Neither'];
-Events.setting('building',   0, Settings.type.enumeration, display_options, 'Keep track of what you build [from village center and overview]');
-Events.setting('attack',     0, Settings.type.enumeration, display_options, 'Keep track of all incoming and outgoing troops [from the rally point]');
-Events.setting('market',     0, Settings.type.enumeration, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
-Events.setting('research',   0, Settings.type.enumeration, display_options, 'Keep track of what is being researched [from the Acadamy, Blacksmith and Armoury]');
-Events.setting('party',      0, Settings.type.enumeration, display_options, 'Keep track of parties [from the town hall]');
-Events.setting('demolish',   0, Settings.type.enumeration, display_options, 'Keep track of demolished buildings [from the main building]');
-Events.setting('overflow',   0, Settings.type.enumeration, display_options, 'Keep track of resource overflows [from every page]');
+    Events.direct('br');
+    display_options = ['Timeline & Tooltip', 'Timeline', 'Tooltip', 'Neither'];
+    Events.setting('building',   0, Settings.type.enumeration, display_options, 'Keep track of what you build [from village center and overview]');
+    Events.setting('attack',     0, Settings.type.enumeration, display_options, 'Keep track of all incoming and outgoing troops [from the rally point]');
+    Events.setting('market',     0, Settings.type.enumeration, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
+    Events.setting('research',   0, Settings.type.enumeration, display_options, 'Keep track of what is being researched [from the Acadamy, Blacksmith and Armoury]');
+    Events.setting('party',      0, Settings.type.enumeration, display_options, 'Keep track of parties [from the town hall]');
+    Events.setting('demolish',   0, Settings.type.enumeration, display_options, 'Keep track of demolished buildings [from the main building]');
+    Events.setting('overflow',   0, Settings.type.enumeration, display_options, 'Keep track of resource overflows [from every page]');
 
-Events.setting('send_twice',  false, Settings.type.bool, undefined, '', 'true');
-
+    Events.persist('send_twice',  false);
+};
 // There is no report type, because there are different types of reports, which can also be divided over the currently
 // available types.
 
@@ -1796,46 +1804,44 @@ Events.collector.overflow = function(){
  * TIMELINE
  ****************************************/
 
-// WIP
-
 Feature.create("Timeline");
-Timeline.setting("enabled", true, Settings.type.bool, undefined, "Enable the timeline (make sure that the events feature is also enabled).");
-Timeline.setting("collapse", true, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
-Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
-Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
-Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
+Timeline.init=function(){
+    Timeline.setting("enabled", true, Settings.type.bool, undefined, "Enable the timeline (make sure that the events feature is also enabled).");
+    Timeline.setting("collapse", true, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+    Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
+    Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
+    Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
 
-Timeline.direct('br');
-Timeline.setting("color", "rgba(255, 255, 204, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
-Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
-Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
-Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
-Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
-Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
-Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
-Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
-Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
+    Timeline.direct('br');
+    Timeline.setting("color", "rgba(255, 255, 204, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
+    Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
+    Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
+    Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
+    Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
+    Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
+    Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
+    Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
+    Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
 
-Timeline.persist("visible", true);
-//Timeline.setting("use_server_time", false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
-//Timeline.setting("time_difference", 0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
+    Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
 
-Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
+    Timeline.persist("visible", true);
 
-Timeline.scroll_offset=0; // the current 'center' of the timeline.
+    Timeline.scroll_offset=0; // the current 'center' of the timeline.
 
-if (Timeline.scale_warp==0) {
-    Timeline.warp = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
-    Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
-} else {
-    Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
-    Timeline.warp = function(x) { return (Math.arsinh(
-                                                      ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
-                                                      )/Timeline.scale_warp +1)/2*Timeline.height; };
-    Timeline.unwarp = function(y) { return Math.sinh(
-                                                     (2*y/Timeline.height-1)*Timeline.scale_warp
-                                                     )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
-}
+    if (Timeline.scale_warp==0) {
+        Timeline.warp = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
+        Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+    } else {
+        Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
+        Timeline.warp = function(x) { return (Math.arsinh(
+                                                          ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
+                                                          )/Timeline.scale_warp +1)/2*Timeline.height; };
+        Timeline.unwarp = function(y) { return Math.sinh(
+                                                         (2*y/Timeline.height-1)*Timeline.scale_warp
+                                                         )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+    }
+};
 
 Timeline.create_canvas=function() {
     // Create timeline canvas + container
@@ -2209,49 +2215,50 @@ Timeline.run=function() {
  * Village Tool Tip
  ****************************************/
 Feature.create("Tooltip");
-Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
-Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
+Tooltip.init=function(){
+    Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
+    Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
 
-Tooltip.direct('br', '! Events.enabled');
-Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');
-var ttp_1 = Tooltip.direct('table');
-ttp_1.el.style.marginLeft = '10px';
-Tooltip.setting('seperate_values',      false, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
-Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
-Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+    Tooltip.direct('br', '! Events.enabled');
+    Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');
+    var ttp_1 = Tooltip.direct('table');
+    ttp_1.el.style.marginLeft = '10px';
+    Tooltip.setting('seperate_values',      false, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+    Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+    Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 
-Tooltip.direct('br', '! Resources.enabled');
-Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.", '! Resources.enabled');
-var ttp_2 = Tooltip.direct('table');
-ttp_2.el.style.marginLeft = '10px';
-Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
-Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
+    Tooltip.direct('br', '! Resources.enabled');
+    Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.", '! Resources.enabled');
+    var ttp_2 = Tooltip.direct('table');
+    ttp_2.el.style.marginLeft = '10px';
+    Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
+    Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
 
-Tooltip.direct('br', '! Resources.enabled');
-Tooltip.setting('show_troops',           true, Settings.type.bool,    undefined, "Show stored values for troops in the header.", '! Resources.enabled');
+    Tooltip.direct('br', '! Resources.enabled');
+    Tooltip.setting('show_troops',           true, Settings.type.bool,    undefined, "Show stored values for troops in the header.", '! Resources.enabled');
 
-Tooltip.direct('br');
-Tooltip.setting("mouseover_delay",        500, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
-Tooltip.setting("mouseout_delay",         300, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
+    Tooltip.direct('br');
+    Tooltip.setting("mouseover_delay",        500, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
+    Tooltip.setting("mouseout_delay",         300, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
-// These are invisable variables to the user
-Tooltip.persist('header_rotation', [0, 0]);
-Tooltip.persist("summary_rotation_type", 0);
-Tooltip.persist("summary_rotation",    [0, 0]);
+    // These are invisable variables to the user
+    Tooltip.persist('header_rotation', [0, 0]);
+    Tooltip.persist("summary_rotation_type", 0);
+    Tooltip.persist("summary_rotation",    [0, 0]);
 
-Tooltip.header_mapping   = [[0, 3, 1, 2], [5]]; // These are the types of display that the header will rotate through
-Tooltip.summary_mapping  = [[0, 3, 1, 2], [4]]; // And this is the same thing for the summary
+    Tooltip.header_mapping   = [[0, 3, 1, 2], [5]]; // These are the types of display that the header will rotate through
+    Tooltip.summary_mapping  = [[0, 3, 1, 2], [4]]; // And this is the same thing for the summary
 
-Tooltip.image = [];
-Tooltip.image[0] = 'img/un/r/4.gif';
-// Clock
-Tooltip.image[1] = 'data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA/////////////v7+/v7+rq6uTExMREREPDw8PDw8PDw8QEBAi4uL/////v7+////////////AAD////////////9/f2pqalDQ0N+fn75+fn////x8fHc3NyCgoI7OzuKior///////////////8AAP///////////6SkpEhISJubm/39/f39/f39/f////7+/v7+/o2NjURERKGhof///////////wAA////////////SkpKjY2N7e3t/////v7+/f39/v7+////9/f3WlpaU1NTSUlJ////////////AAD///////////9BQUHc3Nz7+/v+/v7+/v79/f3///9SUlJbW1vx8fG+vr47Ozv///////////8AAP///////////zw8PNnZ2f////39/f7+/v///ysrK+vr6/z8/P7+/vn5+TMzM////////////wAA////////////QUFB/////////f39/f39////Li4u/////f39/v7+/Pz8ODg4////////////AAD///////////83NzePj4/39/f+/v79/f3///9QUFD////+/v7+/v67u7s7Ozv///////////8AAP///////////2BgYERERJeXl/////7+/v///1JSUv////7+/v///1tbW0FBQf///////////wAA////////////////T09PVlZW9fX1+fn5////T09P////+/v7W1tbOzs7l5eX////////////AAD////////////9/f339/dPT09UVFSBgYH///9LS0vc3NxSUlI8PDyBgYH+/v7///////////8AAP////////////7+/v39/f///25ubkpKSklJSUNDQ0pKSjs7O2hoaP39/f7+/v///////////wAA';
-Tooltip.image[2] = 'img/un/r/5.gif';
-// Percent
-Tooltip.image[3] = 'data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////AAD////////////////////Y2NhNTU23t7f////m5uZbW1s/Pz9QUFCCgoL39/f///////////8AAP///////////////////////7W1tUpKSuPj49LS0ioqKq2trZaWlkJCQvHx8f///////////wAA////////////////////////+Pj4SEhIkpKS1NTUMjIytbW1nZ2dNzc38fHx////////////AAD////////////////Ozs6YmJijo6POzs5MTEy+vr5xcXFFRUU/Pz+Ghob7+/v///////////8AAP///////////+Xl5VtbW1BQUD4+Po+Pj6GhoUVFRd7e3tPT09vb2/7+/v///////////////wAA////////////0tLSKioqwsLCh4eHQkJC5OTkUlJSjIyM/v7+////////////////////////AAD////////////V1dUyMjK0tLSQkJBQUFDx8fHa2tpeXl7Y2Nj///////////////////////8AAP////////////Ly8oCAgEREREBAQJeXl/v7+/7+/p6enlZWVtvb2////////////////////wAA////////////////8fHx0tLS29vb////////////+Pj42NjY////////////////////////AAD///////////////////////////////////////////////////////////////////////8AAP///////////////////////////////////////////////////////////////////////wAA';
-// Hammer
-Tooltip.image[4] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kEEhY1JQfrF6AAAAFYSURBVCjPlZI7a8IAFEY/K1UCBn+AiwZpwVVwCMFNguJQHOvgUIQ4FEQoUjNVCiIFN6GbU0CdujWrdNPBdggOoqGgHZSCQRE1hdvZt571Xg738YF2oGkaSZJE2WyWTuUCGyyXS8iyDJ7n0e120e/3cQpbolgsBlEUwbIsjOkUHMedLzIMA1arFT6fD2/lMl4KBZzKmkgURQiCAIfTievxGO/pNNRaDX/niHRdh2mamM/nSCaT+HW74bDZoJVKUPJ5fI9GmAyHx0UejwfFYhGqquIukcBNLoemaWJqscDWaqGaSuGz3d4/0uYbG40GrVYrIiL66nToKZOhqMtFSjhMz8EgVSuVne/HsXxMZjN6UxS6YllSolEqh0L0GI9v9VmIiI4dkgDogwFuAwFIfj8uAfwwDB7q9f2rHWKxWJDAcfQaiRDv9R5O9iHsdjs+ej00GQb3srxW+wd+q1O9w+tuqQAAAABJRU5ErkJggg==';
-
+    Tooltip.image = [];
+    Tooltip.image[0] = 'img/un/r/4.gif';
+    // Clock
+    Tooltip.image[1] = 'data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA/////////////v7+/v7+rq6uTExMREREPDw8PDw8PDw8QEBAi4uL/////v7+////////////AAD////////////9/f2pqalDQ0N+fn75+fn////x8fHc3NyCgoI7OzuKior///////////////8AAP///////////6SkpEhISJubm/39/f39/f39/f////7+/v7+/o2NjURERKGhof///////////wAA////////////SkpKjY2N7e3t/////v7+/f39/v7+////9/f3WlpaU1NTSUlJ////////////AAD///////////9BQUHc3Nz7+/v+/v7+/v79/f3///9SUlJbW1vx8fG+vr47Ozv///////////8AAP///////////zw8PNnZ2f////39/f7+/v///ysrK+vr6/z8/P7+/vn5+TMzM////////////wAA////////////QUFB/////////f39/f39////Li4u/////f39/v7+/Pz8ODg4////////////AAD///////////83NzePj4/39/f+/v79/f3///9QUFD////+/v7+/v67u7s7Ozv///////////8AAP///////////2BgYERERJeXl/////7+/v///1JSUv////7+/v///1tbW0FBQf///////////wAA////////////////T09PVlZW9fX1+fn5////T09P////+/v7W1tbOzs7l5eX////////////AAD////////////9/f339/dPT09UVFSBgYH///9LS0vc3NxSUlI8PDyBgYH+/v7///////////8AAP////////////7+/v39/f///25ubkpKSklJSUNDQ0pKSjs7O2hoaP39/f7+/v///////////wAA';
+    Tooltip.image[2] = 'img/un/r/5.gif';
+    // Percent
+    Tooltip.image[3] = 'data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////AAD////////////////////Y2NhNTU23t7f////m5uZbW1s/Pz9QUFCCgoL39/f///////////8AAP///////////////////////7W1tUpKSuPj49LS0ioqKq2trZaWlkJCQvHx8f///////////wAA////////////////////////+Pj4SEhIkpKS1NTUMjIytbW1nZ2dNzc38fHx////////////AAD////////////////Ozs6YmJijo6POzs5MTEy+vr5xcXFFRUU/Pz+Ghob7+/v///////////8AAP///////////+Xl5VtbW1BQUD4+Po+Pj6GhoUVFRd7e3tPT09vb2/7+/v///////////////wAA////////////0tLSKioqwsLCh4eHQkJC5OTkUlJSjIyM/v7+////////////////////////AAD////////////V1dUyMjK0tLSQkJBQUFDx8fHa2tpeXl7Y2Nj///////////////////////8AAP////////////Ly8oCAgEREREBAQJeXl/v7+/7+/p6enlZWVtvb2////////////////////wAA////////////////8fHx0tLS29vb////////////+Pj42NjY////////////////////////AAD///////////////////////////////////////////////////////////////////////8AAP///////////////////////////////////////////////////////////////////////wAA';
+    // Hammer
+    Tooltip.image[4] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kEEhY1JQfrF6AAAAFYSURBVCjPlZI7a8IAFEY/K1UCBn+AiwZpwVVwCMFNguJQHOvgUIQ4FEQoUjNVCiIFN6GbU0CdujWrdNPBdggOoqGgHZSCQRE1hdvZt571Xg738YF2oGkaSZJE2WyWTuUCGyyXS8iyDJ7n0e120e/3cQpbolgsBlEUwbIsjOkUHMedLzIMA1arFT6fD2/lMl4KBZzKmkgURQiCAIfTievxGO/pNNRaDX/niHRdh2mamM/nSCaT+HW74bDZoJVKUPJ5fI9GmAyHx0UejwfFYhGqquIukcBNLoemaWJqscDWaqGaSuGz3d4/0uYbG40GrVYrIiL66nToKZOhqMtFSjhMz8EgVSuVne/HsXxMZjN6UxS6YllSolEqh0L0GI9v9VmIiI4dkgDogwFuAwFIfj8uAfwwDB7q9f2rHWKxWJDAcfQaiRDv9R5O9iHsdjs+ej00GQb3srxW+wd+q1O9w+tuqQAAAABJRU5ErkJggg==';
+};
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
     if (!Tooltip.show_warehouse_store) return;
@@ -2624,8 +2631,12 @@ Tooltip.run = function(){
         alert(e.lineNumber+":"+e);
     }
 }
- 
-Feature.forall('init',true);
+if (Settings.natural_run){
+    Feature.forall('init',true);
+} else {
+    Events.init();
+    Timeline.init();
+}
 window.addEventListener('load', function() {
         // Filter out the natural includes/excludes - these always run everything
         if (Settings.natural_run){
@@ -2633,8 +2644,6 @@ window.addEventListener('load', function() {
         }
         // Unnatural (user-created) includes will only run the timeline
         else {
-            // To run the timeline on a non-Travian page, we need to know the server and user ID
-            // These are both saved in persistent data
             Events.run();
             Timeline.run();
         }
