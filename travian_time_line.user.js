@@ -1980,7 +1980,8 @@ Timeline.draw_info=function(img,nrs) {
     }
 }
 
-Timeline.draw=function() {
+// If once is false, this will set a timer at the end of the function call recalling this function after the update period
+Timeline.draw=function(once) {
     // Update the event data
     Events.s.events.read();
     Timeline.now=new Date().getTime();
@@ -2164,6 +2165,7 @@ Timeline.draw=function() {
     }
     g.restore();
 
+    if (Timeline.keep_updated && once!==true) window.setTimeout(Timeline.draw, Timeline.update_interval)
 };
 
 Timeline.run=function() {
@@ -2188,7 +2190,7 @@ Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined,
 Tooltip.direct('br', '! Events.enabled');
 Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');
 var ttp_1 = Tooltip.direct('table');
-ttp_1.el.style.paddingLeft = '10px';
+ttp_1.el.style.marginLeft = '10px';
 Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
@@ -2196,7 +2198,7 @@ Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined,
 Tooltip.direct('br', '! Resources.enabled');
 Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.", '! Resources.enabled');
 var ttp_2 = Tooltip.direct('table');
-ttp_2.el.style.paddingLeft = '10px';
+ttp_2.el.style.marginLeft = '10px';
 Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
 Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
 

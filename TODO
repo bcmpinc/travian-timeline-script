@@ -5,7 +5,6 @@ Timeline Events,Look&Feel:
   - and/or add a way of disabling the capture of certain event types
 - Add option of what market event text should be prefered?
 - fix the images to account for v3.5
-- Timeline updating needs to be fixed
 
 Settings: 
 - Add support for per element and order editing of lists.
