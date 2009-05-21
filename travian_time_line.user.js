@@ -213,6 +213,30 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden, par
     this.s[name] = s;
     return s;
 };
+// This guy is just like a setting, except it is never visible to the user in the 'settings' menu
+// Therefore we don't need things like 'type' (which we deduce from 'def_value'), 'typedata', or 'description'
+Feature.persist=function(name, def_value){
+    var s = new Object();
+    s.__proto__ = Settings;
+    s.fullname  = Settings.server+'.'+Settings.username+'.'+this.name+'.'+name;
+    s.parent    = this;
+    s.name      = name;
+    this[name]  = def_value;
+    s.def_val   = def_value;
+    s.hidden    = 'true';
+
+    switch (typeof(def_value)){
+    default:        s.type = Settings.type.none;    break;
+    case 'boolean': s.type = Settings.type.bool;    break;
+    case 'number':  s.type = Settings.type.integer; break;
+    case 'string':  s.type = Settings.type.string;  break;
+    case 'object':  s.type = Settings.type.object;  break;
+    }
+
+    s.read();
+    this.s[name] = s;
+    return s;
+};
 // This adds a given element directly
 Feature.direct=function(type, hidden){
     var s = new Object();
@@ -733,7 +757,7 @@ Lines.setting("update_crop", true, Settings.type.bool, undefined, "Automatically
 Lines.setting("list_extra_villages", true, Settings.type.bool, undefined, "Append villages in the 'extra' category to the villages list.");
 Lines.setting("analyze_neighbourhood", true, Settings.type.bool, undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
 Lines.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
-Lines.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
+Lines.persist("categories", { /* <tag>: [ <color> , <drawline> ], */
         none: ["",false], // ie. remove from 'locations'.
             owned: ["rgba(192,128,0,1.0)", true],
             ally: ["rgba(0,0,255,0.5)", true],
@@ -747,8 +771,8 @@ Lines.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             ban: ["rgba(0,0,0,0.5)", false],
             natar: ["rgba(128,64,0,0.5)", false],
             other: ["rgba(255,0,255,0.5)", true]
-            }, Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
-Lines.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");
+            });
+Lines.persist("locations", {});
 // A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
 // name is optional.
 
@@ -977,7 +1001,7 @@ Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redire
 // Original sidebar links
 // Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
 // TODO: make configureable?
-Sidebar.setting("links",
+Sidebar.persist("links",
                 [
                  1,
                  ["FAQ", "http://help.travian.nl/"],
@@ -997,8 +1021,7 @@ Sidebar.setting("links",
                  -1,
                  6,
                  7
-                 ]
-                , Settings.type.object, undefined, "The links of the sidebar.");
+                 ]);
     
 Sidebar.add=function(text, target) {
     var el;
@@ -1074,11 +1097,11 @@ Sidebar.run=function() {
     
 Feature.create("Resources");
 Resources.setting("enabled", true, Settings.type.bool, undefined, "Turn on resource and resource rate collection.");
-Resources.setting("display", true, Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off. Collection must be on for this to work.");
-Resources.setting("market", {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
-Resources.setting("production", {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
-Resources.setting("storage", {}, Settings.type.object, undefined, "An array of length 7 containing the stored values of wood, clay, iron and grain, the size of the warehouse, the size of the granary, and then a timestamp indicating when this was taken.");
-Resources.setting('troops', {}, Settings.type.object, undefined, '', 'true');
+Resources.setting("display", true, Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off");
+Resources.persist("market", {});
+Resources.persist("production", {});
+Resources.persist("storage", {});
+Resources.persist('troops', {});
 
 Resources.show=function() {
     var head = document.getElementById("lres0");
@@ -1290,9 +1313,11 @@ Events.setting("events", {}, Settings.type.object, undefined, "The list of colle
 
 Events.direct('br');
 Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
-Events.setting("merchant_send",        'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+var ev_1 = Events.direct('table');
+ev_1.el.style.marginLeft = '10px';
+Events.setting("merchant_send",        'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
+Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
+Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants', ev_1);
 
 Events.direct('br');
 display_options = ['Timeline & Tooltip', 'Timeline', 'Tooltip', 'Neither'];
@@ -1775,14 +1800,13 @@ Events.collector.overflow = function(){
 
 Feature.create("Timeline");
 Timeline.setting("enabled", true, Settings.type.bool, undefined, "Enable the timeline (make sure that the events feature is also enabled).");
-Timeline.setting("visible", true, Settings.type.bool, undefined, "Is the timeline visible on pageload. This setting can also be changed with the timeline-button.");
-Timeline.setting("collapse", false, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+Timeline.setting("collapse", true, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
+Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
 Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
 Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
-Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
 
-Timeline.setting("color", "rgba(255, 255, 204, 0.5)", Settings.type.string, undefined, "Background color of the timeline");
-
+Timeline.direct('br');
+Timeline.setting("color", "rgba(255, 255, 204, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
 Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
 Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
 Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
@@ -1792,6 +1816,7 @@ Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Coll
 Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
 Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
 
+Timeline.persist("visible", true);
 //Timeline.setting("use_server_time", false, Settings.type.bool, undefined, "Use the server time instead of the local clock. Requires a 24 hours clock.");
 //Timeline.setting("time_difference", 0, Settings.type.integer, undefined, "If you didn't configure your timezone correctly. (server time - local time) (in hours)");
 
@@ -2191,7 +2216,7 @@ Tooltip.direct('br', '! Events.enabled');
 Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');
 var ttp_1 = Tooltip.direct('table');
 ttp_1.el.style.marginLeft = '10px';
-Tooltip.setting('seperate_values',       true, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+Tooltip.setting('seperate_values',      false, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 
@@ -2206,13 +2231,13 @@ Tooltip.direct('br', '! Resources.enabled');
 Tooltip.setting('show_troops',           true, Settings.type.bool,    undefined, "Show stored values for troops in the header.", '! Resources.enabled');
 
 Tooltip.direct('br');
-Tooltip.setting("mouseover_delay",       1000, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
-Tooltip.setting("mouseout_delay",         500, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
+Tooltip.setting("mouseover_delay",        500, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
+Tooltip.setting("mouseout_delay",         300, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
 // These are invisable variables to the user
-Tooltip.setting("header_rotation",     [0, 0], Settings.type.object,  undefined, '', 'true');
-Tooltip.setting("summary_rotation_type",    0, Settings.type.integer, undefined, '', 'true');
-Tooltip.setting("summary_rotation",    [0, 0], Settings.type.object,  undefined, '', 'true');
+Tooltip.persist('header_rotation', [0, 0]);
+Tooltip.persist("summary_rotation_type", 0);
+Tooltip.persist("summary_rotation",    [0, 0]);
 
 Tooltip.header_mapping   = [[0, 3, 1, 2], [5]]; // These are the types of display that the header will rotate through
 Tooltip.summary_mapping  = [[0, 3, 1, 2], [4]]; // And this is the same thing for the summary
