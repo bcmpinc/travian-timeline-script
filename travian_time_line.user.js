@@ -100,7 +100,7 @@ Math.arcosh   = function(x) { return Math.log(x+Math.sqrt(x*x-1)); };
 Math.round_sig= function(amount, sigfig){
     if (sigfig == undefined) sigfig = 2;
     if (typeof(amount)=='string') try {amount -= 0;} catch (e){ return amount;}
-    var power = Math.round(Math.log(amount)/Math.LN10);
+    var power = Math.floor(Math.log(amount)/Math.LN10);
     amount = Math.round(amount/Math.pow(10, 1+power-sigfig))/Math.pow(10, sigfig-1-power);
     if (power >=6) return amount/1000000 + 'M';
     if (power >=3) return amount/1000 + 'k';
@@ -2356,12 +2356,7 @@ Tooltip.sumarize = function(rota){
         for (var i=0; i < 4; i++){
             rtn += '<td>'+Images.html(Images.res(i))+'<td>';
             if (Tooltip.resource_kilo_values){
-                var x = Math.abs(total[i]);
-                if (x > 1000000) rtn += Math.round(total[i]/100000)/10+'M';
-                else if (x > 100000) rtn += Math.round(total[i]/1000)+'k';
-                else if (x > 10000) rtn += Math.round(total[i]/100)/10+'k';
-                else if (x > 1000) rtn += Math.round(total[i]/10)/100+'k';
-                else rtn += total[i];
+                rtn += Math.round_sig(Math.abs(total[i]), 3);
             }
             else rtn += total[i];
         }
@@ -2501,10 +2496,7 @@ Tooltip.make_header = function(rota, time, did){
 
                 // Turn red if value is decreasing or overflowing, or orange if within two hours of overflowing
                 rtn += '<td style="color:'+(prod[i] < 0 || s==r ? 'red' : (s-r)/prod[i] < 2 ? 'orange' : 'green')+'">';
-                if (Tooltip.resource_kilo_values){
-                    rtn += r > 10000 ? Math.round(r/1000)+'k/' : (r > 1000 ? Math.round(r/100)/10+'k/' : Math.round(r)+'/');
-                    rtn += s > 10000 ? Math.round(s/1000)+'k' : (s > 1000 ? Math.round(s/100)/10+'k' : s);
-                }
+                if (Tooltip.resource_kilo_values) rtn += Math.round_sig(r)+'/'+Math.round_sig(s);
                 else rtn += Math.round(r) + '/' + s;
                 rtn += '</td>';
                 values.push(r);
