@@ -96,6 +96,16 @@ Math.sinh     = function(x) { return .5*(Math.exp(x)-Math.exp(-x)); };
 Math.cosh     = function(x) { return .5*(Math.exp(x)+Math.exp(-x)); };
 Math.arsinh   = function(x) { return Math.log(x+Math.sqrt(x*x+1)); };
 Math.arcosh   = function(x) { return Math.log(x+Math.sqrt(x*x-1)); };
+// This rounds and trims values
+Math.round_sig= function(amount, sigfig){
+    if (sigfig == undefined) sigfig = 2;
+    if (typeof(amount)=='string') try {amount -= 0;} catch (e){ return amount;}
+    var power = Math.round(Math.log(amount)/Math.LN10);
+    amount = Math.round(amount/Math.pow(10, 1+power-sigfig))/Math.pow(10, sigfig-1-power);
+    if (power >=6) return amount/1000000 + 'M';
+    if (power >=3) return amount/1000 + 'k';
+    return amount;
+};
  
 function tl_date(){
     this.date = new Date();
@@ -742,7 +752,35 @@ Debug.init =function() {
 Debug.call("init",true); // Runs init once.
 Debug.info("Running on server: "+Settings.server);
 
+/****************************************
+ * IMAGES (ours and Travians)
+ ****************************************/
+Images = new Object();
+// There are two formats for troops to be in. Uncompressed indexes for all races, compressed only for local
+// 'troops' and 'res' both return the class name
+Images.troops = function(index, compressed){
+    if (index==10)  return 'unit uhero';
+    if (compressed) return 'unit u'+(Settings.race*10+index+1);
+    return 'unit u'+index;
+};
+Images.res = function(index){
+    return 'r'+(index+1);
+};
+Images.html = function(className, src){
+    if (src == undefined || !src) src = 'img/x.gif';
+    return '<img class="'+className+'" src="'+src+'">';
+};
+Images.obj = function(className, src){
+    if (src == undefined || !src) src = 'img/x.gif';
+    var img = document.createElement('img');
+    if (className) img.className = className;
+    img.src = src;
+    return img;
+};
 
+Images.clock = '<img src="data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA/////////////v7+/v7+rq6uTExMREREPDw8PDw8PDw8QEBAi4uL/////v7+////////////AAD////////////9/f2pqalDQ0N+fn75+fn////x8fHc3NyCgoI7OzuKior///////////////8AAP///////////6SkpEhISJubm/39/f39/f39/f////7+/v7+/o2NjURERKGhof///////////wAA////////////SkpKjY2N7e3t/////v7+/f39/v7+////9/f3WlpaU1NTSUlJ////////////AAD///////////9BQUHc3Nz7+/v+/v7+/v79/f3///9SUlJbW1vx8fG+vr47Ozv///////////8AAP///////////zw8PNnZ2f////39/f7+/v///ysrK+vr6/z8/P7+/vn5+TMzM////////////wAA////////////QUFB/////////f39/f39////Li4u/////f39/v7+/Pz8ODg4////////////AAD///////////83NzePj4/39/f+/v79/f3///9QUFD////+/v7+/v67u7s7Ozv///////////8AAP///////////2BgYERERJeXl/////7+/v///1JSUv////7+/v///1tbW0FBQf///////////wAA////////////////T09PVlZW9fX1+fn5////T09P////+/v7W1tbOzs7l5eX////////////AAD////////////9/f339/dPT09UVFSBgYH///9LS0vc3NxSUlI8PDyBgYH+/v7///////////8AAP////////////7+/v39/f///25ubkpKSklJSUNDQ0pKSjs7O2hoaP39/f7+/v///////////wAA">';
+Images.percent = '<img src="data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////AAD////////////////////Y2NhNTU23t7f////m5uZbW1s/Pz9QUFCCgoL39/f///////////8AAP///////////////////////7W1tUpKSuPj49LS0ioqKq2trZaWlkJCQvHx8f///////////wAA////////////////////////+Pj4SEhIkpKS1NTUMjIytbW1nZ2dNzc38fHx////////////AAD////////////////Ozs6YmJijo6POzs5MTEy+vr5xcXFFRUU/Pz+Ghob7+/v///////////8AAP///////////+Xl5VtbW1BQUD4+Po+Pj6GhoUVFRd7e3tPT09vb2/7+/v///////////////wAA////////////0tLSKioqwsLCh4eHQkJC5OTkUlJSjIyM/v7+////////////////////////AAD////////////V1dUyMjK0tLSQkJBQUFDx8fHa2tpeXl7Y2Nj///////////////////////8AAP////////////Ly8oCAgEREREBAQJeXl/v7+/7+/p6enlZWVtvb2////////////////////wAA////////////////8fHx0tLS29vb////////////+Pj42NjY////////////////////////AAD///////////////////////////////////////////////////////////////////////8AAP///////////////////////////////////////////////////////////////////////wAA">';
+Images.hammer = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kEEhY1JQfrF6AAAAFYSURBVCjPlZI7a8IAFEY/K1UCBn+AiwZpwVVwCMFNguJQHOvgUIQ4FEQoUjNVCiIFN6GbU0CdujWrdNPBdggOoqGgHZSCQRE1hdvZt571Xg738YF2oGkaSZJE2WyWTuUCGyyXS8iyDJ7n0e120e/3cQpbolgsBlEUwbIsjOkUHMedLzIMA1arFT6fD2/lMl4KBZzKmkgURQiCAIfTievxGO/pNNRaDX/niHRdh2mamM/nSCaT+HW74bDZoJVKUPJ5fI9GmAyHx0UejwfFYhGqquIukcBNLoemaWJqscDWaqGaSuGz3d4/0uYbG40GrVYrIiL66nToKZOhqMtFSjhMz8EgVSuVne/HsXxMZjN6UxS6YllSolEqh0L0GI9v9VmIiI4dkgDogwFuAwFIfj8uAfwwDB7q9f2rHWKxWJDAcfQaiRDv9R5O9iHsdjs+ej00GQb3srxW+wd+q1O9w+tuqQAAAABJRU5ErkJggg==">';
 
 /****************************************
  * LINES (and circles)
@@ -2589,21 +2627,16 @@ Tooltip.make_tip = function(anchor, callback, param){
 // This creates the resource info html.
 Tooltip.convert_info=function(type, index, amount) {
     if (!amount || amount == '0') return "";
-    var img = "";
-    if (type==3) {
-        if (index==10) img="img/un/u/hero.gif";
-        else img="img/un/u/"+(Settings.race*10+index+1)+".gif";
-    } else if (type==4) {
-        img="img/un/r/"+(index+1)+".gif"
+    var img = '';
+    if (type==3)      img = Images.html(Images.troops(index, true));
+    else if (type==4) img = Images.html(Images.res(index));
+
+    if ((type==4 && Tooltip.merchant_kilo_values) ||
+        (type==3 && Tooltip.army_kilo_values)){
+        amount = Math.round_sig(amount);
     }
-    if (amount.constructor == Array) 
-        amount=amount[0]+" (-"+amount[1]+")";
-    var seperator = Tooltip.seperate_values ? ' | '  : ' ';
-    if (((type==4 && Tooltip.merchant_kilo_values) ||
-         (type==3 && Tooltip.army_kilo_values)) && amount > 1000)
-        return seperator + '<img src="'+img+'"/>' +
-            (amount > 10000 ? Math.round(amount/1000) + 'k' : Math.round(amount/100)/10 + 'k');
-    return seperator + '<img src="'+img+'"/>' + amount;
+
+    return (Tooltip.seperate_values ? ' | ' : ' ')+img+amount;
 };
 
 Tooltip.run = function(){
