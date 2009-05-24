@@ -4,7 +4,6 @@ Timeline Events,Look&Feel:
 - Add filter to disable the displaying of some events (based on type)
   - and/or add a way of disabling the capture of certain event types
 - Add option of what market event text should be prefered?
-- fix the images to account for v3.5
 
 Settings: 
 - Add support for per element and order editing of lists.
@@ -28,7 +27,6 @@ Event Capture:
 Tool Tip:
 - Keep track of the most recently completed task/building for each village, and provide link to it
 - Add buttons next to listed events, to delete mistakes/changes event?
-- Fix the images to account for v3.5
 
 New Features:
 - Modify all the links for more robust navigation
@@ -38,4 +36,4 @@ New Features:
 ? Add a 'scan all villages' option, to automatically (and non-deterministically) visit all your villages and exract pertinent information
 
 BUGS:
-- tl_date: events far in the future (>48 hours) tend to drop a day or two from their arrival time...
+- tl_date: constantly underestimates the time of an event by ~1 minute
