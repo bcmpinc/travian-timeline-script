@@ -317,7 +317,7 @@ Feature.forall=function(fn_name, once) {
 Feature.create("Settings");
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
 // Are we on a natural include/exclude, or one created by the user?
-Settings.natural_run = (location.href.match(/.*\.travian.*\.\/.*\.php.*/) &&
+Settings.natural_run = (location.href.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
                         !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
                         !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/));
 Settings.server=function(){
