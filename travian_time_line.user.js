@@ -783,6 +783,7 @@ Images.eaten = '<img class="r5" src="img/x.gif">';
 Images.clock = '<img src="data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA/////////////v7+/v7+rq6uTExMREREPDw8PDw8PDw8QEBAi4uL/////v7+////////////AAD////////////9/f2pqalDQ0N+fn75+fn////x8fHc3NyCgoI7OzuKior///////////////8AAP///////////6SkpEhISJubm/39/f39/f39/f////7+/v7+/o2NjURERKGhof///////////wAA////////////SkpKjY2N7e3t/////v7+/f39/v7+////9/f3WlpaU1NTSUlJ////////////AAD///////////9BQUHc3Nz7+/v+/v7+/v79/f3///9SUlJbW1vx8fG+vr47Ozv///////////8AAP///////////zw8PNnZ2f////39/f7+/v///ysrK+vr6/z8/P7+/vn5+TMzM////////////wAA////////////QUFB/////////f39/f39////Li4u/////f39/v7+/Pz8ODg4////////////AAD///////////83NzePj4/39/f+/v79/f3///9QUFD////+/v7+/v67u7s7Ozv///////////8AAP///////////2BgYERERJeXl/////7+/v///1JSUv////7+/v///1tbW0FBQf///////////wAA////////////////T09PVlZW9fX1+fn5////T09P////+/v7W1tbOzs7l5eX////////////AAD////////////9/f339/dPT09UVFSBgYH///9LS0vc3NxSUlI8PDyBgYH+/v7///////////8AAP////////////7+/v39/f///25ubkpKSklJSUNDQ0pKSjs7O2hoaP39/f7+/v///////////wAA">';
 Images.percent = '<img src="data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////AAD////////////////////Y2NhNTU23t7f////m5uZbW1s/Pz9QUFCCgoL39/f///////////8AAP///////////////////////7W1tUpKSuPj49LS0ioqKq2trZaWlkJCQvHx8f///////////wAA////////////////////////+Pj4SEhIkpKS1NTUMjIytbW1nZ2dNzc38fHx////////////AAD////////////////Ozs6YmJijo6POzs5MTEy+vr5xcXFFRUU/Pz+Ghob7+/v///////////8AAP///////////+Xl5VtbW1BQUD4+Po+Pj6GhoUVFRd7e3tPT09vb2/7+/v///////////////wAA////////////0tLSKioqwsLCh4eHQkJC5OTkUlJSjIyM/v7+////////////////////////AAD////////////V1dUyMjK0tLSQkJBQUFDx8fHa2tpeXl7Y2Nj///////////////////////8AAP////////////Ly8oCAgEREREBAQJeXl/v7+/7+/p6enlZWVtvb2////////////////////wAA////////////////8fHx0tLS29vb////////////+Pj42NjY////////////////////////AAD///////////////////////////////////////////////////////////////////////8AAP///////////////////////////////////////////////////////////////////////wAA">';
 Images.hammer = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kEEhY1JQfrF6AAAAFYSURBVCjPlZI7a8IAFEY/K1UCBn+AiwZpwVVwCMFNguJQHOvgUIQ4FEQoUjNVCiIFN6GbU0CdujWrdNPBdggOoqGgHZSCQRE1hdvZt571Xg738YF2oGkaSZJE2WyWTuUCGyyXS8iyDJ7n0e120e/3cQpbolgsBlEUwbIsjOkUHMedLzIMA1arFT6fD2/lMl4KBZzKmkgURQiCAIfTievxGO/pNNRaDX/niHRdh2mamM/nSCaT+HW74bDZoJVKUPJ5fI9GmAyHx0UejwfFYhGqquIukcBNLoemaWJqscDWaqGaSuGz3d4/0uYbG40GrVYrIiL66nToKZOhqMtFSjhMz8EgVSuVne/HsXxMZjN6UxS6YllSolEqh0L0GI9v9VmIiI4dkgDogwFuAwFIfj8uAfwwDB7q9f2rHWKxWJDAcfQaiRDv9R5O9iHsdjs+ej00GQb3srxW+wd+q1O9w+tuqQAAAABJRU5ErkJggg==">';
+Images.nohammer = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kFGQEIJZ4LRFoAAAFXSURBVCjPjZKxa8JAGMVfSiE6hHYVoUOQ/gsHoQ4FQRBFcAo4dAq4tIOLlEzd6m6hm5PgWHDo4FDEyWKLi5OoFCe3lIiogb4OadRogz74hu+497t33x34j/r9PguFAkulEo/VCQBAktwCsFwuYZomNE3DYDDAaDRCoLZ8Loh0S5Igh0JIJpNQFAXftg1VVYMBns9lbGRZFjOZDAnwJpHgZ7e7fwe/ZbO83QghWC6X+dHreWfxtV6n4wECICR56qUdj8dwHAfz+RyGYeA6m8WFbeNO1wFdx9d0ijPHwXnQvLapzWaTQgg+VSpsdzrMx+PrJI+5HN8ajcBEe1lbrRZXq9Ua8FAsMh2Nrvt6tXocaHeg1mzGl1qNl4rCWjpNArzP5w+AAgb6Q3I4mVBEIqz+wXb3gUe8iKfFYsErVeVzKkUtFvP5/B/ygGRZRns4xHs4jFvT9Pl+AbHZF5zaQ2LdAAAAAElFTkSuQmCC">';
 Images.hero = 'data:image/gif;base64,R0lGODlhDwAQAMIDAPCzB//RAP/ogf///////////////////yH5BAEKAAQALAAAAAAPABAAAAM5OLoj/M9BKASY0eJV7d1d8HFdKZYOEKBrJS5qIAuyOCoxbd+wDvwYF8ATtNF4igpQiTxyXhGeRpEAADs='; // This has to be src-only for annoying reasons...
 
 /****************************************
@@ -2285,7 +2286,7 @@ Tooltip.init=function(){
     Tooltip.persist("summary_rotation",    [0, 0]);
 
     Tooltip.header_mapping   = [[0, 3, 1, 2], [5]]; // These are the types of display that the header will rotate through
-    Tooltip.summary_mapping  = [[0, 3, 1, 2], [4]]; // And this is the same thing for the summary
+    Tooltip.summary_mapping  = [[0, 3, 1, 2], [4, 6]]; // And this is the same thing for the summary
 
     Tooltip.image = [];
     Tooltip.image[0] = 'wheat';
@@ -2293,6 +2294,7 @@ Tooltip.init=function(){
     Tooltip.image[2] = 'eaten';
     Tooltip.image[3] = 'percent';
     Tooltip.image[4] = 'hammer';
+    Tooltip.image[6] = 'nohammer';
 };
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
@@ -2334,16 +2336,16 @@ Tooltip.overview = function(){
 Tooltip.sumarize = function(rota){
     var rtn = '';
     var total = [0, 0, 0, 0]; // Wood, Clay, Iron, Wheat...
-    var totalable = rota != 1 && rota != 3 && rota != 4 && rota != 5;
+    var totalable = rota == 0 || rota == 2;
     var d = new Date().getTime();
 
     // Cycle through all of the villages
     var vils = []; // Push the html into here for alphabetizing...
     for (var did in Resources.storage){
-        var s = Resources.storage[did];
         var name = Settings.village_names[did];
-
         var a = Tooltip.make_header(rota, d, did);
+        if (a == -1) continue;
+
         vils.push([name, '<tr><td><a href="?newdid='+did+Tooltip.href_postfix+'">'+name+':</a>'+a[0]]);
         if (totalable) for (var i in total) total[i] += a[1][i];
     }
@@ -2545,11 +2547,14 @@ Tooltip.make_header = function(rota, time, did){
         }
         break;
     case 4: // Building
+    case 6: // Non-building
         // There should only be one building in the future... get it!
         for (var i in Events.events[did]){
             var e = Events.events[did][i];
             if (e[1] < time) continue; // Ignore past events
             if (e[0] == "building"){
+                // Pass back an error code if we're looking for only non-building vils
+                if (rota == 6) return -1;
                 rtn += Tooltip.parse_event(e, time);
                 break;
             }
