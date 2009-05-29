@@ -4,19 +4,23 @@ Timeline Events,Look&Feel:
 - Add filter to disable the displaying of some events (based on type)
   - and/or add a way of disabling the capture of certain event types
 - Add option of what market event text should be prefered?
+- Add doubleclick(?) listener on unnatural pages to switch the scope
+- Add a way to display events from more than one scope
 
 Settings: 
 - Add support for per element and order editing of lists.
 - Add color settingstype
 - Add color preview
 - Add color picker
+- Add a 'button' type, with a callback
 
 Lines:
 - Add linethickness parameters
 - Make the square optional
 - Repair Ally-lines' ally determination algorithm
 ~ Fix concurrency bug with special locations.
-- Add names to special locations.
+- Add names to special locations - already done with the "village renamer" script?
+- Insert code to show swords on the map, for events? (<span class="m4"> on T3.5 only)
 
 Event Capture:
 - Make colors customizable, 
@@ -27,13 +31,16 @@ Event Capture:
 Tool Tip:
 - Keep track of the most recently completed task/building for each village, and provide link to it
 - Add buttons next to listed events, to delete mistakes/changes event?
+- Add HTML requests to get data on villages with expired info
 
 New Features:
 - Modify all the links for more robust navigation
-- Add event synchronization between multiple browsers
+- Add event synchronization between multiple browsers - store data in a link, piggyback on Xmarks?
 - Add quicklinks (for quickly building/upgrading something in a given village) (maybe something in combination with the tool tip)
 - Add task queue functionality
-? Add a 'scan all villages' option, to automatically (and non-deterministically) visit all your villages and exract pertinent information
+? Add a 'scan all villages' option, to automatically (and non-deterministically) visit all your villages and exract pertinent information --- NOT NEEDED if we impliment the HTML requests in Tooltip
 
 BUGS:
 - tl_date: constantly underestimates the time of an event by ~1 minute
+- problems with scope, lines, sidebar and some others on T3.5
+- problems with single-village accts - might be related to the scoping problems?
