@@ -322,7 +322,8 @@ Settings.natural_run = (location.href.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) 
                         !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/));
 Settings.server=function(){
     if (!Settings.natural_run) return GM_getValue('last_server', 'unknown');
-    GM_setValue('absolute_server', location.href.match('http://[.a-z0-9]*')+'');
+    Settings.absolute_server = location.href.match('http://[.a-z0-9]*')+'';
+    GM_setValue('absolute_server', Settings.absolute_server);
     // This should give the server id as used by travian analyzer.
     var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
     if (!url) return "unknown";
@@ -564,20 +565,32 @@ Settings.run=function() {
     link.addEventListener("click",Settings.show,false);
 
     // Extract the active village
-    // These values below are sufficient to keep things working when only 1 village exists.
-    Settings.village_name = "";
-    Settings.village_id = 0;
     try {
         var village_link = document.evaluate('//tr[@class="sel"]/td[@class="text"]/a', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
         Settings.village_name = village_link.textContent;
         Settings.village_id=village_link.href.match("newdid=(\\d+)")[1]-0;
     } catch (e) {
         // If this fails, there probably is only 1 village.
-        // Having the name in the timeline isn't really usefull then.
+        // We should only then try loading this data from storage
+        Settings.persist('village_name', "");
+        Settings.persist('village_id', 0);
+        if (Settings.village_id === 0) Settings.get_id();
     }
     Debug.debug("The active village is "+Settings.village_id+": "+Settings.village_name);
     Settings.village_names[Settings.village_id]=Settings.village_name;
     Settings.s.village_names.write();
+};
+Settings.get_id=function(){
+    GM_xmlhttpRequest({
+            method: 'GET',
+            url: Settings.absolute_server + '/dorf3.php',
+            onload: function(e){
+                var x = e.responseText.match('newdid=(\\d+)">([^<]*)<');
+                Settings.village_name = x[2];
+                Settings.s.village_name.write();
+                Settings.village_id = x[1]-0;
+                Settings.s.village_id.write();
+            }});
 };
 Settings.show=function() {
     var w = document.createElement("div");
@@ -1519,13 +1532,15 @@ Events.collector.attack=function(){
         // Instead of checking if this is the correct line, just act as if it's correct
         // If it isn't this will certainly fail.
         var d = new tl_date();
-        var y = x.childNodes[x.childNodes.length == 5 ? 4 : 3];
         if (x.childNodes.length == 5){ // We have resources coming back
-            var y = x.childNodes[4];
+            var z = x.childNodes[4];
             var r = x.childNodes[3].childNodes[0].childNodes[1].textContent.split(' |');
-        } else var y = x.childNodes[3];
-        d.set_time(y.textContent.split('\n')[3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(y.textContent.split('\n')[2].match('(\\d\\d?):\\d\\d:\\d\\d'));
+        } else {
+            var z = x.childNodes[3];
+            var r = [];
+        }
+        d.set_time(z.textContent.split('\n')[3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
+        var t = d.adjust_day(z.textContent.split('\n')[2].match('(\\d\\d?):\\d\\d:\\d\\d'));
 
         var y = res.snapshotItem(i).parentNode;
         var dest = y.previousSibling.textContent;
