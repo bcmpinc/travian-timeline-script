@@ -1519,8 +1519,13 @@ Events.collector.attack=function(){
         // Instead of checking if this is the correct line, just act as if it's correct
         // If it isn't this will certainly fail.
         var d = new tl_date();
-        d.set_time(x.childNodes[3].textContent.split('\n')[3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(x.childNodes[3].textContent.split('\n')[2].match('(\\d\\d?):\\d\\d:\\d\\d'));
+        var y = x.childNodes[x.childNodes.length == 5 ? 4 : 3];
+        if (x.childNodes.length == 5){ // We have resources coming back
+            var y = x.childNodes[4];
+            var r = x.childNodes[3].childNodes[0].childNodes[1].textContent.split(' |');
+        } else var y = x.childNodes[3];
+        d.set_time(y.textContent.split('\n')[3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
+        var t = d.adjust_day(y.textContent.split('\n')[2].match('(\\d\\d?):\\d\\d:\\d\\d'));
 
         var y = res.snapshotItem(i).parentNode;
         var dest = y.previousSibling.textContent;
@@ -1542,6 +1547,10 @@ Events.collector.attack=function(){
             var y = x.childNodes[2].childNodes[1].childNodes[j+1];
             if (y!=undefined)
                 e[3][j] = y.textContent - 0;
+        }
+        if (r != undefined){
+            e[4] = [];
+            for (var i=0; i < 4; i++) if (r[i] > 0) e[4][i] = r[i];
         }
     }
 };
