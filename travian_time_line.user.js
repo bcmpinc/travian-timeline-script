@@ -1550,7 +1550,7 @@ Events.collector.attack=function(){
         }
         if (r != undefined){
             e[4] = [];
-            for (var i=0; i < 4; i++) if (r[i] > 0) e[4][i] = r[i];
+            for (var j=0; j < 4; j++) if (r[j] > 0) e[4][j] = r[j];
         }
     }
 };
