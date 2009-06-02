@@ -729,7 +729,7 @@ Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which ca
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
 Debug.print =GM_log;
 Debug.lineshift = function(){
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-709; } // Keep the number in this line equal to it's line number. Don't modify anything else.
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-732; } // Keep the number in this line equal to it's line number. Don't modify anything else.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
@@ -1535,6 +1535,7 @@ Events.collector.attack=function(){
         if (x.childNodes.length == 5){ // We have resources coming back
             var z = x.childNodes[4];
             var r = x.childNodes[3].childNodes[0].childNodes[1].textContent.split(' |');
+            Debug.debug(x.childNodes[3].childNodes[0].childNodes[1].textContent);
         } else {
             var z = x.childNodes[3];
             var r = [];
@@ -2324,7 +2325,9 @@ Tooltip.init=function(){
 Tooltip.overview = function(){
     if (!Tooltip.show_warehouse_store) return;
 
-    var anchor = document.getElementById('vlist').childNodes[0];
+    var anchor = document.getElementById('vlist');
+    if (anchor == undefined) return; // Short out on single-village accounts
+    anchor = anchor.childNodes[0];
 
     var div = Tooltip.make_tip(anchor, function(){
             var type = Tooltip.summary_rotation_type;
@@ -2658,7 +2661,7 @@ Tooltip.convert_info=function(type, index, amount) {
 
 Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
-    var x = document.evaluate('//div[@id="vlist"]/table[@class="vlist"]/tbody/tr/td[@class="text"]/a', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var x = document.evaluate('//table[@class="vlist"]/tbody/tr/td[@class="text"]/a', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     Tooltip.href_postfix = '';
     // Run through our villages
     for (var i=0; i < x.snapshotLength; i++){
