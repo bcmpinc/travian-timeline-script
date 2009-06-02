@@ -2310,16 +2310,8 @@ Tooltip.init=function(){
     Tooltip.persist("summary_rotation_type", 0);
     Tooltip.persist("summary_rotation",    [0, 0]);
 
-    Tooltip.header_mapping   = [[0, 3, 1, 2], [5]]; // These are the types of display that the header will rotate through
-    Tooltip.summary_mapping  = [[0, 3, 1, 2], [4, 6]]; // And this is the same thing for the summary
-
-    Tooltip.image = [];
-    Tooltip.image[0] = 'wheat';
-    Tooltip.image[1] = 'clock';
-    Tooltip.image[2] = 'eaten';
-    Tooltip.image[3] = 'percent';
-    Tooltip.image[4] = 'hammer';
-    Tooltip.image[6] = 'nohammer';
+    Tooltip.header_mapping   = [['wheat', 'percent', 'clock', 'eaten'], ['troops']]; // These are the types of display that the header will rotate through
+    Tooltip.summary_mapping  = [['wheat', 'percent', 'clock', 'eaten'], ['hammer', 'nohammer']]; // And this is the same thing for the summary
 };
 // This adds a mouseover to the dorf3.php link, and fills it with a summary of all tooltip information
 Tooltip.overview = function(){
@@ -2335,7 +2327,7 @@ Tooltip.overview = function(){
             var txt = '<table class="f10" width="100%" style="font-size:11px; border-bottom: solid black 1px; cursor:pointer"><tbody><tr>';
             for (var i in Tooltip.summary_mapping){
                 txt += '<td width="20px">';
-                txt += Images[Tooltip.image[Tooltip.summary_mapping[i][Tooltip.summary_rotation[i]]]];
+                txt += Images[Tooltip.summary_mapping[i][Tooltip.summary_rotation[i]]];
             }
             txt += '<td>';
             txt += '</tbody></table><table class="f10" style="font-size:11px;"><tbody>';
@@ -2352,7 +2344,7 @@ Tooltip.overview = function(){
                     Tooltip.s.summary_rotation_type.write();
                 }
                 var result = Tooltip.summary_mapping[type][Tooltip.summary_rotation[type]];
-                e.target.parentNode.innerHTML = Images[Tooltip.image[result]];
+                e.target.parentNode.innerHTML = Images[result];
                 disp.innerHTML = Tooltip.sumarize(result);
             }
             sel[0].addEventListener('click', function(e){on_click(e, 0)}, false);
@@ -2363,7 +2355,7 @@ Tooltip.overview = function(){
 Tooltip.sumarize = function(rota){
     var rtn = '';
     var total = [0, 0, 0, 0]; // Wood, Clay, Iron, Wheat...
-    var totalable = rota == 0 || rota == 2;
+    var totalable = rota == 'wheat' || rota == 'eaten';
     var d = new Date().getTime();
 
     // Cycle through all of the villages
@@ -2508,7 +2500,7 @@ Tooltip.village_tip = function(anchor, did){
 
 Tooltip.make_header = function(rota, time, did){
     var prod = Resources.production[did];
-    if (rota == 0 || rota == 1 || rota == 3) var store = Resources.at_time(time, did);
+    if (rota == 'wheat' || rota == 'clock' || rota == 'percent') var store = Resources.at_time(time, did);
 
     var rtn = '';
     var values = [];
@@ -2519,7 +2511,7 @@ Tooltip.make_header = function(rota, time, did){
 
             switch (rota){
             default: break;
-            case 0: // Stored resources
+            case 'wheat': // Stored resources
                 var r = store[i];
                 var s = store[i < 3 ? 4 : 5];
 
@@ -2530,7 +2522,7 @@ Tooltip.make_header = function(rota, time, did){
                 rtn += '</td>';
                 values.push(r);
                 break;
-            case 1: // Time to overflow
+            case 'clock': // Time to overflow
                 // First we need to find the space remaining
                 var p = prod[i];
                 var c = store[i];
@@ -2555,11 +2547,11 @@ Tooltip.make_header = function(rota, time, did){
                     values.push(0);
                 }
                 break;
-            case 2: // Resource production
+            case 'eaten': // Resource production
                 rtn += '<td>' + prod[i] + '</td>';
                 values.push(prod[i]);
                 break;
-            case 3: // % full
+            case 'percent': // % full
                 var r = store[i];
                 var s = store[(i < 3 ? 4 : 5)];
                 var f = Math.round((r / s) * 100);
@@ -2573,15 +2565,15 @@ Tooltip.make_header = function(rota, time, did){
             };
         }
         break;
-    case 4: // Building
-    case 6: // Non-building
+    case 'hammer': // Building
+    case 'nohammer': // Non-building
         // There should only be one building in the future... get it!
         for (var i in Events.events[did]){
             var e = Events.events[did][i];
             if (e[1] < time) continue; // Ignore past events
             if (e[0] == "building"){
                 // Pass back an error code if we're looking for only non-building vils
-                if (rota == 6) return -1;
+                if (rota == 'nohammer') return -1;
                 rtn += Tooltip.parse_event(e, time);
                 break;
             }
@@ -2590,7 +2582,7 @@ Tooltip.make_header = function(rota, time, did){
             rtn += '<td colspan="2">IDLE!</td>';
         }
         break;
-    case 5: // Troops! Not distinguishing between which vil owns what...
+    case 'troops': // Troops! Not distinguishing between which vil owns what...
         for (var i in Resources.troops[did]){
             rtn += '<td width="16px">'+Images.html(Images.troops(i))+'</td>';
             rtn += '<td>'+Resources.troops[did][i]+' </td>';
