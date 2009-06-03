@@ -227,6 +227,7 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden, par
 Feature.global=function(name, def_val, type, typedata, description, hidden, parent_el){
     var s = this.setting(name, def_val, type, typedata, description, hidden, parent_el);
     s.fullname = this.name+'.'+name;
+    s.read();
     return s;
 };
 // This guy is just like a setting, except it is never visible to the user in the 'settings' menu
@@ -550,8 +551,9 @@ Settings.init=function(){
     Settings.persist("village_names",{});
     Settings.persist("current_tab",  "Settings");
 
-    if (Settings.users[Settings.server] == undefined)
+    if (Settings.users[Settings.server] == undefined){
         Settings.users[Settings.server] = {};
+    }
 
     if (Settings.users[Settings.server][Settings.username] == undefined){
         var x = document.evaluate('//div[@id="sleft"]/p/a[contains(@href, "chatname")]', document, null,
