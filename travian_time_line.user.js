@@ -223,6 +223,12 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden, par
     this.s[name] = s;
     return s;
 };
+// This is the same as setting, but at a global scope
+Feature.global=function(name, def_val, type, typedata, description, hidden, parent_el){
+    var s = this.setting(name, def_val, type, typedata, description, hidden, parent_el);
+    s.fullname = this.name+'.'+name;
+    return s;
+};
 // This guy is just like a setting, except it is never visible to the user in the 'settings' menu
 // Therefore we don't need things like 'type' (which we deduce from 'def_value'), 'typedata', or 'description'
 Feature.persist=function(name, def_value){
@@ -540,8 +546,19 @@ Settings.config=function(parent_element) {
 Settings.init=function(){
     Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
+    Settings.global('users',         {},        Settings.type.object, undefined, '', 'true');
     Settings.persist("village_names",{});
     Settings.persist("current_tab",  "Settings");
+
+    if (Settings.users[Settings.server] == undefined)
+        Settings.users[Settings.server] = {};
+
+    if (Settings.users[Settings.server][Settings.username] == undefined){
+        var x = document.evaluate('//div[@id="sleft"]/p/a[contains(@href, "chatname")]', document, null,
+                                  XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        Settings.users[Settings.server][Settings.username] = x.href.split('|')[1];
+        Settings.s.users.write();
+    }
 };
 Settings.run=function() {
     // Create link for opening the settings menu.
