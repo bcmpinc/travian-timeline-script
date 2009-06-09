@@ -624,7 +624,8 @@ Settings.show=function() {
     w.style.right    = "0px";
     w.style.bottom   = "0px";
     w.style.background = "rgba(192,192,192,0.8)";
-    w.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
+    w.innerHTML = '<a style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;">'+
+                  '<span style="position: absolute; right: 30px; top: 20px;">[x] Close</span></a>'+
                   '<div style="position: absolute; left: 50%; top: 50%;">'+
                   '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
                   ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
