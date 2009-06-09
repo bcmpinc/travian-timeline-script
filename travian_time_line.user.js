@@ -1850,11 +1850,16 @@ Events.collector.demolish = function(){
     x = x.parentNode.parentNode.parentNode;
     var d = new tl_date();
 
-    d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-    var t = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+    event_time = x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)')
+    event_duration = x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')
+    // If one regex didn't match, we probably had a false positive
+    if (event_time==null || event_duration==null) {
+        Debug.debug("Got demolish event false positive.");
+        return;
+    }
     
-    // If t is null, we probably had a false positive
-    if (t==null) return;
+    d.set_time(event_time);
+    var t = d.adjust_day(event_duration);    
 
     // The target getting demolished
     var msg = x.childNodes[1].textContent;
