@@ -1121,9 +1121,9 @@ Sidebar.add_break=function() {
 };
 Sidebar.run=function() {
     if (Sidebar.remove_plus_button) {
-        var plus = document.getElementById("lplus1");
+        var plus = document.getElementById("plus");
         if (plus) {
-            plus.parentNode.style.visibility="hidden";
+            plus.style.visibility="hidden";
         } else {
             Debug.info("Couldn't find the plus button.");
         }
