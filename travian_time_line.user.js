@@ -2050,7 +2050,13 @@ Timeline.create_canvas=function() {
 };
 
 Timeline.change_scope=function(){
-    var div = document.createElement('div');
+    if (Timeline.scope_changer != undefined){
+        document.body.removeChild(Timeline.scope_changer);
+        delete Timeline.scope_changer;
+        return;
+    }
+    Timeline.scope_changer = document.createElement('div');
+    var div = Timeline.scope_changer;
     div.style.position = 'fixed';
     div.style.zIndex   = '1000';
     div.style.left     = '150px';
