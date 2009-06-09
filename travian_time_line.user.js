@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.35
+// @version        0.36
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
  
 // @include        http://*.travian*.*/*.php*
@@ -599,7 +599,7 @@ Settings.run=function() {
         Settings.persist('village_id', 0);
         if (Settings.village_id === 0) Settings.get_id();
     }
-    Debug.debug("The active village is "+Settings.village_id+": "+Settings.village_name);
+    Debug.info("The active village is "+Settings.village_id+": "+Settings.village_name);
     Settings.village_names[Settings.village_id]=Settings.village_name;
     Settings.s.village_names.write();
 };
@@ -624,7 +624,8 @@ Settings.show=function() {
     w.style.right    = "0px";
     w.style.bottom   = "0px";
     w.style.background = "rgba(192,192,192,0.8)";
-    w.innerHTML = '<div style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;"></div>'+
+    w.innerHTML = '<a style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;">'+
+                  '<span style="position: absolute; right: 30px; top: 20px;">[x] Close</span></a>'+
                   '<div style="position: absolute; left: 50%; top: 50%;">'+
                   '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
                   ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
@@ -646,8 +647,8 @@ Settings.show=function() {
             var f = Feature.list[n];
             if (f.s == undefined) continue;
 
-            txt += '<tr align="right"><td style="padding: 5px 0px;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
-                'padding:2px 11px 3px; border: 2px solid #000; '+
+            txt += '<tr align="right"><td style="padding: 5px 2px;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
+                'padding:1px 11px 2px; border: 2px solid #000; '+
                 (n==Settings.current_tab?'background: #fff; border-right: none;':'background: #ddd; border-right: 3px solid black;')+
                 ' color:black; outline: none;">'+
                 f.name + '</a></td></tr>';
@@ -729,13 +730,6 @@ Settings.close=function(){
     remove(Settings.window);
 };
 
-// TODO: remove following BWC (backwards compatability code)
-function prefix(s) {
-    return "speed.nl."+s;
-}
-
-
-
 /****************************************
  * DEBUG
  ****************************************/
@@ -752,7 +746,7 @@ Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which ca
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
 Debug.print =GM_log;
 Debug.lineshift = function(){
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-732; } // Keep the number in this line equal to it's line number. Don't modify anything else.
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-749; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
@@ -766,24 +760,25 @@ Debug.exception=function(fn_name, e) {
 Debug.init =function() {
     switch (Debug.output) {
     case 0:
-    for (var i in Debug.categories) {
-        Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
-    }
-    break;
+        for (var i in Debug.categories) {
+            Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
+        }
+        break;
     case 1:
-    var console = unsafeWindow.console;
-    if (!console) {
-        Debug.print("Firebug not found! Using console for this page!");
-        Debug.output=0;
-        Debug.init();
-        return;
+        var console = unsafeWindow.console;
+        if (!console) {
+            Debug.print("Firebug not found! Using console for this page!");
+            Debug.output=0;
+            Debug.init();
+            return;
+        }
+        var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
+        for (var i in Debug.categories) {
+            Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?fns[i]:nothing;
+        }
+        break;
     }
-    var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
-    for (var i in Debug.categories) {
-        Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?fns[i]:nothing;
-    }
-    break;
-    }
+    Debug.debug("Source code line numbers are offset by: "+Debug.lineshift);
 };
 Debug.call("init",true); // Runs init once.
 Debug.info("Running on server: "+Settings.server);
@@ -870,7 +865,7 @@ Lines.append_villages=function(){
         var location = Lines.locations[l];
         if (location[2]=="extra") {
             var row = document.createElement("tr");
-            row.appendChild(newcell("<span>%Gâ¢%@ </span> "+location[3]));
+            row.appendChild(newcell("<span>&#x25CF;</span> "+location[3]));
             row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+location[0]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+location[1]+")</td>\n</tr>\n</tbody></table>"));
             tab.appendChild(row);
         }
@@ -1066,7 +1061,8 @@ Sidebar.init=function(){
     Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
     Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
     Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
-    Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
+    //Servse no purpose: (though is an idea to add to other links)
+    //Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
     Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
 
     // Numbers for original sidebar links
@@ -1127,21 +1123,24 @@ Sidebar.add_break=function() {
 };
 Sidebar.run=function() {
     if (Sidebar.remove_plus_button) {
-        var plus = document.getElementById("lplus1");
+        var plus = document.getElementById("plus");
         if (plus) {
-            plus.parentNode.style.visibility="hidden";
+            plus.style.visibility="hidden";
         } else {
             Debug.info("Couldn't find the plus button.");
         }
     }
 
-    var navi_table = document.getElementById("navi_table");
-    if (!navi_table) return;
-
+    var navi_table = document.getElementById("sleft");
+    if (!navi_table) {
+        Debug.warning("Couldn't find sidebar.");        
+        return;
+    }
+    
     if (Sidebar.remove_home_link)
-        navi_table.parentNode.childNodes[1].href=location.href;
+        navi_table.childNodes[1].href=location.href;
         
-    Sidebar.navi = navi_table.childNodes[1].childNodes[0].childNodes[1];
+    Sidebar.navi = navi_table.childNodes[3];
     
     // Make copy of links
     Sidebar.oldnavi = [];
@@ -1154,8 +1153,8 @@ Sidebar.run=function() {
         Sidebar.navi.removeChild(Sidebar.navi.childNodes[i]);
     
     // Add new links
-    for (var i = 0; i < Sidebar.links.length; i++) {'rgb(0,0,0)'
-            var x = Sidebar.links[i];
+    for (var i = 0; i < Sidebar.links.length; i++) {
+        var x = Sidebar.links[i];
         if (x.constructor == Array) {
             Sidebar.add(x[0], x[1]);
         } else if (x.constructor == String) {
@@ -1164,8 +1163,8 @@ Sidebar.run=function() {
             Sidebar.add_break();
         } else {
             var el = Sidebar.oldnavi[x];
-            if (Sidebar.remove_target_blank)
-                el.removeAttribute("target"); // Force all links to open in the current page.
+            //if (Sidebar.remove_target_blank)
+            //    el.removeAttribute("target"); // Force all links to open in the current page.
             if (Sidebar.remove_plus_color)
                 el.innerHTML=el.textContent; // Remove color from Plus link.
             Sidebar.navi.appendChild(el);
@@ -1185,13 +1184,13 @@ Resources.init=function(){
     Resources.persist("market", {});
     Resources.persist("production", {});
     Resources.persist("storage", {});
-    Resources.persist('troops', {});
+    Resources.persist("troops", {});
 };
 
 Resources.show=function() {
-    var head = document.getElementById("lres0");
+    var head = document.getElementById("res");
     if (head!=null) {
-        head = head.childNodes[1].childNodes[0];
+        head = head.childNodes[1].childNodes[1];
     
         var mkt = Resources.market [Settings.village_id];
         var prod = Resources.production[Settings.village_id];
@@ -1204,30 +1203,33 @@ Resources.show=function() {
         for (var i=0; i < 4; i++) {
             var c=(mkt[i]>0)?("+"+mkt[i]+" "):("");
             var p=(prod[i]=='?')?'?':((prod[i]>0?"+":"")+Math.round(prod[i]/6)/10.0);
-            a+="<td></td><td>"+c+p+"/m</td>";
+            a+="<td></td><td style=\"color: gray; font-size: 80%; text-align: center;\">"+c+p+"/m</td>";
         }
         a+="<td></td><td></td>";
     
         var tr = document.createElement("tr");
         head.appendChild(tr);
         tr.innerHTML = a;
+    } else {
+        Debug.warning("Could not find resources bar.");
     }
 };
 Resources.update=function() {
     // Store info about resources put on the market if availbale
-    var x = document.getElementById("lmid2");
-    if (x!=null && x.innerHTML.indexOf("name=\"t\" value=\"2\"")>0) {
-        var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-
+    var x = document.getElementById("market_sell");
+    if (x!=null) {
+        x=x.childNodes[3].childNodes;
         var mkt = new Array(0,0,0,0);
-        for ( var i=0 ; i < res.snapshotLength; i++ ){
-            var c = res.snapshotItem(i).textContent - 0;
-            var t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
+        for ( var i=1 ; i < x.length; i++ ){
+            var c = x[i].childNodes[5].textContent - 0;
+            var t = x[i].childNodes[3].firstChild.src.match("\\d") - 1;
             mkt[t] += c;
         }
-        Debug.debug("This is on the market: "+mkt);
+        Debug.info("This is on the market: "+mkt);
         Resources.market[Settings.village_id]=mkt;
         Resources.s.market.write();
+    } else {
+        Debug.debug("No marketplace info found");
     }
 
     // Capture these from the title of the resource bar
@@ -1251,12 +1253,15 @@ Resources.update=function() {
         // Capture storage sizes
         if (i >= 2) Resources.storage[Settings.village_id][i+2] = parseInt(e.textContent.split('/')[1]);
     }
+    Debug.info("Found the following resources storage: "+Resources.storage[Settings.village_id].join(" - "));
+    Debug.info("Found the following resources production: "+Resources.production[Settings.village_id].join(" - "));
+    
     // Timestamp. We don't need to worry about time offset because it's only used to compare with itself.
     Resources.storage[Settings.village_id][6] = new Date().getTime();
 
     // Get troops - either from main page, or from rally point(TBD)
     if (location.href.indexOf('dorf1.php') >= 0){
-        // We're going to overwright whatever was there in the first place
+        // We're going to overwrite whatever was there in the first place
         Resources.troops[Settings.village_id] = {};
 
         // Grab the troop table
@@ -1275,6 +1280,7 @@ Resources.update=function() {
                 Resources.troops[Settings.village_id][type] = parseInt(amount);
             }
         }
+        Debug.info("Found the following troups: "+uneval(Resources.troops[Settings.village_id]));
     }
     // Save the values
     Resources.s.storage.write();
@@ -1340,10 +1346,9 @@ Market.colorify=function() {
     if (!Market.update_colors) return;
     Market.update_colors=false;
 
-    var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-
-    for ( var i=0 ; i < res.snapshotLength; i++ ) {
-        x = res.snapshotItem(i);
+    var res = document.getElementById("market_buy").childNodes[2].childNodes
+    for ( var i=1 ; i < res.length; i++ ) {
+        x = res[i];
         if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
             a = x.childNodes[2].textContent-0;
             b = x.childNodes[6].textContent-0;
@@ -1365,12 +1370,14 @@ Market.colorify=function() {
 };
 Market.attribute_changed=function(e) {
     // Tell that something changed and that an update might be necessary
+    // The TravianBeyound script used to preload some more pages and merged them into this list,
+    // causing the colors to be removed. Als changing filters removed colors.
+    // This event tells that colors need updating.
     Market.update_colors=true;
 };
 Market.run=function(){
-    x = document.getElementById("lmid2");
-    // TODO: find out why this also matches reports.
-    if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
+    x = document.getElementById("market_buy");
+    if (x!=null) {
         Market.colorify();
         document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
     }
@@ -1828,6 +1835,7 @@ Events.collector.party = function(){
 
     // We can only have one party per village max; overwrite any pre-existing party records
     // (how the hell could we ever get pre-existing parties??? You can't cancel the damn things...)
+    // BUG: So the event entry of parties that finished already will be removed when a new party is detected. 
     var e = Events.get_event(Settings.village_id, 'party', true);
     e[0] = 'party';
     e[1] = t;
@@ -1838,14 +1846,23 @@ Events.collector.demolish = function(){
     // Are we on the main building page?
     if (location.href.indexOf('build.php') < 0) return;
     // Look for a 'cancel' image, as is used to cancel the demolishion
+    // BUG: following check does cause false positives
     var x = document.evaluate('//img[@class="del"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
     if (x == undefined) return;
 
     x = x.parentNode.parentNode.parentNode;
     var d = new tl_date();
 
-    d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-    var t = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+    event_time = x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)')
+    event_duration = x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')
+    // If one regex didn't match, we probably had a false positive
+    if (event_time==null || event_duration==null) {
+        Debug.debug("Got demolish event false positive.");
+        return;
+    }
+    
+    d.set_time(event_time);
+    var t = d.adjust_day(event_duration);    
 
     // The target getting demolished
     var msg = x.childNodes[1].textContent;
@@ -1854,7 +1871,7 @@ Events.collector.demolish = function(){
     var msg = x.parentNode.parentNode.previousSibling.previousSibling.previousSibling.previousSibling.previousSibling.textContent + ' ' + msg;
 
     // We can just index this by the time - only one thing can be demoed at any given time
-    var e = Events.get_event(Settings.village_id, t);
+    var e = Events.get_event("d"+Settings.village_id, t);
     e[0] = 'demolish';
     e[1] = t;
     e[2] = msg;
