@@ -646,8 +646,8 @@ Settings.show=function() {
             var f = Feature.list[n];
             if (f.s == undefined) continue;
 
-            txt += '<tr align="right"><td style="padding: 5px 0px;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
-                'padding:2px 11px 3px; border: 2px solid #000; '+
+            txt += '<tr align="right"><td style="padding: 5px 2px;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
+                'padding:1px 11px 2px; border: 2px solid #000; '+
                 (n==Settings.current_tab?'background: #fff; border-right: none;':'background: #ddd; border-right: 3px solid black;')+
                 ' color:black; outline: none;">'+
                 f.name + '</a></td></tr>';
