@@ -1060,7 +1060,8 @@ Sidebar.init=function(){
     Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
     Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
     Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
-    Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
+    //Servse no purpose: (though is an idea to add to other links)
+    //Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
     Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
 
     // Numbers for original sidebar links
@@ -1151,8 +1152,8 @@ Sidebar.run=function() {
         Sidebar.navi.removeChild(Sidebar.navi.childNodes[i]);
     
     // Add new links
-    for (var i = 0; i < Sidebar.links.length; i++) {'rgb(0,0,0)'
-            var x = Sidebar.links[i];
+    for (var i = 0; i < Sidebar.links.length; i++) {
+        var x = Sidebar.links[i];
         if (x.constructor == Array) {
             Sidebar.add(x[0], x[1]);
         } else if (x.constructor == String) {
@@ -1161,8 +1162,8 @@ Sidebar.run=function() {
             Sidebar.add_break();
         } else {
             var el = Sidebar.oldnavi[x];
-            if (Sidebar.remove_target_blank)
-                el.removeAttribute("target"); // Force all links to open in the current page.
+            //if (Sidebar.remove_target_blank)
+            //    el.removeAttribute("target"); // Force all links to open in the current page.
             if (Sidebar.remove_plus_color)
                 el.innerHTML=el.textContent; // Remove color from Plus link.
             Sidebar.navi.appendChild(el);
