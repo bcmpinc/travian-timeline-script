@@ -1346,10 +1346,9 @@ Market.colorify=function() {
     if (!Market.update_colors) return;
     Market.update_colors=false;
 
-    var res = document.evaluate( "//table[@class='tbg']/tbody/tr[not(@class) and not(@bgcolor)]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-
-    for ( var i=0 ; i < res.snapshotLength; i++ ) {
-        x = res.snapshotItem(i);
+    var res = document.getElementById("market_buy").childNodes[2].childNodes
+    for ( var i=1 ; i < res.length; i++ ) {
+        x = res[i];
         if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
             a = x.childNodes[2].textContent-0;
             b = x.childNodes[6].textContent-0;
@@ -1371,12 +1370,14 @@ Market.colorify=function() {
 };
 Market.attribute_changed=function(e) {
     // Tell that something changed and that an update might be necessary
+    // The TravianBeyound script used to preload some more pages and merged them into this list,
+    // causing the colors to be removed. Als changing filters removed colors.
+    // This event tells that colors need updating.
     Market.update_colors=true;
 };
 Market.run=function(){
-    x = document.getElementById("lmid2");
-    // TODO: find out why this also matches reports.
-    if (x!=null && x.innerHTML.indexOf("</tr><tr class=\"cbg1\">")>0) {
+    x = document.getElementById("market_buy");
+    if (x!=null) {
         Market.colorify();
         document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
     }
