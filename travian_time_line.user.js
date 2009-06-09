@@ -1129,13 +1129,16 @@ Sidebar.run=function() {
         }
     }
 
-    var navi_table = document.getElementById("navi_table");
-    if (!navi_table) return;
-
+    var navi_table = document.getElementById("sleft");
+    if (!navi_table) {
+        Debug.warning("Couldn't find sidebar.");        
+        return;
+    }
+    
     if (Sidebar.remove_home_link)
-        navi_table.parentNode.childNodes[1].href=location.href;
+        navi_table.childNodes[1].href=location.href;
         
-    Sidebar.navi = navi_table.childNodes[1].childNodes[0].childNodes[1];
+    Sidebar.navi = navi_table.childNodes[3];
     
     // Make copy of links
     Sidebar.oldnavi = [];
