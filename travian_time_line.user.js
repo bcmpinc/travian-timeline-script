@@ -2546,7 +2546,7 @@ Tooltip.village_tip = function(anchor, did){
         }
 
         if (events.length > 0){
-            txt += '<table class="f10" style="font-size:11px"><tbody>';
+            txt += '<table class="f10" style="font-size:11px;width:auto;"><tbody>';
             for (var i in events) txt += '<tr>'+events[i][1]+'</tr>';
             txt += '</tbody></table>';
         }
