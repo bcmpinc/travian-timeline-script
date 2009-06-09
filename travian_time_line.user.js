@@ -1184,7 +1184,7 @@ Resources.init=function(){
     Resources.persist("market", {});
     Resources.persist("production", {});
     Resources.persist("storage", {});
-    Resources.persist('troops', {});
+    Resources.persist("troops", {});
 };
 
 Resources.show=function() {
@@ -1280,6 +1280,7 @@ Resources.update=function() {
                 Resources.troops[Settings.village_id][type] = parseInt(amount);
             }
         }
+        Debug.info("Found the following troups: "+uneval(Resources.troops[Settings.village_id]));
     }
     // Save the values
     Resources.s.storage.write();
