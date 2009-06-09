@@ -599,7 +599,7 @@ Settings.run=function() {
         Settings.persist('village_id', 0);
         if (Settings.village_id === 0) Settings.get_id();
     }
-    Debug.debug("The active village is "+Settings.village_id+": "+Settings.village_name);
+    Debug.info("The active village is "+Settings.village_id+": "+Settings.village_name);
     Settings.village_names[Settings.village_id]=Settings.village_name;
     Settings.s.village_names.write();
 };
@@ -746,7 +746,7 @@ Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which ca
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
 Debug.print =GM_log;
 Debug.lineshift = function(){
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-732; } // Keep the number in this line equal to it's line number. Don't modify anything else.
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-749; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
@@ -1187,9 +1187,9 @@ Resources.init=function(){
 };
 
 Resources.show=function() {
-    var head = document.getElementById("lres0");
+    var head = document.getElementById("res");
     if (head!=null) {
-        head = head.childNodes[1].childNodes[0];
+        head = head.childNodes[1].childNodes[1];
     
         var mkt = Resources.market [Settings.village_id];
         var prod = Resources.production[Settings.village_id];
@@ -1202,13 +1202,15 @@ Resources.show=function() {
         for (var i=0; i < 4; i++) {
             var c=(mkt[i]>0)?("+"+mkt[i]+" "):("");
             var p=(prod[i]=='?')?'?':((prod[i]>0?"+":"")+Math.round(prod[i]/6)/10.0);
-            a+="<td></td><td>"+c+p+"/m</td>";
+            a+="<td></td><td style=\"color: gray; font-size: 80%; text-align: center;\">"+c+p+"/m</td>";
         }
         a+="<td></td><td></td>";
     
         var tr = document.createElement("tr");
         head.appendChild(tr);
         tr.innerHTML = a;
+    } else {
+        Debug.warning("Could not find resources bar.");
     }
 };
 Resources.update=function() {
@@ -1223,9 +1225,11 @@ Resources.update=function() {
             var t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
             mkt[t] += c;
         }
-        Debug.debug("This is on the market: "+mkt);
+        Debug.info("This is on the market: "+mkt);
         Resources.market[Settings.village_id]=mkt;
         Resources.s.market.write();
+    } else {
+        Debug.debug("No marketplace info found");
     }
 
     // Capture these from the title of the resource bar
@@ -1249,12 +1253,15 @@ Resources.update=function() {
         // Capture storage sizes
         if (i >= 2) Resources.storage[Settings.village_id][i+2] = parseInt(e.textContent.split('/')[1]);
     }
+    Debug.info("Found the following resources storage: "+Resources.storage[Settings.village_id].join(" - "));
+    Debug.info("Found the following resources production: "+Resources.production[Settings.village_id].join(" - "));
+    
     // Timestamp. We don't need to worry about time offset because it's only used to compare with itself.
     Resources.storage[Settings.village_id][6] = new Date().getTime();
 
     // Get troops - either from main page, or from rally point(TBD)
     if (location.href.indexOf('dorf1.php') >= 0){
-        // We're going to overwright whatever was there in the first place
+        // We're going to overwrite whatever was there in the first place
         Resources.troops[Settings.village_id] = {};
 
         // Grab the troop table
@@ -1826,6 +1833,7 @@ Events.collector.party = function(){
 
     // We can only have one party per village max; overwrite any pre-existing party records
     // (how the hell could we ever get pre-existing parties??? You can't cancel the damn things...)
+    // BUG: So the event entry of parties that finished already will be removed when a new party is detected. 
     var e = Events.get_event(Settings.village_id, 'party', true);
     e[0] = 'party';
     e[1] = t;
@@ -1836,6 +1844,7 @@ Events.collector.demolish = function(){
     // Are we on the main building page?
     if (location.href.indexOf('build.php') < 0) return;
     // Look for a 'cancel' image, as is used to cancel the demolishion
+    // BUG: following check does cause false positives
     var x = document.evaluate('//img[@class="del"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
     if (x == undefined) return;
 
@@ -1844,6 +1853,9 @@ Events.collector.demolish = function(){
 
     d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
     var t = d.adjust_day(x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+    
+    // If t is null, we probably had a false positive
+    if (t==null) return;
 
     // The target getting demolished
     var msg = x.childNodes[1].textContent;
@@ -1852,7 +1864,7 @@ Events.collector.demolish = function(){
     var msg = x.parentNode.parentNode.previousSibling.previousSibling.previousSibling.previousSibling.previousSibling.textContent + ' ' + msg;
 
     // We can just index this by the time - only one thing can be demoed at any given time
-    var e = Events.get_event(Settings.village_id, t);
+    var e = Events.get_event("d"+Settings.village_id, t);
     e[0] = 'demolish';
     e[1] = t;
     e[2] = msg;
