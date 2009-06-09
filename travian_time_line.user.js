@@ -760,24 +760,25 @@ Debug.exception=function(fn_name, e) {
 Debug.init =function() {
     switch (Debug.output) {
     case 0:
-    for (var i in Debug.categories) {
-        Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
-    }
-    break;
+        for (var i in Debug.categories) {
+            Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?this.print:nothing;
+        }
+        break;
     case 1:
-    var console = unsafeWindow.console;
-    if (!console) {
-        Debug.print("Firebug not found! Using console for this page!");
-        Debug.output=0;
-        Debug.init();
-        return;
+        var console = unsafeWindow.console;
+        if (!console) {
+            Debug.print("Firebug not found! Using console for this page!");
+            Debug.output=0;
+            Debug.init();
+            return;
+        }
+        var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
+        for (var i in Debug.categories) {
+            Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?fns[i]:nothing;
+        }
+        break;
     }
-    var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
-    for (var i in Debug.categories) {
-        Debug[i]=Debug[Debug.categories[i]]=(i <= this.level)?fns[i]:nothing;
-    }
-    break;
-    }
+    Debug.debug("Source code line numbers are offset by: "+Debug.lineshift);
 };
 Debug.call("init",true); // Runs init once.
 Debug.info("Running on server: "+Settings.server);
