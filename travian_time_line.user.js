@@ -548,18 +548,22 @@ Settings.init=function(){
     Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     Settings.global('users',         {},        Settings.type.object, undefined, '', 'true');
+    Settings.global('user_display',  {},        Settings.type.object, undefined, '', 'true');
     Settings.persist("village_names",{});
     Settings.persist("current_tab",  "Settings");
 
     if (Settings.users[Settings.server] == undefined){
         Settings.users[Settings.server] = {};
+        Settings.user_display[Settings.server] = {};
     }
 
     if (Settings.users[Settings.server][Settings.username] == undefined){
         var x = document.evaluate('//div[@id="sleft"]/p/a[contains(@href, "chatname")]', document, null,
                                   XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
         Settings.users[Settings.server][Settings.username] = x.href.split('|')[1];
+        Settings.user_display[Settings.server][Settings.username] = false;
         Settings.s.users.write();
+        Settings.s.user_display.write();
     }
 };
 Settings.run=function() {
@@ -2020,9 +2024,63 @@ Timeline.create_canvas=function() {
     }
     tlc.addEventListener("click",setAt,false);
 
+    // Add the doubleclick listener to change scopes
+    tlc.addEventListener('dblclick', Timeline.change_scope, false);
+
     Timeline.element=tlc;
     Timeline.context=tl.getContext("2d");
     Timeline.context.mozTextStyle = "8pt Monospace";
+};
+
+Timeline.change_scope=function(){
+    var div = document.createElement('div');
+    div.style.position = 'fixed';
+    div.style.zIndex   = '1000';
+    div.style.left     = '150px';
+    div.style.top      = '150px';
+    div.style.border   = '3px solid black';
+    div.style.background = 'rgb(255, 255, 255)';
+    div.style.MozBorderRadius = '6px';
+    var txt = '<table><tbody><tr><td style="border-right: 1px solid black">';
+    var i=0;
+    var s;
+    for (var a in Settings.users){
+        if (i==0) s = a;
+        txt += '<input type="radio" name="'+a+'" value="'+i+'"'+(i==0?' checked=""':'')+'>'+a+'&nbsp;<br>';
+        i++;
+    }
+    txt += '<td></tbody></table>';
+    div.innerHTML = txt;
+    var servers = div.childNodes[0].childNodes[0].childNodes[0].childNodes[0];
+    var users = servers.nextSibling;
+    var check_user=function(e){
+        var u = e.target.name;
+        Settings.user_display[s][u] = e.target.checked==true;
+        Settings.s.user_display.write();
+    };
+    var fill_users=function(){
+        var txt = '';
+        for (var u in Settings.users[s]){
+            var checked = Settings.user_display[s][u];
+            var uname = Settings.users[s][u];
+            txt += '<input type="checkbox" name="'+u+'" '+(checked?'checked=""':'')+'>'+uname+'&nbsp;<br>';
+        }
+        users.innerHTML = txt;
+        for (var i in users.childNodes)
+            users.childNodes[i].addEventListener('change', check_user, false);
+    };
+    var switch_server=function(e){
+        // Clear everything but...
+        for (var i in servers.childNodes) servers.childNodes[i].checked = false;
+        e.target.checked = true;
+
+        s = e.target.name;
+        fill_users();
+    };
+    fill_users();
+    for (var i in servers.childNodes)
+        servers.childNodes[i].addEventListener('change', switch_server, false);
+    document.body.appendChild(div);
 };
 
 Timeline.toggle=function() {
