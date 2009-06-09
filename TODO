@@ -42,5 +42,6 @@ New Features:
 
 BUGS:
 - tl_date: constantly underestimates the time of an event by ~1 minute
-- problems with scope, lines, sidebar and some others on T3.5
+- problems with scope, lines and some others on T3.5
 - problems with single-village accts - might be related to the scoping problems?
+- any comment starting with "BUG:"
