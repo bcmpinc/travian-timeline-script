@@ -730,13 +730,6 @@ Settings.close=function(){
     remove(Settings.window);
 };
 
-// TODO: remove following BWC (backwards compatability code)
-function prefix(s) {
-    return "speed.nl."+s;
-}
-
-
-
 /****************************************
  * DEBUG
  ****************************************/
