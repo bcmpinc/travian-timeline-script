@@ -871,7 +871,7 @@ Lines.append_villages=function(){
         var location = Lines.locations[l];
         if (location[2]=="extra") {
             var row = document.createElement("tr");
-            row.appendChild(newcell("<span>%Gâ¢%@ </span> "+location[3]));
+            row.appendChild(newcell("<span>&#x25CF;</span> "+location[3]));
             row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+location[0]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+location[1]+")</td>\n</tr>\n</tbody></table>"));
             tab.appendChild(row);
         }
