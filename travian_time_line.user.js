@@ -1215,14 +1215,13 @@ Resources.show=function() {
 };
 Resources.update=function() {
     // Store info about resources put on the market if availbale
-    var x = document.getElementById("lmid2");
-    if (x!=null && x.innerHTML.indexOf("name=\"t\" value=\"2\"")>0) {
-        var res = document.evaluate( "//table[@class='f10']/tbody/tr[@bgcolor='#ffffff']/td[2]", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null );
-
+    var x = document.getElementById("market_sell");
+    if (x!=null) {
+        x=x.childNodes[3].childNodes;
         var mkt = new Array(0,0,0,0);
-        for ( var i=0 ; i < res.snapshotLength; i++ ){
-            var c = res.snapshotItem(i).textContent - 0;
-            var t = res.snapshotItem(i).firstChild.src.match("\\d") - 1;
+        for ( var i=1 ; i < x.length; i++ ){
+            var c = x[i].childNodes[5].textContent - 0;
+            var t = x[i].childNodes[3].firstChild.src.match("\\d") - 1;
             mkt[t] += c;
         }
         Debug.info("This is on the market: "+mkt);
