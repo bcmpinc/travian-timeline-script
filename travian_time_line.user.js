@@ -1006,7 +1006,7 @@ Lines.tag_change=function(e) {
 // add a "this location is special!" button to the map's village view. (if applicable)
 Lines.tag_tool=function() {
     if (location.href.indexOf("karte.php?d=")<=0) return;
-    var x = document.evaluate( "//div[@id='lmid2']//h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+    var x = document.evaluate( "//div[@id='content']/h1", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
     if (!x) return;
     var loc = x.textContent.match("\\((-?\\d+)\\|(-?\\d+)\\)");
     var cat=Lines.locations[loc[1]+","+loc[2]];
@@ -1036,7 +1036,7 @@ Lines.run=function() {
         }
     }
 
-    var x = document.evaluate( "//img[@usemap='#karte']", document, null, XPathResult. ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+    var x = document.getElementById("map");
     if (x != null) { // If this page has a map ...
         if (Lines.analyze_neighbourhood)
             Lines.create_analyzer_links();
