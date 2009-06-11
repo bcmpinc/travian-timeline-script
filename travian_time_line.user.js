@@ -843,7 +843,7 @@ Lines.init=function(){
                 enemies: ["rgba(255,0,0,0.5)", true],
                 crop9: ["rgba(255,128,0.5)", true],
                 crop15: ["rgba(255,128,1.0)", true],
-                extra: ["rgba(128,128,128,0.5)", true],
+                extra: ["rgba(128,128,128,1)", true],
                 farms: ["rgba(255,255,255,0.5)", true],
                 ban: ["rgba(0,0,0,0.5)", false],
                 natar: ["rgba(128,64,0,0.5)", false],
@@ -862,12 +862,13 @@ Lines.new_table_cell=function(c,innerhtml) {
 };
 // Adds the location to the villages list.
 Lines.append_villages=function(){
+    var color = Lines.categories.extra[0];
     for (var l in Lines.locations) {
         var location = Lines.locations[l];
         if (location[2]=="extra") {
             var row = document.createElement("tr");
             row.appendChild(Lines.new_table_cell("dot","&#x25CF;"));
-            row.appendChild(Lines.new_table_cell("text","<a>"+location[3]+"</a>"));
+            row.appendChild(Lines.new_table_cell("text","<a style=\"color: "+color+";\">"+location[3]+"</a>"));
             row.appendChild(Lines.new_table_cell("x","("+location[0]));
             row.appendChild(Lines.new_table_cell(""," | "));
             row.appendChild(Lines.new_table_cell("y",location[1]+")"));
