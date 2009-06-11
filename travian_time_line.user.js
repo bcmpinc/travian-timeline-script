@@ -1003,7 +1003,7 @@ Lines.tag_change=function(e) {
     if (cat=="none") {
         delete Lines.locations[l];
     } else {
-        Lines.locations[l]=[Lines.posx,Lines.posy,cat];
+        Lines.locations[l]=[Lines.posx,Lines.posy,cat,Lines.village_name];
     }
     Lines.s.locations.write();
 };
@@ -1026,6 +1026,7 @@ Lines.tag_tool=function() {
     }
     Lines.posx=loc[1]-0;
     Lines.posy=loc[2]-0;
+    Lines.village_name=x.firstChild.textContent;
     select.addEventListener('change',Lines.tag_change,false);
     x.appendChild(select);
     x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
