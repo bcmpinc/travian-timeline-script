@@ -4,8 +4,9 @@ Timeline Events,Look&Feel:
 - Add filter to disable the displaying of some events (based on type)
   - and/or add a way of disabling the capture of certain event types
 - Add option of what market event text should be prefered?
-- Add doubleclick(?) listener on unnatural pages to switch the scope
 - Add a way to display events from more than one scope
+? use contextmenu event listener
+- Add contextmenu on unnatural pages to switch the scope
 
 Settings: 
 - Add support for per element and order editing of lists.
@@ -18,8 +19,8 @@ Lines:
 - Add linethickness parameters
 - Make the square optional
 - Repair Ally-lines' ally determination algorithm
-~ Fix concurrency bug with special locations.
-- Add names to special locations - already done with the "village renamer" script?
+? Fix concurrency bug with special locations.
+? Add names to special locations - already done with the "village renamer" script? Probably an option. Though our script will need to be compatible with this script, detect changes and store the new name somewhere.
 - Insert code to show swords on the map, for events? (<span class="m4"> on T3.5 only)
 
 Event Capture:
@@ -31,7 +32,7 @@ Event Capture:
 Tool Tip:
 - Keep track of the most recently completed task/building for each village, and provide link to it
 - Add buttons next to listed events, to delete mistakes/changes event?
-- Add HTML requests to get data on villages with expired info
+- Add HTML requests to get data on villages with expired info (a hidden iframe would probably do the trick here (script will run for that iframe), though has a lot of overhead)
 
 New Features:
 - Modify all the links for more robust navigation

@@ -854,10 +854,10 @@ Lines.init=function(){
     // name is optional.
 };
 
-Lines.new_table_cell=function(innerhtml) {
+Lines.new_table_cell=function(c,innerhtml) {
     cell = document.createElement("td");
     cell.innerHTML = innerhtml;
-    cell.className = "nbr";
+    cell.className = c;
     return cell;
 };
 // Adds the location to the villages list.
@@ -866,9 +866,12 @@ Lines.append_villages=function(){
         var location = Lines.locations[l];
         if (location[2]=="extra") {
             var row = document.createElement("tr");
-            row.appendChild(newcell("<span>&#x25CF;</span> "+location[3]));
-            row.appendChild(newcell("<table cellspacing=\"0\" cellpadding=\"0\" class=\"dtbl\">\n<tbody><tr>\n<td class=\"right dlist1\">("+location[0]+"</td>\n<td class=\"center dlist2\">|</td>\n<td class=\"left dlist3\">"+location[1]+")</td>\n</tr>\n</tbody></table>"));
-            tab.appendChild(row);
+            row.appendChild(Lines.new_table_cell("dot","&#x25CF;"));
+            row.appendChild(Lines.new_table_cell("text","<a>"+location[3]+"</a>"));
+            row.appendChild(Lines.new_table_cell("x","("+location[0]));
+            row.appendChild(Lines.new_table_cell(""," | "));
+            row.appendChild(Lines.new_table_cell("y",location[1]+")"));
+            Lines.village_list.appendChild(row);
         }
     }
 };
@@ -2762,6 +2765,7 @@ Tooltip.run = function(){
     for (var i=0; i < x.snapshotLength; i++){
         var vil = x.snapshotItem(i);
         var did = vil.href.split('newdid=')[1];
+        if (did==undefined) continue;
         if (did.indexOf('&') >= 0){
             if (i == 0) Tooltip.href_postfix = did.match('&.*'); // This is the same for all - take from the first for simplicity
             did = did.split('&')[0];
