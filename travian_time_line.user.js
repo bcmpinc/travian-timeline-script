@@ -220,6 +220,7 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden, par
     if (parent_el != undefined) s.parent_el = parent_el;
     s.def_val = def_val;
     s.read();
+    if (this.s==undefined) this.s=new Object();
     this.s[name] = s;
     return s;
 };
@@ -251,6 +252,7 @@ Feature.persist=function(name, def_value){
     }
 
     s.read();
+    if (this.s==undefined) this.s=new Object();
     this.s[name] = s;
     return s;
 };
@@ -275,6 +277,7 @@ Feature.direct=function(type, hidden){
     s.read = nothing;
     s.write = nothing;
 
+    if (this.s==undefined) this.s=new Object();
     this.s[name] = s;
     return s;
 };
@@ -282,7 +285,6 @@ Feature.create=function(name){
     var x=new Object();
     x.__proto__=Feature;
     x.name = name;
-    x.s=new Object();
     Feature.list[name]=x;
     global[name]=x;
     return x;
@@ -786,7 +788,8 @@ Debug.info("Running on server: "+Settings.server);
 /****************************************
  * IMAGES (ours and Travians)
  ****************************************/
-Images = new Object();
+
+Feature.create("Images");
 // There are two formats for troops to be in. Uncompressed indexes for all races, compressed only for local
 // 'troops' and 'res' both return the class name
 Images.troops = function(index, compressed){
