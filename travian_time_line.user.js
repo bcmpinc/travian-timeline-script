@@ -1,3 +1,4 @@
+var metadata = <><![CDATA[
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
@@ -13,10 +14,12 @@
 // @exclude        http://*.travian*.*/login.php*
 // @exclude        http://*.travian*.*/logout.php*
  
+// @copyright      2008, 2009 Bauke Conijn, Adriaan Tichler (http://github.com/bcmpinc/travian-timeline-script)
 // @author         bcmpinc
 // @author         arandia
-// @license        GPL 3 or any later version
+// @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // ==/UserScript==
+]]></>+"";
 
 /*****************************************************************************
  * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
@@ -2785,7 +2788,11 @@ Tooltip.run = function(){
 
     Tooltip.overview();
 }
- 
+
+/*************************
+ * END OF SCRIPT
+ *************************/
+
 }catch(e){
     try{Debug.exception(e);}
     catch(ee) {
