@@ -91,6 +91,11 @@ function pad2(x) {
     return x;
 }
 
+function isempty(ob) {
+    for(var i in ob) {if(ob.hasOwnProperty(i)){return false;}}
+    return true;
+}
+
 // Functions missing in Math
 Math.sinh     = function(x) { return .5*(Math.exp(x)-Math.exp(-x)); };
 Math.cosh     = function(x) { return .5*(Math.exp(x)+Math.exp(-x)); };
@@ -252,7 +257,6 @@ Feature.persist=function(name, def_value){
     }
 
     s.read();
-    if (this.s==undefined) this.s=new Object();
     this.s[name] = s;
     return s;
 };
@@ -277,7 +281,6 @@ Feature.direct=function(type, hidden){
     s.read = nothing;
     s.write = nothing;
 
-    if (this.s==undefined) this.s=new Object();
     this.s[name] = s;
     return s;
 };
@@ -285,6 +288,7 @@ Feature.create=function(name){
     var x=new Object();
     x.__proto__=Feature;
     x.name = name;
+    x.s=new Object();
     Feature.list[name]=x;
     global[name]=x;
     return x;
@@ -647,7 +651,7 @@ Settings.show=function() {
         var txt = '<tbody>';
         for (var n in Feature.list){
             var f = Feature.list[n];
-            if (f.s == undefined) continue;
+            if (f.s == undefined || isempty(f.s)) continue;
 
             txt += '<tr align="right"><td style="padding: 5px 2px;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
                 'padding:1px 11px 2px; border: 2px solid #000; '+
