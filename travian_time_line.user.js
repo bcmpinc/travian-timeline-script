@@ -1206,6 +1206,7 @@ Resources.init=function(){
 Resources.show=function() {
     var head = document.getElementById("res");
     if (head!=null) {
+        head.style.top="90px";
         head = head.childNodes[1].childNodes[1];
     
         var mkt = Resources.market [Settings.village_id];
