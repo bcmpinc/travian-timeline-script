@@ -245,14 +245,13 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden, par
 };
 // This is a setting at arbitrary scope
 Feature.external=function(server, username, name, def_val, type, typedata, description, hidden){
-    var s = this._setting(name, def_val, type, typedata, description, hidden);
-    if (!server)        s.fullname = this.name+'.'+name; // Global
-    else if (!username) s.fullname = server+'.'+this.name+'.'+name; // Server-specific
-    else                s.fullname = server+'.'+username+'.'+this.name+'.'+name; // Server and user-specific
+    var n = (server?server+'_':'')+(username?username+'_':'')+name; // Use '_' rather than '.' to seperate here...
+    var s = this._setting(n, def_val, type, typedata, description, hidden);
+    s.fullname = (server?server+'.':'')+(username?username+'.':'')+this.name+'.'+name;
 
     // Don't store this in this.s, because those get displayed in Settings. Also, we don't want to overwrite them...
     if (this.e==undefined) this.e=new Object();
-    this.e[name] = s;
+    this.e[n] = s;
 
     s.read(); // Load the value - must be done *after* the fullname parameter has been set.
     return s;
@@ -589,8 +588,8 @@ Settings.init=function(){
                                   XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
         Settings.users[Settings.server][Settings.username] = x.href.split('|')[1];
         Settings.user_display[Settings.server][Settings.username] = false;
-        Settings.s.users.write();
-        Settings.s.user_display.write();
+        Settings.e.users.write();
+        Settings.e.user_display.write();
     }
 };
 Settings.run=function() {
@@ -1983,6 +1982,21 @@ Timeline.init=function(){
                                                          (2*y/Timeline.height-1)*Timeline.scale_warp
                                                          )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
     }
+
+    // Load events from other server/users, as specified
+    for (var server in Settings.user_display){
+        for (var user in Settings.user_display[server]){
+            if (!Settings.user_display[server][user]) continue;
+            if (Settings.natural_run && server == Settings.server && user == Settings.username){
+                Events[server+'_'+user+'_events'] = Events.events; // Don't reload it if possible
+                Settings[server+'_'+user+'_village_names'] = Settings.village_names;
+            } else {
+                Debug.info("Loading events from "+server+'.'+user);
+                Events.external(server, user, 'events', {}, Settings.type.object, undefined, '');
+                Settings.external(server, user, 'village_names', {}, Settings.type.object, undefined, '');
+            }
+        }
+    }
 };
 
 Timeline.create_canvas=function() {
@@ -2116,7 +2130,7 @@ Timeline.change_scope=function(){
     var check_user=function(e){
         var u = e.target.name;
         Settings.user_display[s][u] = e.target.checked==true;
-        Settings.s.user_display.write();
+        Settings.e.user_display.write();
     };
     var fill_users=function(){
         var txt = '';
@@ -2329,10 +2343,23 @@ Timeline.draw=function(once) {
             return q-0;
     }
 
+    for (var server in Settings.user_display){
+        for (var user in Settings.user_display[server]){
+            if (!Settings.user_display[server][user]) continue;
+            Debug.info('Displaying events for '+server+'.'+Settings.users[server][user]);
+            Timeline.draw_events(g, Events[server+'_'+user+'_events'], Settings[server+'_'+user+'_village_names']);
+        }
+    }
+    g.restore();
+
+    if (Timeline.keep_updated && once!==true) window.setTimeout(Timeline.draw, Timeline.update_interval)
+};
+
+Timeline.draw_events=function(g, events, village_names){
     // Draw data
-    for (v in Events.events) {
-        for (e in Events.events[v]) {
-            var p = Events.events[v][e];
+    for (v in events) {
+        for (e in events[v]) {
+            var p = events[v][e];
             var t = Events.type[p[0]];
             var y = Timeline.warp(p[1]);
         
@@ -2354,7 +2381,7 @@ Timeline.draw=function(once) {
             // Draw the village id. (if village number is known, otherwise there's only one village)
             if (v>0) {
                 // TODO: convert to human readable village name.
-                var v_name = Settings.village_names[v];
+                var v_name = village_names[v];
                 if (!v_name) v_name="["+v+"]";
                 g.fillStyle = "rgb(0,0,128)";
                 g.save();
@@ -2395,9 +2422,6 @@ Timeline.draw=function(once) {
             }
         }
     }
-    g.restore();
-
-    if (Timeline.keep_updated && once!==true) window.setTimeout(Timeline.draw, Timeline.update_interval)
 };
 
 Timeline.run=function() {
