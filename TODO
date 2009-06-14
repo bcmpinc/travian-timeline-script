@@ -4,9 +4,6 @@ Timeline Events,Look&Feel:
 - Add filter to disable the displaying of some events (based on type)
   - and/or add a way of disabling the capture of certain event types
 - Add option of what market event text should be prefered?
-- Add a way to display events from more than one scope
-? use contextmenu event listener
-- Add contextmenu on unnatural pages to switch the scope
 
 Settings: 
 - Add support for per element and order editing of lists.
@@ -43,6 +40,4 @@ New Features:
 
 BUGS:
 - tl_date: constantly underestimates the time of an event by ~1 minute
-- problems with scope, lines and some others on T3.5
-- problems with single-village accts - might be related to the scoping problems?
 - any comment starting with "BUG:"
