@@ -592,7 +592,8 @@ Settings.init=function(){
         var x = document.evaluate('//div[@id="sleft"]/p/a[contains(@href, "chatname")]', document, null,
                                   XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
         Settings.users[s][u] = x.href.split('|')[1];
-        Settings.g_user_display[s][u] = false;
+        // Update the global display
+        Settings.g_user_display[s][u] = true;
         // Update the local lists for *all* users if the global one changes
         // This is *technically* an n^2 solution - but these lists are unlikely to get extremely large... :-/ (and how else could we do it?)
         for (var server in Settings.g_user_display){
@@ -610,7 +611,7 @@ Settings.init=function(){
                         if (Settings[x.name][s2] == undefined)
                             Settings[x.name][s2] = {};
                         if (Settings[x.name][s2][u2] == undefined)
-                            Settings[x.name][s2][u2] = Settings.g_user_display[s2][u2];
+                            Settings[x.name][s2][u2] = false;
                     }
                 }
                 x.write();
