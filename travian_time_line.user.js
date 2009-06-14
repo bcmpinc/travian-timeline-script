@@ -2022,10 +2022,12 @@ Timeline.init=function(){
             if (Settings.natural_run && server == Settings.server && user == Settings.username){
                 Events[server+'_'+user+'_events'] = Events.events; // Don't reload it if possible
                 Settings[server+'_'+user+'_village_names'] = Settings.village_names;
+                Settings[server+'_'+user+'_race'] = Settings.race;
             } else {
                 Debug.info("Loading events from "+server+'.'+user);
                 Events.external(server, user, 'events', {}, Settings.type.object, undefined, '');
                 Settings.external(server, user, 'village_names', {}, Settings.type.object, undefined, '');
+                Settings.external(server, user, 'race', 0, Settings.type.integer, undefined, '');
             }
         }
     }
@@ -2222,12 +2224,13 @@ Timeline.create_button=function() {
 
 Timeline.load_images=function() {
     var base = GM_getValue('absolute_server', '')+'/';
-    Timeline.img_unit = new Array(11);
-    for (i=0; i<10; i++) {
+    // We have to load all images, because with multiple scopes displayed the units could come from any race
+    Timeline.img_unit = new Array(31);
+    Timeline.img_unit[0] = Images.obj('', Images.hero);
+    for (i=1; i<=30; i++) {
         // This is irritating. For this, we need an actual src, using the class method screws things up... :(
-        Timeline.img_unit[i] = Images.obj('', base+"img/un/u/"+(Settings.race*10+i+1)+".gif");
+        Timeline.img_unit[i] = Images.obj('', base+"img/un/u/"+(i)+".gif");
     }
-    Timeline.img_unit[10] = Images.obj('', Images.hero);
 
     Timeline.img_res = new Array(4);
     for (i=0; i<4; i++) {
@@ -2385,7 +2388,7 @@ Timeline.draw=function(once) {
         for (var user in disp[server]){
             if (!disp[server][user]) continue;
             Debug.info('Displaying events for '+server+'.'+Settings.users[server][user]);
-            Timeline.draw_events(g, Events[server+'_'+user+'_events'], Settings[server+'_'+user+'_village_names']);
+            Timeline.draw_events(g, server, user);//Events[server+'_'+user+'_events'], Settings[server+'_'+user+'_village_names']);
         }
     }
     g.restore();
@@ -2393,7 +2396,10 @@ Timeline.draw=function(once) {
     if (Timeline.keep_updated && once!==true) window.setTimeout(Timeline.draw, Timeline.update_interval)
 };
 
-Timeline.draw_events=function(g, events, village_names){
+Timeline.draw_events=function(g, server, user){
+    var events = Events[server+'_'+user+'_events'];
+    var village_names = Settings[server+'_'+user+'_village_names'];
+    var race = Settings[server+'_'+user+'_race'];
     // Draw data
     for (v in events) {
         for (e in events[v]) {
@@ -2453,7 +2459,9 @@ Timeline.draw_events=function(g, events, village_names){
                 if (p[3]) {
                     g.fillStyle = "rgb(0,0,255)";
                     for (var i=10; i>=0; i--) {
-                        Timeline.draw_info(Timeline.img_unit[i],p[3][i]);
+                        // This is a serious hack, but the best we can do without tearing up the entire 'events' list...
+                        if (i == 10) Timeline.draw_info(Timeline.img_unit[0], p[3][i]);
+                        else Timeline.draw_info(Timeline.img_unit[race*10+1+i], p[3][i]);
                     }
                 }
                 g.restore();
