@@ -228,8 +228,6 @@ Feature._setting=function(name, def_val, type, typedata, description, hidden){
     s.hidden      = hidden;
 
     this[name]    = def_val;
-    if (this.s==undefined) this.s=new Object();
-    this.s[name]  = s;
     return s;
 };
 // This is used to create a basic setting
@@ -238,6 +236,9 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden, par
 
     s.fullname = Settings.server+'.'+Settings.username+'.'+this.name+'.'+name;
     if (parent_el != undefined) s.parent_el = parent_el; // To be removed...
+
+    if (this.s==undefined) this.s=new Object();
+    this.s[name] = s;
 
     s.read();
     return s;
@@ -249,7 +250,11 @@ Feature.external=function(server, username, name, def_val, type, typedata, descr
     else if (!username) s.fullname = server+'.'+this.name+'.'+name; // Server-specific
     else                s.fullname = server+'.'+username+'.'+this.name+'.'+name; // Server and user-specific
 
-    s.read(); // Load the value
+    // Don't store this in this.s, because those get displayed in Settings. Also, we don't want to overwrite them...
+    if (this.e==undefined) this.e=new Object();
+    this.e[name] = s;
+
+    s.read(); // Load the value - must be done *after* the fullname parameter has been set.
     return s;
 };
 // This guy is just like a setting, except it is never visible to the user in the 'settings' menu
