@@ -2388,7 +2388,7 @@ Timeline.draw=function(once) {
         for (var user in disp[server]){
             if (!disp[server][user]) continue;
             Debug.info('Displaying events for '+server+'.'+Settings.users[server][user]);
-            Timeline.draw_events(g, server, user);//Events[server+'_'+user+'_events'], Settings[server+'_'+user+'_village_names']);
+            Timeline.draw_events(g, server, user);
         }
     }
     g.restore();
