@@ -211,32 +211,45 @@ Feature=new Object();
 Feature.list=[];
 Feature.init=nothing;
 Feature.run =nothing;
-// This is used to create a basic setting
-Feature.setting=function(name, def_val, type, typedata, description, hidden, parent_el) {
-    var s = new Object();
+// This is a generalization for all settings. *Not* to be called directly.
+// Note that 'parent_el' is being depreciated in favour of Settings.type.table
+Feature._setting=function(name, def_val, type, typedata, description, hidden){
     if (type==undefined) type=Settings.type.none;
-    if (hidden==undefined || typeof(hidden) != 'string') hidden='false';
-    s.__proto__ = Settings;
-    s.fullname = Settings.server+'.'+Settings.username+'.'+this.name+'.'+name;
-    s.parent = this;
-    s.name = name;
-    this[name] = def_val;
-    s.type = type;
-    s.typedata = typedata;
+    if (hidden==undefined || typeof(hidden) != 'string') hidden = 'false';
+
+    var s = new Object();
+    s.__proto__   = Settings;
+    s.parent      = this;
+    s.name        = name;
+    s.def_val     = def_val;
+    s.type        = type;
+    s.typedata    = typedata;
     s.description = description;
-    s.hidden = hidden;
-    if (parent_el != undefined) s.parent_el = parent_el;
-    s.def_val = def_val;
-    s.read();
+    s.hidden      = hidden;
+
+    this[name]    = def_val;
     if (this.s==undefined) this.s=new Object();
-    this.s[name] = s;
+    this.s[name]  = s;
     return s;
 };
-// This is the same as setting, but at a global scope
-Feature.global=function(name, def_val, type, typedata, description, hidden, parent_el){
-    var s = this.setting(name, def_val, type, typedata, description, hidden, parent_el);
-    s.fullname = this.name+'.'+name;
+// This is used to create a basic setting
+Feature.setting=function(name, def_val, type, typedata, description, hidden, parent_el) {
+    var s = this._setting(name, def_val, type, typedata, description, hidden);
+
+    s.fullname = Settings.server+'.'+Settings.username+'.'+this.name+'.'+name;
+    if (parent_el != undefined) s.parent_el = parent_el; // To be removed...
+
     s.read();
+    return s;
+};
+// This is a setting at arbitrary scope
+Feature.external=function(server, username, name, def_val, type, typedata, description, hidden){
+    var s = this._setting(name, def_val, type, typedata, description, hidden);
+    if (!server)        s.fullname = this.name+'.'+name; // Global
+    else if (!username) s.fullname = server+'.'+this.name+'.'+name; // Server-specific
+    else                s.fullname = server+'.'+username+'.'+this.name+'.'+name; // Server and user-specific
+
+    s.read(); // Load the value
     return s;
 };
 // This guy is just like a setting, except it is never visible to the user in the 'settings' menu
@@ -556,8 +569,8 @@ Settings.config=function(parent_element) {
 Settings.init=function(){
     Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
-    Settings.global('users',         {},        Settings.type.object, undefined, '', 'true');
-    Settings.global('user_display',  {},        Settings.type.object, undefined, '', 'true');
+    Settings.external('', '', 'users',         {},        Settings.type.object, undefined, '', 'true');
+    Settings.external('', '', 'user_display',  {},        Settings.type.object, undefined, '', 'true');
     Settings.persist("village_names",{});
     Settings.persist("current_tab",  "Settings");
 
