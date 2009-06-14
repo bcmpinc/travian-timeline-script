@@ -573,23 +573,53 @@ Settings.config=function(parent_element) {
 Settings.init=function(){
     Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
-    Settings.external('', '', 'users',         {},        Settings.type.object, undefined, '', 'true');
-    Settings.external('', '', 'user_display',  {},        Settings.type.object, undefined, '', 'true');
+    Settings.external('', '', 'users',          {},        Settings.type.object, undefined, '', 'true');
+    Settings.external('', '', 'g_user_display', {},        Settings.type.object, undefined, '', 'true');
+    Settings.persist('user_display', {}); // Keep a local set of enabled/disabled ones too
     Settings.persist("village_names",{});
     Settings.persist("current_tab",  "Settings");
 
-    if (Settings.users[Settings.server] == undefined){
-        Settings.users[Settings.server] = {};
-        Settings.user_display[Settings.server] = {};
-    }
+    var s = Settings.server;
+    var u = Settings.username;
+    // Have to make it backwards-compatible... can't go around asking users to reset Settings.users for us, can we?
+    if (Settings.users[s] == undefined)          Settings.users[s] = {};
+    if (Settings.g_user_display[s] == undefined) Settings.g_user_display[s] = {};
+    if (Settings.user_display[s] == undefined)   Settings.user_display[s] = {};
 
-    if (Settings.users[Settings.server][Settings.username] == undefined){
+    if (Settings.users[s][u] == undefined ||
+        Settings.g_user_display[s][u] == undefined ||
+        Settings.user_display[s][u] == undefined){
         var x = document.evaluate('//div[@id="sleft"]/p/a[contains(@href, "chatname")]', document, null,
                                   XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-        Settings.users[Settings.server][Settings.username] = x.href.split('|')[1];
-        Settings.user_display[Settings.server][Settings.username] = false;
+        Settings.users[s][u] = x.href.split('|')[1];
+        Settings.g_user_display[s][u] = false;
+        // Update the local lists for *all* users if the global one changes
+        // This is *technically* an n^2 solution - but these lists are unlikely to get extremely large... :-/ (and how else could we do it?)
+        for (var server in Settings.g_user_display){
+            for (var user in Settings.g_user_display[server]){
+                // Update the local list
+                if (Settings.user_display[server] == undefined)
+                    Settings.user_display[server] = {};
+                if (Settings.user_display[server][user] == undefined)
+                    Settings.user_display[server][user] = s==server && u==user;
+                if (s==server && u==user) continue; // If local, go no farther
+                var x = Settings.external(server, user, 'user_display', {}, Settings.type.object, undefined, '');
+                // now update user-specific data for *other* users - copy over new values from the global list
+                for (var s2 in Settings.g_user_display){
+                    for (var u2 in Settings.g_user_display[s2]){
+                        if (Settings[x.name][s2] == undefined)
+                            Settings[x.name][s2] = {};
+                        if (Settings[x.name][s2][u2] == undefined)
+                            Settings[x.name][s2][u2] = Settings.g_user_display[s2][u2];
+                    }
+                }
+                x.write();
+            }
+        }
+
         Settings.e.users.write();
-        Settings.e.user_display.write();
+        Settings.e.g_user_display.write();
+        Settings.s.user_display.write();
     }
 };
 Settings.run=function() {
@@ -1984,9 +2014,10 @@ Timeline.init=function(){
     }
 
     // Load events from other server/users, as specified
-    for (var server in Settings.user_display){
-        for (var user in Settings.user_display[server]){
-            if (!Settings.user_display[server][user]) continue;
+    var disp = Settings.natural_run ? Settings.user_display : Settings.g_user_display;
+    for (var server in disp){
+        for (var user in disp[server]){
+            if (!disp[server][user]) continue;
             if (Settings.natural_run && server == Settings.server && user == Settings.username){
                 Events[server+'_'+user+'_events'] = Events.events; // Don't reload it if possible
                 Settings[server+'_'+user+'_village_names'] = Settings.village_names;
@@ -2129,13 +2160,18 @@ Timeline.change_scope=function(){
     var users = servers.nextSibling;
     var check_user=function(e){
         var u = e.target.name;
-        Settings.user_display[s][u] = e.target.checked==true;
-        Settings.e.user_display.write();
+        if (Settings.natural_run){
+            Settings.user_display[s][u] = e.target.checked==true;
+            Settings.s.user_display.write();
+        } else {
+            Settings.g_user_display[s][u] = e.target.checked==true;
+            Settings.e.g_user_display.write();
+        }
     };
     var fill_users=function(){
         var txt = '';
         for (var u in Settings.users[s]){
-            var checked = Settings.user_display[s][u];
+            var checked = Settings.natural_run ? Settings.user_display[s][u] : Settings.g_user_display[s][u];
             var uname = Settings.users[s][u];
             txt += '<input type="checkbox" name="'+u+'" '+(checked?'checked=""':'')+'>'+uname+'&nbsp;<br>';
         }
@@ -2343,9 +2379,10 @@ Timeline.draw=function(once) {
             return q-0;
     }
 
-    for (var server in Settings.user_display){
-        for (var user in Settings.user_display[server]){
-            if (!Settings.user_display[server][user]) continue;
+    var disp = Settings.natural_run ? Settings.user_display : Settings.g_user_display;
+    for (var server in disp){
+        for (var user in disp[server]){
+            if (!disp[server][user]) continue;
             Debug.info('Displaying events for '+server+'.'+Settings.users[server][user]);
             Timeline.draw_events(g, Events[server+'_'+user+'_events'], Settings[server+'_'+user+'_village_names']);
         }
