@@ -366,6 +366,7 @@ Settings.get_server=function(){
     GM_setValue('last_server', url[3]+a);
     return url[3]+a;
 };
+Settings.server = Settings.get_server(); // This value is needed very early in the script.
 Settings.get_username=function(){
     if (Settings.natural_run){
         var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
@@ -571,7 +572,6 @@ Settings.config=function(parent_element) {
     }
 };
 Settings.init=function(){
-    Settings.server = Settings.get_server();
     Settings.username = Settings.get_username();
     Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
@@ -840,8 +840,11 @@ Debug.init =function() {
     Debug.debug("Source code line numbers are offset by: "+Debug.lineshift);
 };
 Debug.call("init",true); // Runs init once.
-Debug.info("Running on server: "+Settings.server);
-
+if (Settings.server==undefined) {
+    Debug.error("Running on unknown server!");
+} else {
+    Debug.info("Running on server: "+Settings.server);
+}
 /****************************************
  * IMAGES (ours and Travians)
  ****************************************/
@@ -1094,7 +1097,7 @@ Lines.tag_tool=function() {
 };
 Lines.run=function() {
     if (Lines.list_extra_villages) {
-        Lines.village_list = document.evaluate( "//div[@id='vlist']/table[@class='vlist']/tbody", document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null ).singleNodeValue;
+        Lines.village_list = document.getElementById("vlist").childNodes[1];
         if (Lines.village_list) {
             Lines.append_villages();
         } else {
