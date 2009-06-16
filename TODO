@@ -41,3 +41,4 @@ New Features:
 BUGS:
 - tl_date: constantly underestimates the time of an event by ~1 minute
 - any comment starting with "BUG:"
+- Confusion in identifying UID's, mixing up from other servers... FIX BEFORE RELEASE!
