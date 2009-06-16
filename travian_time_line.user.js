@@ -366,7 +366,7 @@ Settings.get_server=function(){
     GM_setValue('last_server', url[3]+a);
     return url[3]+a;
 };
-Settings.server = Settings.get_server(); // This value is needed very early in the script.
+Settings.server = Settings.get_server(); // This value is needed very early in the script. Luckily it does not rely on DOM.
 Settings.get_username=function(){
     if (Settings.natural_run){
         var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
@@ -1345,13 +1345,13 @@ Resources.update=function() {
         Resources.troops[Settings.village_id] = {};
 
         // Grab the troop table
-        var x = document.evaluate('//div[@id="troop_village"]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        var x = document.getElementById("troops").childNodes[2].childNodes;
 
-        // Only continue if there are troops present
-        if (x.snapshotItem(0).childNodes.length > 1){
-            // We can identify the troops based on their class
-            for (var i = 0; i < x.snapshotLength; i++){
-                var row = x.snapshotItem(i);
+        // We can identify the troops based on their class
+        for (var i = 0; i < x.length; i++){
+            var row = x[i];
+            // Only continue if there are troops present on this row
+            if (row.childNodes.length>1) {
                 var type;
                 if (row.childNodes[1].innerHTML.indexOf('unit uhero') >= 0) type = 'hero';
                 else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
@@ -1360,7 +1360,7 @@ Resources.update=function() {
                 Resources.troops[Settings.village_id][type] = parseInt(amount);
             }
         }
-        Debug.info("Found the following troups: "+uneval(Resources.troops[Settings.village_id]));
+        Debug.info("Found the following troops: "+uneval(Resources.troops[Settings.village_id]));
     }
     // Save the values
     Resources.s.storage.write();
