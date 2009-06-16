@@ -804,8 +804,8 @@ Debug.methods=["console","firebug"];
 Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
 Debug.print =GM_log;
-Debug.lineshift = function(){
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-749; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
+Debug.lineshift = function(){ // __LINESHIFT__ (nice search string)
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-808; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
@@ -1197,26 +1197,35 @@ Sidebar.run=function() {
         }
     }
 
-    var navi_table = document.getElementById("sleft");
-    if (!navi_table) {
+    Sidebar.navi = document.getElementById("sleft");
+    if (!Sidebar.navi) {
         Debug.warning("Couldn't find sidebar.");        
         return;
     }
     
     if (Sidebar.remove_home_link)
-        navi_table.childNodes[1].href=location.href;
+        Sidebar.navi.childNodes[1].href=location.href;
         
-    Sidebar.navi = navi_table.childNodes[3];
-    
     // Make copy of links
     Sidebar.oldnavi = [];
-    for (var i = 0; i < Sidebar.navi.childNodes.length; i++)
-        if (Sidebar.navi.childNodes[i].tagName=="A")
-            Sidebar.oldnavi.push(Sidebar.navi.childNodes[i]);
-
+    for (var i = 2; i < Sidebar.navi.childNodes.length; i++) {
+        var ch=Sidebar.navi.childNodes[i];
+        for (var ii = 0; ii < ch.childNodes.length; ii++) {
+            var ch2=ch.childNodes[ii];
+            if (ch2.tagName=="A") {
+                Sidebar.oldnavi.push(ch2);
+            }
+        }
+    }
+    
     // Remove all links
-    for (var i = Sidebar.navi.childNodes.length - 1; i>=0; i--)
+    for (var i = Sidebar.navi.childNodes.length - 1; i>=2; i--)
         Sidebar.navi.removeChild(Sidebar.navi.childNodes[i]);
+    
+    // Create a link container (p);
+    var p=document.createElement("p");
+    Sidebar.navi.appendChild(p);
+    Sidebar.navi=p;
     
     // Add new links
     for (var i = 0; i < Sidebar.links.length; i++) {
@@ -1229,6 +1238,7 @@ Sidebar.run=function() {
             Sidebar.add_break();
         } else {
             var el = Sidebar.oldnavi[x];
+            Debug.debug(el+" i="+i+" x="+x);
             //if (Sidebar.remove_target_blank)
             //    el.removeAttribute("target"); // Force all links to open in the current page.
             if (Sidebar.remove_plus_color)
