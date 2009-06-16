@@ -353,7 +353,7 @@ Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool
 Settings.natural_run = (location.href.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
                         !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
                         !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/));
-Settings.server=function(){
+Settings.get_server=function(){
     if (!Settings.natural_run) return GM_getValue('last_server', 'unknown');
     Settings.absolute_server = location.href.match('http://[.a-z0-9]*')+'';
     GM_setValue('absolute_server', Settings.absolute_server);
@@ -365,8 +365,8 @@ Settings.server=function(){
     if (url[1]=='speed2') a='y';
     GM_setValue('last_server', url[3]+a);
     return url[3]+a;
-}();
-Settings.username=function(){
+};
+Settings.get_username=function(){
     if (Settings.natural_run){
         var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
         if (uid == undefined) {
@@ -388,7 +388,7 @@ Settings.username=function(){
         throw "Could not find any previous UID";
     }
     return uid;
-}();
+};
 // Get the value of this setting.
 // Note that (for example)
 // "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
@@ -571,6 +571,8 @@ Settings.config=function(parent_element) {
     }
 };
 Settings.init=function(){
+    Settings.server = Settings.get_server();
+    Settings.username = Settings.get_username();
     Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     Settings.external('', '', 'users',          {},        Settings.type.object, undefined, '', 'true');
