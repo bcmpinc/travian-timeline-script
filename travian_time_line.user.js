@@ -947,7 +947,7 @@ Lines.create_analyzer_links=function(){
     rdiv.style.left = "315px";
     rdiv.style.top = "500px";
     rdiv.style.border = "solid 1px #000";
-    rdiv.style.background = "#ffc";
+    rdiv.style.background = "#ffc";table
     rdiv.style.zIndex = 16;
     rdiv.style.padding = "3px";
     rdiv.style.MozBorderRadius = "6px";
@@ -1600,12 +1600,18 @@ Events.collector={};
 Events.collector.building=function(){
     // Checking if data is available
     if (location.href.indexOf("dorf")<=0) return;
-    var build = document.evaluate('//div[starts-with(@id, "building_contract")]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    if (build == undefined) return;
+    var buildlist=document.getElementById("building_contract");
+    Debug.debug(buildlist.textContent);
+    var build = document.evaluate('./tbody/tr', buildlist, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (build == undefined) {
+        Debug.debug("No build tasks found.");
+        return;
+    }
 
     var center = location.href.indexOf('dorf2.php') >= 0;
 
     // Collecting
+    Debug.debug("Collecting "+build.snapshotLength+" build tasks.");
     for (var nn = 0; nn < build.snapshotLength; nn++){
         var x = build.snapshotItem(nn);
         var id = 'b'+x.childNodes[center ? 1 : 0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
