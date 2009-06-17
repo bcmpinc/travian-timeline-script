@@ -1657,14 +1657,21 @@ Events.collector.attack=function(){
     // These are both constant, and the only ways of reaching the rally point...
     if (location.href.indexOf('gid=16') < 0 && location.href.indexOf('id=39') < 0) return;
 
-    var res = document.evaluate('//table[@class="troop_details"]', 
-                                 document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var euro_server = false;
+    var res = document.evaluate('//table[@class="std troop_details"]//th[@colspan]/a[starts-with(@href, "karte.php")]', document,
+                                null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (res.snapshotLength == 0){
+        euro_server = true;
+        res = document.evaluate('//table[@class="troop_details"]', 
+                                    document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    }
     var last_event_time=0;
     var event_count=0;
 
     for ( var i=0 ; i < res.snapshotLength; i++ ) {
         // The top of the table
         x = res.snapshotItem(i);
+        if (!euro_server) x = x.parentNode.parentNode.parentNode.parentNode;
         // Instead of checking if this is the correct line, just act as if it's correct
         // If it isn't this will certainly fail.
         var d = new tl_date();
@@ -1678,8 +1685,8 @@ Events.collector.attack=function(){
             var r = [];
         }
         var zs=z.textContent.split('\n');
-        d.set_time(zs[1].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(zs[1].match('(\\d\\d?):\\d\\d:\\d\\d'));
+        d.set_time(zs[euro_server ? 1 : 3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
+        var t = d.adjust_day(zs[euro_server ? 1 : 2].match('(\\d\\d?):\\d\\d:\\d\\d'));
 
         var y = res.snapshotItem(i).parentNode;
         var dest = y.previousSibling.textContent;
