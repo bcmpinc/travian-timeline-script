@@ -1600,12 +1600,15 @@ Events.collector={};
 Events.collector.building=function(){
     // Checking if data is available
     if (location.href.indexOf("dorf")<=0) return;
-    var buildlist=document.getElementById("building_contract");
-    Debug.debug(buildlist.textContent);
-    var build = document.evaluate('./tbody/tr', buildlist, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    if (build == undefined) {
-        Debug.debug("No build tasks found.");
-        return;
+    var build = document.evaluate('//div[starts-with(@id, "building_contract")]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (build == undefined){
+        var buildlist=document.getElementById("building_contract");
+        Debug.debug(buildlist.textContent);
+        build = document.evaluate('./tbody/tr', buildlist, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        if (build == undefined) {
+            Debug.debug("No build tasks found.");
+            return;
+        }
     }
 
     var center = location.href.indexOf('dorf2.php') >= 0;
