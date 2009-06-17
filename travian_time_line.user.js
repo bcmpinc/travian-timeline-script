@@ -947,7 +947,7 @@ Lines.create_analyzer_links=function(){
     rdiv.style.left = "315px";
     rdiv.style.top = "500px";
     rdiv.style.border = "solid 1px #000";
-    rdiv.style.background = "#ffc";table
+    rdiv.style.background = "#ffc";
     rdiv.style.zIndex = 16;
     rdiv.style.padding = "3px";
     rdiv.style.MozBorderRadius = "6px";
@@ -1637,18 +1637,19 @@ Events.collector.attack=function(){
     // These are both constant, and the only ways of reaching the rally point...
     if (location.href.indexOf('gid=16') < 0 && location.href.indexOf('id=39') < 0) return;
 
-    var res = document.evaluate('//table[@class="std troop_details"]//th[@colspan]/a[starts-with(@href, "karte.php")]', document,
-                                null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var res = document.evaluate('//table[@class="troop_details"]', 
+                                 document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     var last_event_time=0;
     var event_count=0;
 
     for ( var i=0 ; i < res.snapshotLength; i++ ) {
         // The top of the table
-        x = res.snapshotItem(i).parentNode.parentNode.parentNode.parentNode;
+        x = res.snapshotItem(i);
         // Instead of checking if this is the correct line, just act as if it's correct
         // If it isn't this will certainly fail.
         var d = new tl_date();
-        if (x.childNodes.length == 5){ // We have resources coming back
+        Debug.debug("x="+x.innerHTML);
+        if (x.childNodes.length == 5){
             var z = x.childNodes[4];
             var r = x.childNodes[3].childNodes[0].childNodes[1].textContent.split(' |');
             Debug.debug(x.childNodes[3].childNodes[0].childNodes[1].textContent);
@@ -1656,8 +1657,9 @@ Events.collector.attack=function(){
             var z = x.childNodes[3];
             var r = [];
         }
-        d.set_time(z.textContent.split('\n')[3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(z.textContent.split('\n')[2].match('(\\d\\d?):\\d\\d:\\d\\d'));
+        var zs=z.textContent.split('\n');
+        d.set_time(zs[1].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
+        var t = d.adjust_day(zs[1].match('(\\d\\d?):\\d\\d:\\d\\d'));
 
         var y = res.snapshotItem(i).parentNode;
         var dest = y.previousSibling.textContent;
