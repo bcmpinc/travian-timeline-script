@@ -1344,23 +1344,40 @@ Resources.update=function() {
         // We're going to overwrite whatever was there in the first place
         Resources.troops[Settings.village_id] = {};
 
-        // Grab the troop table
-        var x = document.getElementById("troops").childNodes[2].childNodes;
+        // Grab the troop table. Two goddamn ways to do this now, stupid Travian update...
+        var x = document.evaluate('//div[@id="troop_village"]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        if (x.snapshotLength > 0){
+            if (x.snapshotItem(0).childNodes.length > 1){
+                // We can identify the troops based on their class
+                for (var i = 0; i < x.snapshotLength; i++){
+                    var row = x.snapshotItem(i);
+                    var type;
+                    if (row.childNodes[1].innerHTML.indexOf('unit uhero') >= 0) type = 'hero';
+                    else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
+                    var amount = row.childNodes[3].textContent;
 
-        // We can identify the troops based on their class
-        for (var i = 0; i < x.length; i++){
-            var row = x[i];
-            // Only continue if there are troops present on this row
-            if (row.childNodes.length>1) {
-                var type;
-                if (row.childNodes[1].innerHTML.indexOf('unit uhero') >= 0) type = 'hero';
-                else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
-                var amount = row.childNodes[3].textContent;
-
-                Resources.troops[Settings.village_id][type] = parseInt(amount);
+                    Resources.troops[Settings.village_id][type] = parseInt(amount);
+                }
             }
         }
-        Debug.info("Found the following troops: "+uneval(Resources.troops[Settings.village_id]));
+        else {
+            x = document.getElementById("troops").childNodes[2].childNodes;
+
+            // We can identify the troops based on their class
+            for (var i = 0; i < x.length; i++){
+                var row = x[i];
+                // Only continue if there are troops present on this row
+                if (row.childNodes.length>1) {
+                    var type;
+                    if (row.childNodes[1].innerHTML.indexOf('unit uhero') >= 0) type = 'hero';
+                    else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
+                    var amount = row.childNodes[3].textContent;
+
+                    Resources.troops[Settings.village_id][type] = parseInt(amount);
+                }
+            }
+            Debug.info("Found the following troops: "+uneval(Resources.troops[Settings.village_id]));
+        }
     }
     // Save the values
     Resources.s.storage.write();
