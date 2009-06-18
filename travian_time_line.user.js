@@ -1097,11 +1097,14 @@ Lines.tag_tool=function() {
 };
 Lines.run=function() {
     if (Lines.list_extra_villages) {
-        Lines.village_list = document.getElementById("vlist").childNodes[1];
-        if (Lines.village_list) {
-            Lines.append_villages();
-        } else {
-            Debug.warning("Could not find village list.");
+        var vlist=document.getElementById("vlist");
+        if (vlist) {
+            Lines.village_list = vlist.childNodes[1];
+            if (Lines.village_list) {
+                Lines.append_villages();
+            } else {
+                Debug.warning("Could not find village list.");
+            }
         }
     }
 
