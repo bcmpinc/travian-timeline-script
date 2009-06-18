@@ -804,7 +804,7 @@ Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which ca
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
 Debug.print =GM_log;
 Debug.lineshift = function(){ // __LINESHIFT__ (nice search string)
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-808; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-807; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
@@ -1947,7 +1947,9 @@ Events.collector.party = function(){
 
     var d = new tl_date();
     d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
-    var t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+    var duration = x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
+    d.adjust_day(duration);
+    var t = d.set_seconds(duration);
 
     var msg = x.childNodes[1].textContent;
     Debug.info('Party type = '+msg);
@@ -1981,7 +1983,7 @@ Events.collector.demolish = function(){
     }
     
     d.set_time(event_time);
-    var t = d.adjust_day(event_duration);    
+    var t = d.adjust_day(event_duration);
 
     // The target getting demolished
     var msg = x.childNodes[1].textContent;
@@ -1992,7 +1994,7 @@ Events.collector.demolish = function(){
     // We can just index this by the time - only one thing can be demoed at any given time
     var e = Events.get_event("d"+Settings.village_id, t);
     e[0] = 'demolish';
-    e[1] = t;
+    e[1] = d.set_seconds(event_duration);
     e[2] = msg;
 };
 
