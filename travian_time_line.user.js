@@ -1883,7 +1883,8 @@ Events.collector.research = function(){
         var d = new tl_date();
 
         d.set_time(x.childNodes[7].textContent.match(/(\d\d?):(\d\d) ?([a-z]*)/));
-        var t = d.adjust_day(x.childNodes[5].textContent.match(/(\d\d?):\d\d:\d\d/));
+        var duration = x.childNodes[5].textContent.match(/(\d\d?):\d\d:\d\d/);
+        var t = d.adjust_day(duration);
 
         var type = x.childNodes[3].textContent;
 
@@ -1895,7 +1896,8 @@ Events.collector.research = function(){
         var d = new tl_date();
  
         d.set_time(tr.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(tr.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+        var duration = tr.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
+        var t = d.adjust_day(duration);
  
         // Extract the unit being upgraded
         var type = tr.childNodes[1].childNodes[3].textContent;
@@ -1927,7 +1929,7 @@ Events.collector.research = function(){
     // Hash the event by the building name, because we can only have one research event per building per village
     var e = Events.get_event(Settings.village_id, t+building);
     e[0] = 'research';
-    e[1] = t;
+    e[1] = d.set_seconds(duration);
     e[2] = building + ': '+type+(level==undefined ? '' : ' '+level);
 };
 
