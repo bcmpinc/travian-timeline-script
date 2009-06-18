@@ -123,7 +123,7 @@ function tl_date(){
 
     this.set_time = function(time){
         // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
-        Debug.debug('Setting the time: '+time);
+        Debug.info('Setting the time: '+time);
  
         // Can't understand why people use am/pm, it's so confusing..??
         if (time[time.length - 1] == 'am' || time[time.length - 1] == 'pm')
@@ -132,18 +132,18 @@ function tl_date(){
         
         this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
  
-        Debug.debug('time is: '+this.date);
+        Debug.info('time is: '+this.date);
 
         return this.date.getTime();
     }
  
     this.set_day = function(day){
         // day is [day, month, year (optional)]. Month is 1-12.
-        Debug.debug('Setting the day: '+day);
+        Debug.info('Setting the day: '+day);
  
         this.date.setFullYear(day[2] == undefined ? this.date.getFullYear() : '20'+day[2], day[1] - 1, day[0]);
  
-        Debug.debug('time is: '+this.date);
+        Debug.info('time is: '+this.date);
  
         return this.date.getTime();
     }
@@ -171,7 +171,7 @@ function tl_date(){
         // This check needs to be done carefully, or some events will get pushed 24 hours father into the future than they should be.
         if (this.date.getTime() < this.start_time-600000) this.date.setDate(this.date.getDate() + 1);
 
-        Debug.debug('time is: '+this.date);
+        Debug.info('time is: '+this.date);
  
         return this.date.getTime();
     }
@@ -180,15 +180,14 @@ function tl_date(){
         // This will change the time such that it approximates the completion time better. 
         // Note that this approximation is not consistent between pageloads.
         // duration is of type [string, hours, minutes, seconds].
-        Debug.debug('Setting seconds with: '+duration);
+        Debug.info('Setting seconds with: '+duration);
  
         var date2=new Date();
         date2.setHours(date2.getHours()- -duration[1]);
         date2.setMinutes(date2.getMinutes()- -duration[2]);
         date2.setSeconds(date2.getSeconds()- -duration[3]);
         
-        // Check wheter the new value isn't screwed up somehow.
-        Debug.debug('new time would be: '+date2);
+        // Check whether the new value isn't screwed up somehow.
         if (Math.abs(date2.getTime()-this.date.getTime())<60000) {
             this.date=date2;
         }
@@ -805,7 +804,7 @@ Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which ca
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
 Debug.print =GM_log;
 Debug.lineshift = function(){ // __LINESHIFT__ (nice search string)
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-808; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-807; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
@@ -1347,23 +1346,40 @@ Resources.update=function() {
         // We're going to overwrite whatever was there in the first place
         Resources.troops[Settings.village_id] = {};
 
-        // Grab the troop table
-        var x = document.getElementById("troops").childNodes[2].childNodes;
+        // Grab the troop table. Two goddamn ways to do this now, stupid Travian update...
+        var x = document.evaluate('//div[@id="troop_village"]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        if (x.snapshotLength > 0){
+            if (x.snapshotItem(0).childNodes.length > 1){
+                // We can identify the troops based on their class
+                for (var i = 0; i < x.snapshotLength; i++){
+                    var row = x.snapshotItem(i);
+                    var type;
+                    if (row.childNodes[1].innerHTML.indexOf('unit uhero') >= 0) type = 'hero';
+                    else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
+                    var amount = row.childNodes[3].textContent;
 
-        // We can identify the troops based on their class
-        for (var i = 0; i < x.length; i++){
-            var row = x[i];
-            // Only continue if there are troops present on this row
-            if (row.childNodes.length>1) {
-                var type;
-                if (row.childNodes[1].innerHTML.indexOf('unit uhero') >= 0) type = 'hero';
-                else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
-                var amount = row.childNodes[3].textContent;
-
-                Resources.troops[Settings.village_id][type] = parseInt(amount);
+                    Resources.troops[Settings.village_id][type] = parseInt(amount);
+                }
             }
         }
-        Debug.info("Found the following troops: "+uneval(Resources.troops[Settings.village_id]));
+        else {
+            x = document.getElementById("troops").childNodes[2].childNodes;
+
+            // We can identify the troops based on their class
+            for (var i = 0; i < x.length; i++){
+                var row = x[i];
+                // Only continue if there are troops present on this row
+                if (row.childNodes.length>1) {
+                    var type;
+                    if (row.childNodes[1].innerHTML.indexOf('unit uhero') >= 0) type = 'hero';
+                    else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
+                    var amount = row.childNodes[3].textContent;
+
+                    Resources.troops[Settings.village_id][type] = parseInt(amount);
+                }
+            }
+            Debug.info("Found the following troops: "+uneval(Resources.troops[Settings.village_id]));
+        }
     }
     // Save the values
     Resources.s.storage.write();
@@ -1603,12 +1619,15 @@ Events.collector={};
 Events.collector.building=function(){
     // Checking if data is available
     if (location.href.indexOf("dorf")<=0) return;
-    var buildlist=document.getElementById("building_contract");
-    Debug.debug(buildlist.textContent);
-    var build = document.evaluate('./tbody/tr', buildlist, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    if (build == undefined) {
-        Debug.debug("No build tasks found.");
-        return;
+    var build = document.evaluate('//div[starts-with(@id, "building_contract")]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (build == undefined){
+        var buildlist=document.getElementById("building_contract");
+        Debug.debug(buildlist.textContent);
+        build = document.evaluate('./tbody/tr', buildlist, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        if (build == undefined) {
+            Debug.debug("No build tasks found.");
+            return;
+        }
     }
 
     var center = location.href.indexOf('dorf2.php') >= 0;
@@ -1640,18 +1659,24 @@ Events.collector.attack=function(){
     // These are both constant, and the only ways of reaching the rally point...
     if (location.href.indexOf('gid=16') < 0 && location.href.indexOf('id=39') < 0) return;
 
-    var res = document.evaluate('//table[@class="troop_details"]', 
-                                 document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var euro_server = false;
+    var res = document.evaluate('//table[@class="std troop_details"]//th[@colspan]/a[starts-with(@href, "karte.php")]', document,
+                                null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (res.snapshotLength == 0){
+        euro_server = true;
+        res = document.evaluate('//table[@class="troop_details"]', 
+                                    document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    }
     var last_event_time=0;
     var event_count=0;
 
     for ( var i=0 ; i < res.snapshotLength; i++ ) {
         // The top of the table
         x = res.snapshotItem(i);
+        if (!euro_server) x = x.parentNode.parentNode.parentNode.parentNode;
         // Instead of checking if this is the correct line, just act as if it's correct
         // If it isn't this will certainly fail.
         var d = new tl_date();
-        Debug.debug("x="+x.innerHTML);
         if (x.childNodes.length == 5){
             var z = x.childNodes[4];
             var r = x.childNodes[3].childNodes[0].childNodes[1].textContent.split(' |');
@@ -1661,8 +1686,9 @@ Events.collector.attack=function(){
             var r = [];
         }
         var zs=z.textContent.split('\n');
-        d.set_time(zs[1].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(zs[1].match('(\\d\\d?):\\d\\d:\\d\\d'));
+        d.set_time(zs[euro_server ? 1 : 3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
+        var duration = zs[euro_server ? 1 : 2].match('(\\d\\d?):\\d\\d:\\d\\d');
+        var t = d.adjust_day(duration);
 
         var y = res.snapshotItem(i).parentNode;
         var dest = y.previousSibling.textContent;
@@ -1677,7 +1703,7 @@ Events.collector.attack=function(){
         else last_event_time=t;
         var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
         e[0] = "attack";
-        e[1] = t;
+        e[1] = d.set_seconds(duration);
         e[2] = msg;
         e[3] = [];
         for (var j = 0; j<11; j++) {
@@ -1734,7 +1760,7 @@ Events.collector.market=function(){
     var type_A = function(){
         var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
         e[0] = "market";
-        e[1] = t;
+        e[1] = ts;
         e[2] = msg; // Extract the action type
     
         // Add resource pictures and amounts (if sending)
@@ -1744,10 +1770,11 @@ Events.collector.market=function(){
     // Local Return - sending only
     var type_B = function(){
         var rtn_t = 2*t - now;
+        var rtn_ts = 2*ts - now;
 
         var e = Events.get_event(Settings.village_id, 'a'+rtn_t+'_'+event_count);
         e[0] = 'market';
-        e[1] = rtn_t;
+        e[1] = rtn_ts;
         e[2] = Events.merchant_return + msg.split(Events.merchant_send)[1];
     }
 
@@ -1755,7 +1782,7 @@ Events.collector.market=function(){
     var type_C = function(did){
         var e = Events.get_event(did, 'a'+t+'_'+event_count);
         e[0] = 'market';
-        e[1] = t;
+        e[1] = ts;
         e[2] = Events.merchant_receive + ' ' + Settings.village_names[Settings.village_id];
         e[4] = res;
     }
@@ -1800,7 +1827,9 @@ Events.collector.market=function(){
 
         // Extract the arrival time, and adjust by duration of the shipment
         d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
+        var duration = x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+        var t = d.adjust_day(duration);
+        var ts = d.set_seconds(duration);
 
         // Using the time as unique id. If there are multiple with the same time increase event_count.
         // It's the best I could do.
@@ -1857,7 +1886,8 @@ Events.collector.research = function(){
         var d = new tl_date();
 
         d.set_time(x.childNodes[7].textContent.match(/(\d\d?):(\d\d) ?([a-z]*)/));
-        var t = d.adjust_day(x.childNodes[5].textContent.match(/(\d\d?):\d\d:\d\d/));
+        var duration = x.childNodes[5].textContent.match(/(\d\d?):\d\d:\d\d/);
+        var t = d.adjust_day(duration);
 
         var type = x.childNodes[3].textContent;
 
@@ -1869,7 +1899,8 @@ Events.collector.research = function(){
         var d = new tl_date();
  
         d.set_time(tr.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(tr.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+        var duration = tr.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
+        var t = d.adjust_day(duration);
  
         // Extract the unit being upgraded
         var type = tr.childNodes[1].childNodes[3].textContent;
@@ -1901,7 +1932,7 @@ Events.collector.research = function(){
     // Hash the event by the building name, because we can only have one research event per building per village
     var e = Events.get_event(Settings.village_id, t+building);
     e[0] = 'research';
-    e[1] = t;
+    e[1] = d.set_seconds(duration);
     e[2] = building + ': '+type+(level==undefined ? '' : ' '+level);
 };
 
@@ -1919,7 +1950,9 @@ Events.collector.party = function(){
 
     var d = new tl_date();
     d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
-    var t = d.adjust_day(x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d'));
+    var duration = x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
+    d.adjust_day(duration);
+    var t = d.set_seconds(duration);
 
     var msg = x.childNodes[1].textContent;
     Debug.info('Party type = '+msg);
@@ -1953,7 +1986,7 @@ Events.collector.demolish = function(){
     }
     
     d.set_time(event_time);
-    var t = d.adjust_day(event_duration);    
+    var t = d.adjust_day(event_duration);
 
     // The target getting demolished
     var msg = x.childNodes[1].textContent;
@@ -1964,7 +1997,7 @@ Events.collector.demolish = function(){
     // We can just index this by the time - only one thing can be demoed at any given time
     var e = Events.get_event("d"+Settings.village_id, t);
     e[0] = 'demolish';
-    e[1] = t;
+    e[1] = d.set_seconds(event_duration);
     e[2] = msg;
 };
 
