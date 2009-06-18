@@ -1757,7 +1757,7 @@ Events.collector.market=function(){
     var type_A = function(){
         var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
         e[0] = "market";
-        e[1] = t;
+        e[1] = ts;
         e[2] = msg; // Extract the action type
     
         // Add resource pictures and amounts (if sending)
@@ -1767,10 +1767,11 @@ Events.collector.market=function(){
     // Local Return - sending only
     var type_B = function(){
         var rtn_t = 2*t - now;
+        var rtn_ts = 2*ts - now;
 
         var e = Events.get_event(Settings.village_id, 'a'+rtn_t+'_'+event_count);
         e[0] = 'market';
-        e[1] = rtn_t;
+        e[1] = rtn_ts;
         e[2] = Events.merchant_return + msg.split(Events.merchant_send)[1];
     }
 
@@ -1778,7 +1779,7 @@ Events.collector.market=function(){
     var type_C = function(did){
         var e = Events.get_event(did, 'a'+t+'_'+event_count);
         e[0] = 'market';
-        e[1] = t;
+        e[1] = ts;
         e[2] = Events.merchant_receive + ' ' + Settings.village_names[Settings.village_id];
         e[4] = res;
     }
@@ -1823,7 +1824,9 @@ Events.collector.market=function(){
 
         // Extract the arrival time, and adjust by duration of the shipment
         d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var t = d.adjust_day(x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)'));
+        var duration = x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+        var t = d.adjust_day(duration);
+        var ts = d.set_seconds(duration);
 
         // Using the time as unique id. If there are multiple with the same time increase event_count.
         // It's the best I could do.
