@@ -579,6 +579,7 @@ Settings.init=function(){
     Settings.persist('user_display', {}); // Keep a local set of enabled/disabled ones too
     Settings.persist("village_names",{});
     Settings.persist("current_tab",  "Settings");
+    Settings.persist('is_iframe', false);
 
     var s = Settings.server;
     var u = Settings.username;
@@ -2719,6 +2720,8 @@ Tooltip.village_tip = function(anchor, did){
         }
         else if (Tooltip.refresh_data){
             // First, create a hidden iframe to load the data (much simpler than having to reparse everything seprate)
+            //Settings.is_iframe = true;
+            //Settings.s.is_iframe.write();
             var iframe = document.createElement('iframe');
             iframe.style.visibility = 'hidden';
             iframe.src = 'dorf1.php?newdid='+did;
@@ -2742,7 +2745,9 @@ Tooltip.village_tip = function(anchor, did){
                     request.send(null);
 
                     // Redraw the tooltip
+                    Debug.debug('hi');
                     div = fill();
+                    Debug.debug('bye');
                 }, 3000);
         }
 
@@ -2976,21 +2981,33 @@ Tooltip.run = function(){
         alert(e.lineNumber+":"+e);
     }
 }
-if (Settings.natural_run){
-    Feature.forall('init',true);
-} else {
-    Settings.init();
+// Settings init will always run first
+Settings.call('init', true);
+if (!Settings.natural_run){
     Events.init();
     Timeline.init();
+} else if (Settings.is_iframe){
+    Resources.init();
+    Events.init();
+} else {
+    Feature.forall('init',true);
 }
 window.addEventListener('load', function() {
-        // Filter out the natural includes/excludes - these always run everything
-        if (Settings.natural_run){
-            Feature.forall('run',true);
-        }
         // Unnatural (user-created) includes will only run the timeline
-        else {
+        if (!Settings.natural_run){
             Events.run();
             Timeline.run();
+        }
+        // If we're running inside an iframe, only do data collection
+        else if (Settings.is_iframe){
+            Resources.run();
+            Events.run();
+            // We're no longer in an iframe
+            Settings.is_iframe = false;
+            Settings.s.is_iframe.write();
+        }
+        // Filter out the natural includes/excludes - these always run everything
+        else {
+            Feature.forall('run',true);
         }
     }, false); // Run everything after the DOM loads!
