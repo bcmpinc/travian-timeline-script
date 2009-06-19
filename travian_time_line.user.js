@@ -2547,25 +2547,26 @@ Timeline.run=function() {
 Feature.create("Tooltip");
 Tooltip.init=function(){
     Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
-    Tooltip.setting('relative_time',        false, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
+    Tooltip.setting('relative_time',         true, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
 
     Tooltip.direct('br', '! Events.enabled');
     Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');
     var ttp_1 = Tooltip.direct('table');
     ttp_1.el.style.marginLeft = '10px';
     Tooltip.setting('seperate_values',      false, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
-    Tooltip.setting('merchant_kilo_values', false, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
-    Tooltip.setting('army_kilo_values',     false, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+    Tooltip.setting('merchant_kilo_values',  true, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+    Tooltip.setting('army_kilo_values',      true, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
 
     Tooltip.direct('br', '! Resources.enabled');
     Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.", '! Resources.enabled');
     var ttp_2 = Tooltip.direct('table');
     ttp_2.el.style.marginLeft = '10px';
     Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
-    Tooltip.setting('resource_kilo_values', false, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
+    Tooltip.setting('resource_kilo_values',  true, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
 
     Tooltip.direct('br', '! Resources.enabled');
     Tooltip.setting('show_troops',           true, Settings.type.bool,    undefined, "Show stored values for troops in the header.", '! Resources.enabled');
+    Tooltip.setting('refresh_data',          true, Settings.type.bool,    undefined, "Refresh data for ancient tooltips");
 
     Tooltip.direct('br');
     Tooltip.setting("mouseover_delay",        500, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
@@ -2715,6 +2716,34 @@ Tooltip.village_tip = function(anchor, did){
                 txt += '<td></tr></tbody></table>';
             }
             if (show_res || show_troops) txt += '</tbody></table>';
+        }
+        else if (Tooltip.refresh_data){
+            // First, create a hidden iframe to load the data (much simpler than having to reparse everything seprate)
+            var iframe = document.createElement('iframe');
+            iframe.style.visibility = 'hidden';
+            iframe.src = 'dorf1.php?newdid='+did;
+            document.body.appendChild(iframe);
+            // Can't figure out how to set an onload, unfortunately - but three seconds should be enough time
+            window.setTimeout(function(){
+                    // Remove the iframe after it has loaded; no point keeping it running in the background...
+                    document.body.removeChild(iframe);
+
+                    // We need to refresh the local copies of our data
+                    Events.s.events.read();
+                    Resources.s.storage.read();
+                    Resources.s.production.read();
+                    Resources.s.troops.read();
+                    store = Resources.storage[did];
+                    prod = Resources.production[did];
+
+                    // Then, send an xmlhttprequest to set the village back to the current one
+                    var request = new XMLHttpRequest();
+                    request.open('GET', 'dorf1.php?newdid='+Settings.village_id, true);
+                    request.send(null);
+
+                    // Redraw the tooltip
+                    div = fill();
+                }, 3000);
         }
 
         if (events.length > 0){
