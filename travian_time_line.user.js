@@ -823,7 +823,6 @@ Debug.init =function() {
         }
         break;
     case 1:
-        var console = unsafeWindow.console;
         if (!console) {
             Debug.print("Firebug not found! Using console for this page!");
             Debug.output=0;
