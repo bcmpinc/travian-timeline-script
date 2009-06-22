@@ -18,6 +18,8 @@ var metadata = <><![CDATA[
 // @author         bcmpinc
 // @author         arandia
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
+
+// @require        http://code.jquery.com/jquery-latest.js
 // ==/UserScript==
 ]]></>+"";
 
@@ -906,7 +908,7 @@ Lines.init=function(){
                 crop9: ["rgba(255,128,0.5)", true],
                 crop15: ["rgba(255,128,1.0)", true],
                 extra: ["rgba(128,128,128,1)", true],
-                farms: ["rgba(255,255,255,0.5)", true],
+                farms: ["rgba(255,255,255,1)", true],
                 ban: ["rgba(0,0,0,0.5)", false],
                 natar: ["rgba(128,64,0,0.5)", false],
                 other: ["rgba(255,0,255,0.5)", true]
