@@ -79,7 +79,7 @@ if (!Settings.natural_run){
 } else {
     Feature.forall('init',true);
 }
-window.addEventListener('load', function() {
+$(function() {
     // Unnatural (user-created) includes will only run the timeline
     if (!Settings.natural_run){
         Events.run();
@@ -97,4 +97,4 @@ window.addEventListener('load', function() {
     else {
         Feature.forall('run',true);
     }
-}, false); // Run everything after the DOM loads!
+}); // Run everything after the DOM loads!
