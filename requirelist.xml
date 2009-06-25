@@ -1,0 +1,18 @@
+<UserScriptConfig>
+  <script>
+    <Require filename="jquery-latest.js"/>
+    <Require filename="patch.js"/>
+    <Require filename="date.js"/>
+    <Require filename="feature.js"/>
+    <Require filename="settings.js"/>
+    <Require filename="debug.js"/>
+    <Require filename="images.js"/>
+    <Require filename="lines.js"/>
+    <Require filename="sidebar.js"/>
+    <Require filename="resources.js"/>
+    <Require filename="market.js"/>
+    <Require filename="events.js"/>
+    <Require filename="timeline.js"/>
+    <Require filename="tooltip.js"/>
+  </script>
+</UserScriptConfig>
