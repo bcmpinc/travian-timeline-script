@@ -20,19 +20,19 @@ var metadata = <><![CDATA[
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 
 // @require        http://code.jquery.com/jquery-latest.js
-// @require        patch.js
-// @require        date.js
-// @require        feature.js
-// @require        settings.js
-// @require        debug.js
-// @require        images.js
-// @require        lines.js
-// @require        sidebar.js
-// @require        resources.js
-// @require        market.js
-// @require        events.js
-// @require        timeline.js
-// @require        tooltip.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/patch.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/date.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/feature.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/settings.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/debug.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/images.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/lines.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/sidebar.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/resources.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/market.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/events.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/timeline.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/tooltip.js
 // ==/UserScript==
 ]]></>+"";
 
