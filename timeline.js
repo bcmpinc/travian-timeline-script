@@ -526,10 +526,8 @@ Timeline.run=function() {
     Timeline.draw();
 };
 
-if (Settings.natural_run){
-    Timeline.call('init', true);
-    $(function(){Timeline.call('run',true);});
-}
+Timeline.call('init', true);
+$(function(){Timeline.call('run',true);});
 
 }catch(e){
     try{Debug.exception(e);}
