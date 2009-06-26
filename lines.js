@@ -21,8 +21,8 @@ try{
  ****************************************/
 
 Feature.create("Lines");
+Lines.setting("enabled", true, Settings.type.bool, undefined, "Enable the map lines");
 Lines.init=function(){
-    Lines.setting("enabled", true, Settings.type.bool, undefined, "Enable the map lines");
     //Lines.setting("update_owned", true, Settings.type.bool, undefined, "Automatically create and remove lines to your villages.");
     //Lines.setting("update_ally", true, Settings.type.bool, undefined, "Automatically create and remove lines to ally members.");
     //Lines.setting("update_allies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of allied alliances.");
