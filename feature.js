@@ -132,7 +132,7 @@ Feature.create=function(name){
 // A feature is enabled if it doesn't have an enabled field or its enabled 
 // field is not exactly equal to false.
 Feature.call=function(fn_name, once) {
-    if (this.list[n].enabled===false) return;
+    if (this.enabled===false) return;
     if (once==undefined) once=false;
     if (!this.start) this.start=new Object();
     this.start[fn_name] = new Date().getTime();
@@ -148,8 +148,5 @@ Feature.call=function(fn_name, once) {
 };
 
 }catch(e){
-    try{Debug.exception(e);}
-    catch(ee) {
-        alert(e.lineNumber+":"+e);
-    }
+    Debug.exception(e);
 }
