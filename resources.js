@@ -191,7 +191,7 @@ Resources.run=function(){
 };
 
 if (Settings.natural_run){
-    //Resources.call('init', true);
+    Resources.call('init', true);
     $(function(){Resources.call('run',true);});
 }
 
