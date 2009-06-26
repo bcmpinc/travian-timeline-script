@@ -126,12 +126,13 @@ Feature.create=function(name){
     global[name]=x;
     return x;
 };
-// Executes the function specified by fn_name
-// wrapped by a try..catch block and stores
-// the start and endtime of execution.
-// If (once), this function can't be called
-// anymore in the future.
+// Executes the function specified by fn_name wrapped by a try..catch block if
+// the feature is enabled and stores the start and endtime of execution.
+// If (once), this function can't be called anymore in the future.
+// A feature is enabled if it doesn't have an enabled field or its enabled 
+// field is not exactly equal to false.
 Feature.call=function(fn_name, once) {
+    if (this.list[n].enabled===false) return;
     if (once==undefined) once=false;
     if (!this.start) this.start=new Object();
     this.start[fn_name] = new Date().getTime();
@@ -144,16 +145,6 @@ Feature.call=function(fn_name, once) {
     if (!this.end) this.end=new Object();
     this.end[fn_name] = new Date().getTime();
     // TODO: make this timing info visible somewhere.
-};
-// Executes (using Feature.call) the function specified by fn_name for all _enabled_
-// Features created with Feature.create() in the order they have been created.
-// A feature is enabled if it doesn't have an enabled field or its enabled field is not
-// exactly equal to false.
-Feature.forall=function(fn_name, once) {
-    for (var n in this.list) {
-        if (this.list[n].enabled!==false)
-            this.list[n].call(fn_name, once);
-    }
 };
 
 }catch(e){
