@@ -564,6 +564,9 @@ Events.collector.overflow = function(){
     }
 };
 
+Events.call('init', true);
+$(function(){Events.call('run',true);});
+
 }catch(e){
     try{Debug.exception(e);}
     catch(ee) {

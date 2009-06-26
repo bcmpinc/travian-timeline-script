@@ -190,6 +190,11 @@ Resources.run=function(){
     if (Resources.display) Resources.show();
 };
 
+if (Settings.natural_run){
+    //Resources.call('init', true);
+    $(function(){Resources.call('run',true);});
+}
+
 }catch(e){
     try{Debug.exception(e);}
     catch(ee) {

@@ -68,33 +68,3 @@ var metadata = <><![CDATA[
 // villages in the scripts source code.)
 /*****************************************************************************/   
 
-// Settings init will always run first
-Settings.call('init', true);
-if (!Settings.natural_run){
-    Events.init();
-    Timeline.init();
-} else if (Settings.is_iframe){
-    Resources.init();
-    Events.init();
-} else {
-    Feature.forall('init',true);
-}
-$(function() {
-    // Unnatural (user-created) includes will only run the timeline
-    if (!Settings.natural_run){
-        Events.run();
-        Timeline.run();
-    }
-    // If we're running inside an iframe, only do data collection
-    else if (Settings.is_iframe){
-        Resources.run();
-        Events.run();
-        // We're no longer in an iframe
-        Settings.is_iframe = false;
-        Settings.s.is_iframe.write();
-    }
-    // Filter out the natural includes/excludes - these always run everything
-    else {
-        Feature.forall('run',true);
-    }
-}); // Run everything after the DOM loads!

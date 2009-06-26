@@ -257,6 +257,11 @@ Lines.run=function() {
     Lines.tag_tool();
 };
 
+if (Settings.natural_run){
+    Lines.call('init', true);
+    $(function(){Lines.call('run',true);});
+}
+
 }catch(e){
     try{Debug.exception(e);}
     catch(ee) {

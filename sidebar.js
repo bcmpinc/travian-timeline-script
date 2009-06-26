@@ -147,6 +147,11 @@ Sidebar.run=function() {
     }
 };
 
+if (Settings.natural_run){
+    Sidebar.call('init', true);
+    $(function(){Sidebar.call('run',true);});
+}
+
 }catch(e){
     try{Debug.exception(e);}
     catch(ee) {

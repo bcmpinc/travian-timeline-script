@@ -443,6 +443,11 @@ Tooltip.run = function(){
     }
 
     Tooltip.overview();
+};
+
+if (Settings.natural_run){
+    Tooltip.call('init', true);
+    $(function(){Tooltip.call('run',true);});
 }
 
 }catch(e){

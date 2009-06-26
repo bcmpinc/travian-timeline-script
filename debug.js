@@ -21,6 +21,7 @@ try{
  ****************************************/
 
 Feature.create("Debug");
+
 // These categories are in order from extremely severe to extremely verbose and
 // are converted to functions in the Debug namespace using the specified name.
 // Example: Debug.warning("This shouldn't have happend!");
@@ -28,11 +29,13 @@ Feature.create("Debug");
 // has the same effect as the previous example.
 Debug.categories=["none","fatal","error","warning","info","debug","all"];
 Debug.methods=["console","firebug"];
+
 Debug.setting("level", 0, Settings.type.enumeration, Debug.categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
 Debug.setting("output", 0, Settings.type.enumeration, Debug.methods, "Where should the debug output be send to.");
+
 Debug.print =GM_log;
 Debug.lineshift = function(){ // __LINESHIFT__ (nice search string)
-    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-807; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
+    try { p.p.p=p.p.p; } catch (e) { return e.lineNumber-38; } // Keep the number in this line equal to it's line number. Don't modify anything else on this line.
 }();
 Debug.exception=function(fn_name, e) {
     // The lineshift is to correct the linenumber shift caused by greasemonkey.
@@ -64,13 +67,17 @@ Debug.init =function() {
         break;
     }
     Debug.debug("Source code line numbers are offset by: "+Debug.lineshift);
+
+    if (Settings.server==undefined) {
+        Debug.error("Running on unknown server!");
+    } else {
+        Debug.info("Running on server: "+Settings.server);
+    }
+
 };
+
 Debug.call("init",true); // Runs init once.
-if (Settings.server==undefined) {
-    Debug.error("Running on unknown server!");
-} else {
-    Debug.info("Running on server: "+Settings.server);
-}
+// $(function(){Debug.call('run',true);}); // there is no run.
 
 }catch(e){
     try{Debug.exception(e);}

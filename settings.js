@@ -254,7 +254,6 @@ Settings.init=function(){
     Settings.persist('user_display', {}); // Keep a local set of enabled/disabled ones too
     Settings.persist("village_names",{});
     Settings.persist("current_tab",  "Settings");
-    Settings.persist('is_iframe', false);
 
     var s = Settings.server;
     var u = Settings.username;
@@ -463,6 +462,10 @@ Settings.fill=function(){
 Settings.close=function(){
     remove(Settings.window);
 };
+
+// Settings init will always run
+Settings.call('init', true);
+$(function(){Settings.call('run',true);});
 
 }catch(e){
     try{Debug.exception(e);}
