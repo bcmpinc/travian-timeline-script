@@ -42,6 +42,7 @@ Tooltip.init=function(){
     Tooltip.direct('br', '! Resources.enabled');
     Tooltip.setting('show_troops',           true, Settings.type.bool,    undefined, "Show stored values for troops in the header.", '! Resources.enabled');
     Tooltip.setting('refresh_data',          true, Settings.type.bool,    undefined, "Refresh data for ancient tooltips");
+    Tooltip.setting('refresh_threshold',       12, Settings.type.integer, undefined, "The time threshold that must be passed before the script will fetch the latest data for you (in hours)");
 
     Tooltip.direct('br');
     Tooltip.setting("mouseover_delay",        500, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
@@ -192,7 +193,7 @@ Tooltip.village_tip = function(anchor, did){
             }
             if (show_res || show_troops) txt += '</tbody></table>';
         }
-        else if (Tooltip.refresh_data){
+        if (Tooltip.refresh_data && age > Tooltip.refresh_threshold){
             // First, create a hidden iframe to load the data (much simpler than having to reparse everything seprate)
             //Settings.is_iframe = true;
             //Settings.s.is_iframe.write();
