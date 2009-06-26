@@ -298,6 +298,16 @@ Settings.init=function(){
         Settings.e.g_user_display.write();
         Settings.s.user_display.write();
     }
+    
+    if (location.href.match(/about:cache\?device=timeline&/)) {
+        var params=location.href.split("&");
+        Settings.special={};
+        for (var i=1; i<params.length; i++) {
+            var z=params[i].split("=");
+            Settings.special[z[0]]=z[1];
+            GM_log("Param:"+params[i]);
+        }
+    }
 };
 Settings.run=function() {
     // Create link for opening the settings menu.
@@ -335,6 +345,10 @@ Settings.run=function() {
     Debug.info("The active village is "+Settings.village_id+": "+Settings.village_name);
     Settings.village_names[Settings.village_id]=Settings.village_name;
     Settings.s.village_names.write();
+    
+    if (Settings.special && Settings.special.page=="settings") {
+        Settings.show();
+    }
 };
 Settings.get_id=function(){
     GM_xmlhttpRequest({
