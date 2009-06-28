@@ -44,3 +44,4 @@ BUGS:
 - Confusion in identifying UID's, mixing up from other servers... FIX BEFORE RELEASE!
 - Script cannot handle the destruction of a village (still shows up)
 - Market events *can* get overwritten on their destination village, if land at the same time.
+- Also capture the account deletion note from the sidebar and show this in the modified one.
