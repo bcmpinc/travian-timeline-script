@@ -31,7 +31,7 @@ Feature.run =nothing;
 Feature.debug_categories=["none","fatal","error","warning","info","debug","all"];
 
 Feature.init_debug=function(){
-    if (global.Setting==undefined) {
+    if (global.Settings==undefined) {
         level=2;
     } else {
         this.setting("debug_level", Settings.debug_level || 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
@@ -155,8 +155,8 @@ Feature.create=function(name){
     x.name = name;
     x.s=new Object();
     Feature.list[name]=x;
-    global[name]=x;
     x.init_debug();
+    global[name]=x;
     return x;
 };
 // Executes the function specified by fn_name wrapped by a try..catch block if
