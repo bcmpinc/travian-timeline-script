@@ -479,6 +479,7 @@ Settings.close=function(){
 };
 
 // Correctly init debug now that it's possible
+Settings.setting("global_debug_level", 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
 Settings.init_debug();
 
 // Settings init will always run

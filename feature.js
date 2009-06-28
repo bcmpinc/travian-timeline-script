@@ -34,7 +34,7 @@ Feature.init_debug=function(){
     if (global.Settings==undefined) {
         level=2;
     } else {
-        this.setting("debug_level", Settings.debug_level || 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
+        this.setting("debug_level", Settings.global_debug_level || 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
         level=this.debug_level;
     }
     var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
