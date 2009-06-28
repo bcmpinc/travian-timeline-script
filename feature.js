@@ -48,6 +48,7 @@ Feature.init_debug=function(){
             this[cat]=nothing;
         }
     }
+    this.debug("Debug enabled.");
 };
 
 Feature.exception=function(fn_name, e) {
