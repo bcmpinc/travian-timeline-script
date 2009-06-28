@@ -14,8 +14,6 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-try{
-
 /****************************************
  * RESOURCES
  ****************************************/
@@ -193,11 +191,4 @@ Resources.run=function(){
 if (Settings.natural_run){
     Resources.call('init', true);
     $(function(){Resources.call('run',true);});
-}
-
-}catch(e){
-    try{Resources.exception(e);}
-    catch(ee) {
-        alert(e.lineNumber+":"+e);
-    }
 }

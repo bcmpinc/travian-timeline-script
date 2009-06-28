@@ -14,8 +14,6 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-try{
-
 /****************************************
  * TIMELINE
  ****************************************/
@@ -528,10 +526,3 @@ Timeline.run=function() {
 
 Timeline.call('init', true);
 $(function(){Timeline.call('run',true);});
-
-}catch(e){
-    try{Timeline.exception(e);}
-    catch(ee) {
-        alert(e.lineNumber+":"+e);
-    }
-}

@@ -14,8 +14,6 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-try{
-
 /****************************************
  * EVENTS
  ****************************************/
@@ -567,10 +565,3 @@ Events.collector.overflow = function(){
 
 Events.call('init', true);
 $(function(){Events.call('run',true);});
-
-}catch(e){
-    try{Events.exception(e);}
-    catch(ee) {
-        alert(e.lineNumber+":"+e);
-    }
-}

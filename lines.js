@@ -14,8 +14,6 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-try{
-
 /****************************************
  * LINES (and circles)
  ****************************************/
@@ -260,11 +258,4 @@ Lines.run=function() {
 if (Settings.natural_run){
     Lines.call('init', true);
     $(function(){Lines.call('run',true);});
-}
-
-}catch(e){
-    try{Lines.exception(e);}
-    catch(ee) {
-        alert(e.lineNumber+":"+e);
-    }
 }

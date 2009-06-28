@@ -14,9 +14,6 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-try{
-
-
 /****************************************
  * SETTINGS
  ****************************************/
@@ -485,10 +482,3 @@ Settings.init_debug();
 // Settings init will always run
 Settings.call('init', true);
 $(function(){Settings.call('run',true);});
-
-}catch(e){
-    try{Settings.exception(e);}
-    catch(ee) {
-        alert(e.lineNumber+":"+e);
-    }
-}

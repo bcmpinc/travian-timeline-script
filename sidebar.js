@@ -14,8 +14,6 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-try{
-
 /****************************************
  * SIDEBAR
  ****************************************/
@@ -150,11 +148,4 @@ Sidebar.run=function() {
 if (Settings.natural_run){
     Sidebar.call('init', true);
     $(function(){Sidebar.call('run',true);});
-}
-
-}catch(e){
-    try{Sidebar.exception(e);}
-    catch(ee) {
-        alert(e.lineNumber+":"+e);
-    }
 }

@@ -14,8 +14,6 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-try{
-
 /****************************************
  * Village Tool Tip
  ****************************************/
@@ -449,11 +447,4 @@ Tooltip.run = function(){
 if (Settings.natural_run){
     Tooltip.call('init', true);
     $(function(){Tooltip.call('run',true);});
-}
-
-}catch(e){
-    try{Tooltip.exception(e);}
-    catch(ee) {
-        alert(e.lineNumber+":"+e);
-    }
 }
