@@ -19,8 +19,9 @@
  ****************************************/
 
 Feature.create("Events");
+
+Events.s.enabled.description="Enable the event data collector";
 Events.init=function(){
-    Events.setting("enabled", true, Settings.type.bool, undefined, "Enable the event data collector");
     Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
     Events.setting("type", {
                 /* <tag> : [<color>             <visible>] */

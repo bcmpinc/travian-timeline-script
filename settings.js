@@ -246,11 +246,12 @@ Settings.init=function(){
     Settings.username = Settings.get_username();
     Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
-    Settings.external('', '', 'users',          {},        Settings.type.object, undefined, '', 'true');
-    Settings.external('', '', 'g_user_display', {},        Settings.type.object, undefined, '', 'true');
-    Settings.persist('user_display', {}); // Keep a local set of enabled/disabled ones too
-    Settings.persist("village_names",{});
-    Settings.persist("current_tab",  "Settings");
+    //Settings.external('', '', 'users',          {},        Settings.type.object, undefined, '', 'true');
+    //Settings.external('', '', 'g_user_display', {},        Settings.type.object, undefined, '', 'true');
+    // TODO: add documentation.
+    Settings.setting("user_display", {}, Settings.type.object,      undefined, "unknown"); // Keep a local set of enabled/disabled ones too
+    Settings.setting("village_names",{}, Settings.type.object,      undefined, "The names of the villages.");
+    Settings.setting("current_tab",  "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
 
     var s = Settings.server;
     var u = Settings.username;

@@ -19,8 +19,10 @@
  ****************************************/
 
 Feature.create("Sidebar");
+
+Sidebar.s.enabled.description="Cutomize the sidebar";
+
 Sidebar.init=function(){
-    Sidebar.setting("enabled", true, Settings.type.bool, undefined, "Cutomize the sidebar");
     Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
     Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
     Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");

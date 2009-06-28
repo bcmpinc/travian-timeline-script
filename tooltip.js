@@ -18,8 +18,10 @@
  * Village Tool Tip
  ****************************************/
 Feature.create("Tooltip");
+
+Tooltip.s.enabled = "Enable the Village Tooltip (ensure the event collection feature is also enabled).";
+
 Tooltip.init=function(){
-    Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
     Tooltip.setting('relative_time',         true, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
 
     Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');

@@ -19,8 +19,10 @@
  ****************************************/
 
 Feature.create("Timeline");
+
+Timeline.s.enabled = "Enable the timeline (make sure that the events feature is also enabled).";
+    
 Timeline.init=function(){
-    Timeline.setting("enabled", true, Settings.type.bool, undefined, "Enable the timeline (make sure that the events feature is also enabled).");
     Timeline.setting("collapse", true, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
     Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
     Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");

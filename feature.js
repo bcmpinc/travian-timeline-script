@@ -86,6 +86,7 @@ Feature.create=function(name){
     x.s=new Object();
     Feature.list[name]=x;
     x.init_debug();
+    if (global.Settings) x.setting("enabled", true, Settings.type.bool, undefined, "Is '"+name+"' enabled?");
     global[name]=x;
     return x;
 };

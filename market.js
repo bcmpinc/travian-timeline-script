@@ -19,8 +19,8 @@
  ****************************************/
 
 Feature.create("Market");
-Market.setting("enabled", true, Settings.type.bool, undefined, "Color the market offers to quickly determine their value.");
 
+Market.s.enabled.description="Color the market offers to quickly determine their value.";
 Market.update_colors=true; // tells whether the next call to colorify should recolor the table.
 
 Market.colorify=function() {
