@@ -25,7 +25,6 @@ var metadata = <><![CDATA[
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/date.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/feature.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/settings.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/debug.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/images.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/lines.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/sidebar.js
