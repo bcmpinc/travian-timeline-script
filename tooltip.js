@@ -22,34 +22,27 @@ Tooltip.init=function(){
     Tooltip.setting("enabled",               true, Settings.type.bool,    undefined, "Enable the Village Tooltip (ensure the event collection feature is also enabled).");
     Tooltip.setting('relative_time',         true, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
 
-    Tooltip.direct('br', '! Events.enabled');
     Tooltip.setting("show_info",             true, Settings.type.bool,    undefined, "Show additional info about units and resources involved with the events.", '! Events.enabled');
-    var ttp_1 = Tooltip.direct('table');
-    ttp_1.el.style.marginLeft = '10px';
-    Tooltip.setting('seperate_values',      false, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
-    Tooltip.setting('merchant_kilo_values',  true, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
-    Tooltip.setting('army_kilo_values',      true, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)', ttp_1);
+    Tooltip.setting('seperate_values',      false, Settings.type.bool,    undefined, "Seperate the event values from each other with |'s. Show info must be true.", '! (Tooltip.show_info && Events.enabled)');
+    Tooltip.setting('merchant_kilo_values',  true, Settings.type.bool,    undefined, "Show merchant trading values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)');
+    Tooltip.setting('army_kilo_values',      true, Settings.type.bool,    undefined, "Show army movement values in 1000's, rather than 1's. Show info must be true.", '! (Tooltip.show_info && Events.enabled)');
 
-    Tooltip.direct('br', '! Resources.enabled');
     Tooltip.setting('show_warehouse_store',  true, Settings.type.bool,    undefined, "Display the estimated warehouse stores at the top of each tooltip. Resource collection must be on.", '! Resources.enabled');
-    var ttp_2 = Tooltip.direct('table');
-    ttp_2.el.style.marginLeft = '10px';
-    Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
-    Tooltip.setting('resource_kilo_values',  true, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)', ttp_2);
+    Tooltip.setting('cycle_warehouse_info',  true, Settings.type.bool,    undefined, "Only show one piece of warehouse info. Change the type by clicking on the info.", '! (Tooltip.show_warehouse_store && Resources.enabled)');
+    Tooltip.setting('resource_kilo_values',  true, Settings.type.bool,    undefined, "Show resource storage values in 1000's, rather than 1's. Show warehouse store must be true.", '! (Tooltip.show_warehouse_store && Resources.enabled)');
 
-    Tooltip.direct('br', '! Resources.enabled');
     Tooltip.setting('show_troops',           true, Settings.type.bool,    undefined, "Show stored values for troops in the header.", '! Resources.enabled');
     Tooltip.setting('refresh_data',          true, Settings.type.bool,    undefined, "Refresh data for ancient tooltips");
     Tooltip.setting('refresh_threshold',       12, Settings.type.integer, undefined, "The time threshold that must be passed before the script will fetch the latest data for you (in hours)");
 
-    Tooltip.direct('br');
     Tooltip.setting("mouseover_delay",        500, Settings.type.integer, undefined, "The delay length before the tool tip appears (in milliseconds)");
     Tooltip.setting("mouseout_delay",         300, Settings.type.integer, undefined, "The delay length before the tool tip disappears (in milliseconds)");
 
     // These are invisable variables to the user
-    Tooltip.persist('header_rotation', [0, 0]);
-    Tooltip.persist("summary_rotation_type", 0);
-    Tooltip.persist("summary_rotation",    [0, 0]);
+    // TODO: document these settings.
+    Tooltip.setting('header_rotation', [0, 0], Settings.type.object, undefined, "unknown");
+    Tooltip.setting("summary_rotation_type", 0, Settings.type.integer, undefined, "unknown");
+    Tooltip.setting("summary_rotation",    [0, 0], Settings.type.object, undefined, "unknown");
 
     Tooltip.header_mapping   = [['wheat', 'percent', 'clock', 'eaten'], ['troops']]; // These are the types of display that the header will rotate through
     Tooltip.summary_mapping  = [['wheat', 'percent', 'clock', 'eaten'], ['hammer', 'nohammer']]; // And this is the same thing for the summary

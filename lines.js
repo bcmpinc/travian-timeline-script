@@ -30,7 +30,7 @@ Lines.init=function(){
     Lines.setting("list_extra_villages", true, Settings.type.bool, undefined, "Append villages in the 'extra' category to the villages list.");
     Lines.setting("analyze_neighbourhood", true, Settings.type.bool, undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
     Lines.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
-    Lines.persist("categories", { /* <tag>: [ <color> , <drawline> ], */
+    Lines.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             none: ["",false], // ie. remove from 'locations'.
                 owned: ["rgba(192,128,0,1.0)", true],
                 ally: ["rgba(0,0,255,0.5)", true],
@@ -44,8 +44,8 @@ Lines.init=function(){
                 ban: ["rgba(0,0,0,0.5)", false],
                 natar: ["rgba(128,64,0,0.5)", false],
                 other: ["rgba(255,0,255,0.5)", true]
-                });
-    Lines.persist("locations", {});
+                }, Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
+    Lines.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");
     // A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
     // name is optional.
 };

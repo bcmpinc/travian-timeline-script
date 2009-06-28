@@ -42,7 +42,7 @@ Sidebar.init=function(){
     // Original sidebar links
     // Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
     // TODO: make configureable?
-    Sidebar.persist("links",
+    Sidebar.setting("links",
                     [
                      1,
                      ["FAQ", "http://help.travian.nl/"],
@@ -62,7 +62,7 @@ Sidebar.init=function(){
                      -1,
                      6,
                      7
-                     ]);
+                     ]),Settings.type.object,undefined,"The links of the sidebar.";
 };
     
 Sidebar.add=function(text, target) {

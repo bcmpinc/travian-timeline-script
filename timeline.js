@@ -26,7 +26,6 @@ Timeline.init=function(){
     Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
     Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
 
-    Timeline.direct('br');
     Timeline.setting("color", "rgba(255, 255, 204, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
     Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
@@ -39,7 +38,7 @@ Timeline.init=function(){
 
     Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
 
-    Timeline.persist("visible", true);
+    Timeline.setting("visible", true, Settings.type.bool, undefined, "Is the timeline visible on pageload. This setting can also be changed with the timeline-button.");
 
     Timeline.scroll_offset=0; // the current 'center' of the timeline.
 

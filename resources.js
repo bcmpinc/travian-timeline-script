@@ -20,12 +20,12 @@
     
 Feature.create("Resources");
 Resources.init=function(){
-    Resources.setting("enabled", true, Settings.type.bool, undefined, "Turn on resource and resource rate collection.");
-    Resources.setting("display", true, Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off");
-    Resources.persist("market", {});
-    Resources.persist("production", {});
-    Resources.persist("storage", {});
-    Resources.persist("troops", {});
+    Resources.setting("enabled", true,  Settings.type.bool, undefined, "Turn on resource and resource rate collection.");
+    Resources.setting("display", true,  Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off");
+    Resources.setting("market",     {}, Settings.type.object, undefined, "An array of length 4 containing the amount of resources currently available for sale on the marketplace. Might often be inaccurate.");
+    Resources.setting("production", {}, Settings.type.object, undefined, "An array of length 4 containing the production rates of resp. wood, clay, iron and grain. (amount produced per hour)");
+    Resources.setting("storage",    {}, Settings.type.object, undefined, "An array of length 7 containing the stored values of wood, clay, iron and grain, the size of the warehouse, the size of the granary, and then a timestamp indicating when this was taken.");
+    Resources.setting("troops",     {}, Settings.type.object, "A village-id indexed array with the amount of troops that are currently in that village.");
 };
 
 Resources.show=function() {
