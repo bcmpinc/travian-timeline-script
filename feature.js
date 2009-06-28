@@ -14,8 +14,6 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-try{
-
 /****************************************
  * FEATURE
  ****************************************/
@@ -24,6 +22,39 @@ Feature=new Object();
 Feature.list=[];
 Feature.init=nothing;
 Feature.run =nothing;
+
+// These categories are in order from extremely severe to extremely verbose and
+// are converted to functions in the Feature namespace using the specified name.
+// Example: this.warning("This shouldn't have happend!");
+// has the same effect as the previous example.
+// 'none' and 'all' are not converted to functions.
+Feature.debug_categories=["none","fatal","error","warning","info","debug","all"];
+
+Feature.init_debug=function(){
+    if (global.Setting==undefined) {
+        level=2;
+    } else {
+        this.setting("debug_level", Settings.debug_level || 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
+        level=this.debug_level;
+    }
+    var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
+    for (var i=1; i<Feature.debug_categories.length-1; i++) {
+        var cat = Feature.debug_categories[i];
+        if (i <= level) {
+            var fn = fns[i];
+            var tag=this.name + " - " + Feature.debug_categories[i] +": ";
+            this[cat]=function(text){fn(tag+text);};
+        } else {
+            this[cat]=nothing;
+        }
+    }
+};
+
+Feature.exception=function(fn_name, e) {
+    var msg = fn_name+' ('+(e.lineNumber)+'): '+e;
+    this.error(msg);
+};
+
 // This is a generalization for all settings. *Not* to be called directly.
 // Note that 'parent_el' is being depreciated in favour of Settings.type.table
 Feature._setting=function(name, def_val, type, typedata, description, hidden){
@@ -124,6 +155,7 @@ Feature.create=function(name){
     x.s=new Object();
     Feature.list[name]=x;
     global[name]=x;
+    x.init_debug();
     return x;
 };
 // Executes the function specified by fn_name wrapped by a try..catch block if
@@ -139,14 +171,10 @@ Feature.call=function(fn_name, once) {
     try {
         this[fn_name]();
     } catch (e) {
-        Debug.exception("call "+this.name+'.'+fn_name, e);
+        this.exception("call "+this.name+'.'+fn_name, e);
     }
     if (once) this[fn_name]=nothing;
     if (!this.end) this.end=new Object();
     this.end[fn_name] = new Date().getTime();
     // TODO: make this timing info visible somewhere.
 };
-
-}catch(e){
-    Debug.exception(e);
-}

@@ -101,13 +101,13 @@ Events.get_event=function(village, id, overwrite) {
     if (e == undefined) {
         e = {};
         Events.events[village]=e;
-        Debug.debug("Added village: "+village);
+        this.debug("Added village: "+village);
     }
     e = Events.events[village][id];
     if (e == undefined || overwrite === true) {
         e = [];
         Events.events[village][id]=e;
-        Debug.debug("Created element: "+id);
+        this.debug("Created element: "+id);
     }
     return e;
 };
@@ -120,7 +120,7 @@ Events.update_data=function() {
             try {
                 Events.collector[c]();
             } catch (e) {
-                Debug.exception("Events.collector."+c,e);
+                this.exception("Events.collector."+c,e);
             }
         }
     }
@@ -149,16 +149,17 @@ Events.run=function() {
 // ----------
 
 Events.collector={};
+
 Events.collector.building=function(){
     // Checking if data is available
     if (location.href.indexOf("dorf")<=0) return;
     var build = document.evaluate('//div[starts-with(@id, "building_contract")]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     if (build == undefined){
         var buildlist=document.getElementById("building_contract");
-        Debug.debug(buildlist.textContent);
+        Events.debug(buildlist.textContent);
         build = document.evaluate('./tbody/tr', buildlist, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
         if (build == undefined) {
-            Debug.debug("No build tasks found.");
+            Events.debug("No build tasks found.");
             return;
         }
     }
@@ -166,7 +167,7 @@ Events.collector.building=function(){
     var center = location.href.indexOf('dorf2.php') >= 0;
 
     // Collecting
-    Debug.debug("Collecting "+build.snapshotLength+" build tasks.");
+    Events.debug("Collecting "+build.snapshotLength+" build tasks.");
     for (var nn = 0; nn < build.snapshotLength; nn++){
         var x = build.snapshotItem(nn);
         var id = 'b'+x.childNodes[center ? 1 : 0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
@@ -182,7 +183,7 @@ Events.collector.building=function(){
         e[1] = d.set_seconds(duration);
         e[2] = x.childNodes[center ? 3 : 1].textContent;
 
-        Debug.debug("Time set to "+e[1]);
+        Events.debug("Time set to "+e[1]);
     }
 };
 
@@ -213,7 +214,7 @@ Events.collector.attack=function(){
         if (x.childNodes.length == 5){
             var z = x.childNodes[4];
             var r = x.childNodes[3].childNodes[0].childNodes[1].textContent.split(' |');
-            Debug.debug(x.childNodes[3].childNodes[0].childNodes[1].textContent);
+            Events.debug(x.childNodes[3].childNodes[0].childNodes[1].textContent);
         } else {
             var z = x.childNodes[3];
             var r = [];
@@ -332,7 +333,7 @@ Events.collector.market=function(){
             for (var did in Settings.village_names) if (msg.indexOf(Settings.village_names[did]) >= 0){ internal = true; break;}
         }
 
-        Debug.debug(msg + ' | send='+send+' internal='+internal);
+        Events.debug(msg + ' | send='+send+' internal='+internal);
 
         // Ensure an event of this type doesn't already exists at this time
         if (Events.test_event(Settings.village_id, 'a'+t+'_'+event_count)) return;
@@ -371,14 +372,14 @@ Events.collector.market=function(){
 
         // Extract the value of the shipment
         var res = x.childNodes[4].childNodes[1].textContent.split(' | ');
-        Debug.debug("Merchant carrying "+res);
+        Events.debug("Merchant carrying "+res);
 
         // Extract the transit message
         var msg = x.childNodes[0].childNodes[3].textContent;
 
         // Check if merchant is returning
         var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
-        if (ret) Debug.debug("Merchant is returning");
+        if (ret) Events.debug("Merchant is returning");
 
         if (Events.predict_merchants) predict();
         else type_A(); // by default
@@ -437,11 +438,11 @@ Events.collector.research = function(){
  
         // Extract the unit being upgraded
         var type = tr.childNodes[1].childNodes[3].textContent;
-        Debug.debug("Upgrading "+type);
+        Events.debug("Upgrading "+type);
  
         // Extract the name of the building where the upgrade is occuring
         var building = x.snapshotItem(0).previousSibling.previousSibling.childNodes[1].childNodes[1].textContent;
-        Debug.debug("Upgrading at the "+building);
+        Events.debug("Upgrading at the "+building);
 
         // Extract the level upgrading to - not for the acadamy!
         // We can't go far into these <td>s, because Beyond changes its guts (a lot!). Messing too much around
@@ -454,7 +455,7 @@ Events.collector.research = function(){
             if (level){
                 level[2] -= -1; // It's upgrading to one more than its current value. Don't use '+'.
                 level = level[1]+level[2]+level[3];
-                Debug.debug("Upgrading to "+level);
+                Events.debug("Upgrading to "+level);
                 break;
             }
         }
@@ -479,7 +480,7 @@ Events.collector.party = function(){
     if (x.snapshotLength != 1) return;
     x = x.snapshotItem(0).parentNode;
 
-    Debug.info('Found a party event!');
+    Events.info('Found a party event!');
 
     var d = new tl_date();
     d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
@@ -488,7 +489,7 @@ Events.collector.party = function(){
     var t = d.set_seconds(duration);
 
     var msg = x.childNodes[1].textContent;
-    Debug.info('Party type = '+msg);
+    Events.info('Party type = '+msg);
 
     // We can only have one party per village max; overwrite any pre-existing party records
     // (how the hell could we ever get pre-existing parties??? You can't cancel the damn things...)
@@ -514,7 +515,7 @@ Events.collector.demolish = function(){
     event_duration = x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')
     // If one regex didn't match, we probably had a false positive
     if (event_time==null || event_duration==null) {
-        Debug.debug("Got demolish event false positive.");
+        Events.debug("Got demolish event false positive.");
         return;
     }
     
@@ -568,7 +569,7 @@ Events.call('init', true);
 $(function(){Events.call('run',true);});
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{Events.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

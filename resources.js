@@ -55,7 +55,7 @@ Resources.show=function() {
         head.appendChild(tr);
         tr.innerHTML = a;
     } else {
-        Debug.warning("Could not find resources bar.");
+        this.warning("Could not find resources bar.");
     }
 };
 Resources.update=function() {
@@ -69,11 +69,11 @@ Resources.update=function() {
             var t = x[i].childNodes[3].firstChild.src.match("\\d") - 1;
             mkt[t] += c;
         }
-        Debug.info("This is on the market: "+mkt);
+        this.info("This is on the market: "+mkt);
         Resources.market[Settings.village_id]=mkt;
         Resources.s.market.write();
     } else {
-        Debug.debug("No marketplace info found");
+        this.debug("No marketplace info found");
     }
 
     // Capture these from the title of the resource bar
@@ -97,8 +97,8 @@ Resources.update=function() {
         // Capture storage sizes
         if (i >= 2) Resources.storage[Settings.village_id][i+2] = parseInt(e.textContent.split('/')[1]);
     }
-    Debug.info("Found the following resources storage: "+Resources.storage[Settings.village_id].join(" - "));
-    Debug.info("Found the following resources production: "+Resources.production[Settings.village_id].join(" - "));
+    this.info("Found the following resources storage: "+Resources.storage[Settings.village_id].join(" - "));
+    this.info("Found the following resources production: "+Resources.production[Settings.village_id].join(" - "));
     
     // Timestamp. We don't need to worry about time offset because it's only used to compare with itself.
     Resources.storage[Settings.village_id][6] = new Date().getTime();
@@ -140,7 +140,7 @@ Resources.update=function() {
                     Resources.troops[Settings.village_id][type] = parseInt(amount);
                 }
             }
-            Debug.info("Found the following troops: "+uneval(Resources.troops[Settings.village_id]));
+            this.info("Found the following troops: "+uneval(Resources.troops[Settings.village_id]));
         }
     }
     // Save the values
@@ -196,7 +196,7 @@ if (Settings.natural_run){
 }
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{Resources.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

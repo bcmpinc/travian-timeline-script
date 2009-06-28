@@ -75,7 +75,7 @@ if (Settings.natural_run){
 }
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{Market.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

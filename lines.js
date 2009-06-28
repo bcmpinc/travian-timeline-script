@@ -159,7 +159,7 @@ Lines.update=function() {
         Lines.posx = z.x - 0;
         Lines.posy = z.y - 0;
     } catch (e) {
-        Debug.exception("Lines.update", e);
+        this.exception("Lines.update", e);
     }
     // Make sure the locations variable is up to date
     Lines.s.locations.read();
@@ -238,7 +238,7 @@ Lines.run=function() {
             if (Lines.village_list) {
                 Lines.append_villages();
             } else {
-                Debug.warning("Could not find village list.");
+                this.warning("Could not find village list.");
             }
         }
     }
@@ -263,7 +263,7 @@ if (Settings.natural_run){
 }
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{Lines.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

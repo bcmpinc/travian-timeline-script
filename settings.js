@@ -113,8 +113,8 @@ Settings.read=function() {
         break;
         }
     } catch (e) {
-        if (Debug&&Debug.exception)
-            Debug.exception("Settings.read", e);
+        if (this&&this.exception)
+            this.exception("Settings.read", e);
         else
             GM_log("FATAL:"+e);
     }
@@ -125,7 +125,7 @@ Settings.write=function() {
     try {
         switch (this.type) {
         case Settings.type.none:
-        Debug.warning("This setting ("+this.fullname+") has no type and can't be stored!");
+        this.warning("This setting ("+this.fullname+") has no type and can't be stored!");
         break;
 
         case Settings.type.string:
@@ -140,8 +140,8 @@ Settings.write=function() {
         break;
         }
     } catch (e) {
-        if (Debug&&Debug.exception)
-            Debug.exception("Settings.read", e);
+        if (this&&this.exception)
+            this.exception("Settings.read", e);
         else
             GM_log("FATAL:"+e);
     }
@@ -342,7 +342,7 @@ Settings.run=function() {
         Settings.persist('village_id', 0);
         if (Settings.village_id === 0) Settings.get_id();
     }
-    Debug.info("The active village is "+Settings.village_id+": "+Settings.village_name);
+    this.info("The active village is "+Settings.village_id+": "+Settings.village_name);
     Settings.village_names[Settings.village_id]=Settings.village_name;
     Settings.s.village_names.write();
     
@@ -455,7 +455,7 @@ Settings.show=function() {
             }, false);
         }
     } catch (e) {
-        Debug.exception("Settings.show", e);
+        this.exception("Settings.show", e);
     }
     w.firstChild.addEventListener("click",Settings.close,false);
 };
@@ -478,12 +478,15 @@ Settings.close=function(){
     remove(Settings.window);
 };
 
+// Correctly init debug now that it's possible
+Settings.init_debug();
+
 // Settings init will always run
 Settings.call('init', true);
 $(function(){Settings.call('run',true);});
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{Settings.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

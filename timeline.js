@@ -68,7 +68,7 @@ Timeline.init=function(){
                 Settings[server+'_'+user+'_village_names'] = Settings.village_names;
                 Settings[server+'_'+user+'_race'] = Settings.race;
             } else {
-                Debug.info("Loading events from "+server+'.'+user);
+                this.info("Loading events from "+server+'.'+user);
                 Events.external(server, user, 'events', {}, Settings.type.object, undefined, '');
                 Settings.external(server, user, 'village_names', {}, Settings.type.object, undefined, '');
                 Settings.external(server, user, 'race', 0, Settings.type.integer, undefined, '');
@@ -431,7 +431,7 @@ Timeline.draw=function(once) {
     for (var server in disp){
         for (var user in disp[server]){
             if (!disp[server][user]) continue;
-            Debug.info('Displaying events for '+server+'.'+Settings.users[server][user]);
+            this.info('Displaying events for '+server+'.'+Settings.users[server][user]);
             Timeline.draw_events(g, server, user);
         }
     }
@@ -530,7 +530,7 @@ Timeline.call('init', true);
 $(function(){Timeline.call('run',true);});
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{Timeline.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

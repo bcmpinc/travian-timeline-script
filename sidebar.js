@@ -92,13 +92,13 @@ Sidebar.run=function() {
         if (plus) {
             plus.style.visibility="hidden";
         } else {
-            Debug.info("Couldn't find the plus button.");
+            this.info("Couldn't find the plus button.");
         }
     }
 
     Sidebar.navi = document.getElementById("sleft");
     if (!Sidebar.navi) {
-        Debug.warning("Couldn't find sidebar.");        
+        this.warning("Couldn't find sidebar.");        
         return;
     }
     
@@ -137,7 +137,7 @@ Sidebar.run=function() {
             Sidebar.add_break();
         } else {
             var el = Sidebar.oldnavi[x];
-            Debug.debug(el+" i="+i+" x="+x);
+            this.debug(el+" i="+i+" x="+x);
             //if (Sidebar.remove_target_blank)
             //    el.removeAttribute("target"); // Force all links to open in the current page.
             if (Sidebar.remove_plus_color)
@@ -153,7 +153,7 @@ if (Settings.natural_run){
 }
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{Sidebar.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

@@ -220,9 +220,9 @@ Tooltip.village_tip = function(anchor, did){
                     request.send(null);
 
                     // Redraw the tooltip
-                    Debug.debug('hi');
+                    this.debug('hi');
                     div = fill();
-                    Debug.debug('bye');
+                    this.debug('bye');
                 }, 3000);
         }
 
@@ -452,7 +452,7 @@ if (Settings.natural_run){
 }
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{Tooltip.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

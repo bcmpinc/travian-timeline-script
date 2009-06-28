@@ -19,7 +19,7 @@ try{
 
 
 }catch(e){
-    try{Debug.exception(e);}
+    try{**fill in**.exception(e);}
     catch(ee) {
         alert(e.lineNumber+":"+e);
     }

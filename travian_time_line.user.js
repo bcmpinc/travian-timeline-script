@@ -1,3 +1,4 @@
+// Travian Time Line Main file
 var metadata = <><![CDATA[
 // ==UserScript==
 // @name           Travian Time Line
