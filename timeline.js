@@ -194,11 +194,11 @@ Timeline.change_scope=function(){
     txt += '"/></th></tr></thead><tbody><tr><td style="border-right: 1px solid black">';
     var i=0;
     var s;
-    for (var a in Settings.users){
+    /*for (var a in Settings.users){
         if (i==0) s = a;
         txt += '<input type="radio" name="'+a+'" value="'+i+'"'+(i==0?' checked=""':'')+'>'+a+'&nbsp;<br>';
         i++;
-    }
+    }*/
     txt += '<td></tbody></table>';
     div.innerHTML = txt;
     div.childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[0].addEventListener('click', Timeline.change_scope, false);
@@ -216,11 +216,11 @@ Timeline.change_scope=function(){
     };
     var fill_users=function(){
         var txt = '';
-        for (var u in Settings.users[s]){
+        /*for (var u in Settings.users[s]){
             var checked = Settings.natural_run ? Settings.user_display[s][u] : Settings.g_user_display[s][u];
             var uname = Settings.users[s][u];
             txt += '<input type="checkbox" name="'+u+'" '+(checked?'checked=""':'')+'>'+uname+'&nbsp;<br>';
-        }
+        }*/
         users.innerHTML = txt;
         for (var i in users.childNodes)
             users.childNodes[i].addEventListener('change', check_user, false);
@@ -430,7 +430,7 @@ Timeline.draw=function(once) {
     for (var server in disp){
         for (var user in disp[server]){
             if (!disp[server][user]) continue;
-            this.info('Displaying events for '+server+'.'+Settings.users[server][user]);
+            //this.info('Displaying events for '+server+'.'+Settings.users[server][user]);
             Timeline.draw_events(g, server, user);
         }
     }
