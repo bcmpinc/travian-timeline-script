@@ -172,7 +172,7 @@ Events.collector.building=function(){
         e[0]="building";
     
         // TODO: get timing more accurate.
-        var d = new tl_date();
+        var d = new tl_date(Events);
         d.set_time(x.childNodes[center ? 7 : 3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
         var duration = x.childNodes[center ? 5 : 2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
         d.adjust_day(duration);
@@ -206,7 +206,7 @@ Events.collector.attack=function(){
         if (!euro_server) x = x.parentNode.parentNode.parentNode.parentNode;
         // Instead of checking if this is the correct line, just act as if it's correct
         // If it isn't this will certainly fail.
-        var d = new tl_date();
+        var d = new tl_date(Events);
         if (x.childNodes.length == 5){
             var z = x.childNodes[4];
             var r = x.childNodes[3].childNodes[0].childNodes[1].textContent.split(' |');
@@ -215,6 +215,7 @@ Events.collector.attack=function(){
             var z = x.childNodes[3];
             var r = [];
         }
+
         var zs=z.textContent.split('\n');
         d.set_time(zs[euro_server ? 1 : 3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
         var duration = zs[euro_server ? 1 : 2].match('(\\d\\d?):\\d\\d:\\d\\d');
@@ -353,7 +354,7 @@ Events.collector.market=function(){
     var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
     for (var i=0; i < shipment.snapshotLength; i++){
         var x = shipment.snapshotItem(i);
-        var d = new tl_date();
+        var d = new tl_date(Events);
 
         // Extract the arrival time, and adjust by duration of the shipment
         d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
@@ -413,7 +414,7 @@ Events.collector.research = function(){
         if (x.snapshotLength != 1) return;
         x = x.snapshotItem(0).parentNode;
 
-        var d = new tl_date();
+        var d = new tl_date(Events);
 
         d.set_time(x.childNodes[7].textContent.match(/(\d\d?):(\d\d) ?([a-z]*)/));
         var duration = x.childNodes[5].textContent.match(/(\d\d?):\d\d:\d\d/);
@@ -426,7 +427,7 @@ Events.collector.research = function(){
     }
     else {
         var tr = x.snapshotItem(1).childNodes[1];
-        var d = new tl_date();
+        var d = new tl_date(Events);
  
         d.set_time(tr.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
         var duration = tr.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
@@ -478,7 +479,7 @@ Events.collector.party = function(){
 
     Events.info('Found a party event!');
 
-    var d = new tl_date();
+    var d = new tl_date(Events);
     d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
     var duration = x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
     d.adjust_day(duration);
@@ -505,7 +506,7 @@ Events.collector.demolish = function(){
     if (x == undefined) return;
 
     x = x.parentNode.parentNode.parentNode;
-    var d = new tl_date();
+    var d = new tl_date(Events);
 
     event_time = x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)')
     event_duration = x.childNodes[2].textContent.match('(\\d\\d?):\\d\\d:\\d\\d')

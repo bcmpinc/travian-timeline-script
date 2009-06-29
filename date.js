@@ -14,15 +14,16 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-function tl_date(){
+function tl_date(parent){
     this.date = new Date();
+    this.parent = parent; // Used for debugging...
     this.date.setTime(this.date.getTime());
     this.date.setMilliseconds(0);
     this.start_time = this.date.getTime();
 
     this.set_time = function(time){
         // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
-        Debug.info('Setting the time: '+time);
+        this.parent.info('Setting the time: '+time);
  
         // Can't understand why people use am/pm, it's so confusing..??
         if (time[time.length - 1] == 'am' || time[time.length - 1] == 'pm')
@@ -31,18 +32,18 @@ function tl_date(){
         
         this.date.setHours(time[1], time[2], (time[3] != undefined && time[3].match('\\d')) ? time[3] : 0);
  
-        Debug.info('time is: '+this.date);
+        this.parent.info('time is: '+this.date);
 
         return this.date.getTime();
     }
  
     this.set_day = function(day){
         // day is [day, month, year (optional)]. Month is 1-12.
-        Debug.info('Setting the day: '+day);
+        this.parent.info('Setting the day: '+day);
  
         this.date.setFullYear(day[2] == undefined ? this.date.getFullYear() : '20'+day[2], day[1] - 1, day[0]);
  
-        Debug.info('time is: '+this.date);
+        this.parent.info('time is: '+this.date);
  
         return this.date.getTime();
     }
@@ -50,7 +51,7 @@ function tl_date(){
     this.adjust_day = function(duration){
         // The idea with this is to compare a duration value with the current day/time, and adjust the day for every 24 hours in duration.
         // duration is of type [string, hours, ....].
-        Debug.debug('Adjusting the day by: '+duration);
+        this.parent.debug('Adjusting the day by: '+duration);
  
         this.date.setDate(this.date.getDate() + Math.floor(duration[1]/24));
  
@@ -59,7 +60,7 @@ function tl_date(){
             var d = new Date();
             var hours = (d.getHours() - (-duration[1]))%24;
             if (duration[2] != undefined) hours += Math.floor((d.getMinutes() - (-duration[2]))/60);
-            Debug.debug('Using 12-hour time; event is in pm');
+            this.parent.debug('Using 12-hour time; event is in pm');
             if (hours%24 >= 12 && this.date.getHours() < 12){
                 this.date.setHours(this.date.getHours() - (-12));
             }
@@ -70,7 +71,7 @@ function tl_date(){
         // This check needs to be done carefully, or some events will get pushed 24 hours father into the future than they should be.
         if (this.date.getTime() < this.start_time-600000) this.date.setDate(this.date.getDate() + 1);
 
-        Debug.info('time is: '+this.date);
+        this.parent.info('time is: '+this.date);
  
         return this.date.getTime();
     }
@@ -79,7 +80,7 @@ function tl_date(){
         // This will change the time such that it approximates the completion time better. 
         // Note that this approximation is not consistent between pageloads.
         // duration is of type [string, hours, minutes, seconds].
-        Debug.info('Setting seconds with: '+duration);
+        this.parent.info('Setting seconds with: '+duration);
  
         var date2=new Date();
         date2.setHours(date2.getHours()- -duration[1]);
@@ -91,7 +92,7 @@ function tl_date(){
             this.date=date2;
         }
   
-        Debug.debug('time is: '+this.date);
+        this.parent.debug('time is: '+this.date);
  
         return this.date.getTime();
     }
