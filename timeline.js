@@ -20,7 +20,7 @@
 
 Feature.create("Timeline");
 
-Timeline.s.enabled = "Enable the timeline (make sure that the events feature is also enabled).";
+Timeline.s.enabled.description = "Enable the timeline (make sure that the events feature is also enabled).";
     
 Timeline.init=function(){
     Timeline.setting("collapse", true, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");

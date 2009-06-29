@@ -19,6 +19,7 @@
  ****************************************/
     
 Feature.create("Resources");
+
 Resources.s.enabled.description="Turn on resource and resource rate collection.";
 Resources.init=function(){
     Resources.setting("display", true,  Settings.type.bool, undefined, "Turn the resource/minute display on the resource bar on/off");
