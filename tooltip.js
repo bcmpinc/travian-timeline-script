@@ -19,7 +19,7 @@
  ****************************************/
 Feature.create("Tooltip");
 
-Tooltip.s.enabled = "Enable the Village Tooltip (ensure the event collection feature is also enabled).";
+Tooltip.s.enabled.description = "Enable the Village Tooltip (ensure the event collection feature is also enabled).";
 
 Tooltip.init=function(){
     Tooltip.setting('relative_time',         true, Settings.type.bool,    undefined, "Show times relative to the present, as opposed to the time of day.");
@@ -382,7 +382,7 @@ Tooltip.make_tip = function(anchor, callback, param){
                 if (timer != undefined) window.clearTimeout(timer);
                 timer = window.setTimeout(function(){
                         div.parentNode.removeChild(div);
-                    }, Tooltip.mouseout_delay);
+                    }, Tooltip.mouseout_delay);d
             }, false);
     }
 
