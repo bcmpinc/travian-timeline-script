@@ -64,7 +64,7 @@ Sidebar.init=function(){
                      -1,
                      6,
                      7
-                     ]),Settings.type.object,undefined,"The links of the sidebar.";
+                     ],Settings.type.object,undefined,"The links of the sidebar.");
 };
     
 Sidebar.add=function(text, target) {
