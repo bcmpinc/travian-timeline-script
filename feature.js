@@ -73,6 +73,14 @@ Feature.exception=function(fn_name, e) {
 // The name of this function is a bit ill chosen, because 
 // persistent data objects that clearly are *not* settings, are and should
 // also be created/defined using this function.
+//
+// The value of the setting is available in {feature}.{setting name}.
+// Functions for updating the value and storing the value are available 
+// with {feature}.s.{setting name}.{method}, where method is 'read()' or 'write()'.
+// {method} can also be replaced by a fieldname for accessing the setting's
+// meta data. For example: {feature}.s.{setting name}.description.
+//
+// @param typedata: The meaning of the typedata depends on the value of type. 
 Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     if (type==undefined) type=Settings.type.none;
     var s = new Object();
