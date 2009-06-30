@@ -60,6 +60,18 @@ function isempty(ob) {
     return true;
 }
 
+// Turn x/y coords into the hash value that goes on the karte page
+function xy_id(x, y) {
+    return 1 + (parseInt(x)+400) + (801*Math.abs(parseInt(y) - 400));
+}
+
+// The inverse function of xy_id, id_xy(xy_id(x, y)) == [x, y]
+function id_xy(id) {
+    x = id%801 ? (id%801 - 401) : 400;
+    y = 400 - (id - x - 401)/801;
+    return [x, y];
+}
+
 // Functions missing in Math
 Math.sinh     = function(x) { return .5*(Math.exp(x)-Math.exp(-x)); };
 Math.cosh     = function(x) { return .5*(Math.exp(x)+Math.exp(-x)); };
