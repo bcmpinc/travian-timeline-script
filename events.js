@@ -50,7 +50,7 @@ Events.init=function(){
     Events.setting('demolish',   0, Settings.type.enumeration, display_options, 'Keep track of demolished buildings [from the main building]');
     Events.setting('overflow',   1, Settings.type.enumeration, display_options, 'Keep track of resource overflows [from every page]');
 
-    Events.setting('send_twice',  false, Settings.type.boolean, undefined, "Has something to do with the marketplace's send twice checkbox.");
+    Events.setting('send_twice',  false, Settings.type.boolean, undefined, "Internal persistent data only. This records whether the 'send twice' box was checked on the previous page, when sending merchants.");
 };
 // There is no report type, because there are different types of reports, which can also be divided over the currently
 // available types.
