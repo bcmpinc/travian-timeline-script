@@ -256,6 +256,7 @@ Settings.init=function(){
     var s = Settings.server;
     var u = Settings.username;
     // Have to make it backwards-compatible... can't go around asking users to reset Settings.users for us, can we?
+    /* No point running this until we figure out global variables...
     if (Settings.users[s] == undefined)          Settings.users[s] = {};
     if (Settings.g_user_display[s] == undefined) Settings.g_user_display[s] = {};
     if (Settings.user_display[s] == undefined)   Settings.user_display[s] = {};
@@ -295,7 +296,7 @@ Settings.init=function(){
         Settings.e.users.write();
         Settings.e.g_user_display.write();
         Settings.s.user_display.write();
-    }
+        }*/
     
     if (location.href.match(/about:cache\?device=timeline&/)) {
         var params=location.href.split("&");
@@ -333,12 +334,13 @@ Settings.run=function() {
         var village_link = document.evaluate('//tr[@class="sel"]/td[@class="text"]/a', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
         Settings.village_name = village_link.textContent;
         Settings.village_id=village_link.href.match("newdid=(\\d+)")[1]-0;
+        Settings.village_coord = village_link.parentNode.parentNode.textContent.match(/\((-?\d\d?\d?\|-?\d\d?\d?)\)/)[1].split('|');
     } catch (e) {
         // If this fails, there probably is only 1 village.
         // We should only then try loading this data from storage
-        Settings.persist('village_name', "");
-        Settings.persist('village_id', 0);
-        if (Settings.village_id === 0) Settings.get_id();
+        //Settings.persist('village_name', "");
+        //Settings.persist('village_id', 0);
+        //if (Settings.village_id === 0) Settings.get_id();
     }
     this.info("The active village is "+Settings.village_id+": "+Settings.village_name);
     Settings.village_names[Settings.village_id]=Settings.village_name;

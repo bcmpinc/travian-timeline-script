@@ -299,9 +299,17 @@ Events.collector.market=function(){
     }
 
     // Local Return - sending only
-    var type_B = function(){
-        var rtn_t = 2*t - now;
-        var rtn_ts = 2*ts - now;
+    // use the hash parameter to correctly calculate the distance and thus the time
+    var type_B = function(hash){
+        var coord = id_xy(hash);
+        var x = coord[0] - parseInt(Settings.village_coord[0]);
+        var y = coord[1] - parseInt(Settings.village_coord[1]);
+        var dist = Math.sqrt(x*x+y*y);
+        Events.info('Merchant is travelling '+dist+' squares');
+        var time = (dist / ([16, 12, 24][Settings.race])) * 3600000; // In miliseconds
+
+        var rtn_t = t + time;
+        var rtn_ts = ts + time;
 
         var e = Events.get_event(Settings.village_id, 'a'+rtn_t+'_'+event_count);
         e[0] = 'market';
@@ -336,7 +344,7 @@ Events.collector.market=function(){
         if (Events.test_event(Settings.village_id, 'a'+t+'_'+event_count)) return;
 
         if (send || !internal) type_A();
-        if (send)              type_B();
+        if (send)              type_B(hash);
         if (send && internal)  type_C(did);
 
         if (send && Events.send_twice){
@@ -373,6 +381,9 @@ Events.collector.market=function(){
 
         // Extract the transit message
         var msg = x.childNodes[0].childNodes[3].textContent;
+
+        // Extract the hash of the destination village
+        var hash = x.childNodes[0].childNodes[3].childNodes[0].href.match(/\?d=(\d*)/)[1];
 
         // Check if merchant is returning
         var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
