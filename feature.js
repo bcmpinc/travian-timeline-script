@@ -18,9 +18,21 @@
  * FEATURE
  ****************************************/
   
+// Create the Feature object (namespace)
 Feature=new Object();
+
+// A list containing all created features.
 Feature.list=[];
+
+// The init function, which runs before the document is fully loaded. 
+// This field can be overriden by new features. (for example: 
+//   Market.init = function() { /*...*/ };
+// This function should not access the DOM.
 Feature.init=nothing;
+
+// Similar to init, but runs after the html document (DOM) has loaded, but 
+// possibly before images and other external resources are loaded.
+// This function is allowed to access and modify the DOM.
 Feature.run =nothing;
 
 // These categories are in order from extremely severe to extremely verbose and
@@ -30,6 +42,7 @@ Feature.run =nothing;
 // 'none' and 'all' are not converted to functions.
 Feature.debug_categories=["none","fatal","error","warning","info","debug","all"];
 
+// Initializes the debug functions for the specific feature.
 Feature.init_debug=function(){
     if (global.Settings==undefined) {
         level=2;
@@ -56,7 +69,10 @@ Feature.exception=function(fn_name, e) {
     this.error(msg);
 };
 
-// This is used to create a basic setting
+// This is used to create/define a basic setting/persistent data object.
+// The name of this function is a bit ill chosen, because 
+// persistent data objects that clearly are *not* settings, are and should
+// also be created/defined using this function.
 Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     if (type==undefined) type=Settings.type.none;
     var s = new Object();
@@ -79,6 +95,10 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     return s;
 };
 
+// This creates a new feature.
+// This new feature will be available in the global namespace.
+// Override run and init for respectively 'DOM accessing and modifying code' and 
+// 'initialization code that does not touch the DOM (document)'.
 Feature.create=function(name){
     var x=new Object();
     x.__proto__=Feature;
@@ -90,6 +110,7 @@ Feature.create=function(name){
     global[name]=x;
     return x;
 };
+
 // Executes the function specified by fn_name wrapped by a try..catch block if
 // the feature is enabled and stores the start and endtime of execution.
 // If (once), this function can't be called anymore in the future.
