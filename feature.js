@@ -93,7 +93,7 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     s.description = description;
     s.hidden      = hidden;
 
-    s.fullname    = Settings.server+'.'+Settings.username+'.'+this.name+'.'+name;
+    s.fullname    = this.name+'.'+name;
 
     if (this.s==undefined) this.s=new Object();
     this.s[name] = s;

@@ -80,65 +80,78 @@ Settings.set=function(value) {
 // Call this if the value might have changed and you want it's latest value.
 Settings.read=function() {
     try {
+        var x;
+        for (var param=0; param<Settings.scopes.length; param++) {
+            x = GM_getValue(Settings.scopes[param]+'.'+this.fullname);
+            if (x!==undefined && x!=="") {
+                this.scope = param;
+                break;
+            }
+        }
+        if (!(param<Settings.scopes.length)) {
+            x=this.def_val;
+            this.scope = Settings.scopes.length;
+        }
+        
         switch (this.type) {
-        case Settings.type.none:
-        break;
+            case Settings.type.none:
+            break;
 
-        case Settings.type.string:
-        var x = GM_getValue(this.fullname);
-        if (x!==undefined && x!=="")
+            case Settings.type.string:
             this.set(x);
-        break;
+            break;
 
-        case Settings.type.integer:
-        case Settings.type.enumeration:
-        var x = GM_getValue(this.fullname);
-        if (x!==undefined && x!=="")
+            case Settings.type.integer:
+            case Settings.type.enumeration:
             this.set(x-0);
-        break;
+            break;
 
-        case Settings.type.object:
-        var x = GM_getValue(this.fullname);
-        if (x!==undefined && x!=="")
+            case Settings.type.object:
             this.set(eval(x));
-        break;
+            break;
 
-        case Settings.type.bool:
-        var x = GM_getValue(this.fullname);
-        if (x!==undefined && x!=="")
+            case Settings.type.bool:
             this.set(x==true);
-        break;
+            break;
         }
     } catch (e) {
         if (this&&this.exception)
-            this.exception("Settings.read", e);
+            this.exception("Settings.read("+this.name+")", e);
         else
             GM_log("FATAL:"+e);
     }
 };
 
 // Stores the value in the GM persistent storage database aka about:config
-Settings.write=function() {
+// Scope is used to store this setting at a higher scope.
+Settings.write=function(scope) {
     try {
-        switch (this.type) {
-        case Settings.type.none:
-        this.warning("This setting ("+this.fullname+") has no type and can't be stored!");
-        break;
-
-        case Settings.type.string:
-        case Settings.type.integer:
-        case Settings.type.enumeration:
-        case Settings.type.bool:
-        GM_setValue(this.fullname, this.get());
-        break;
-
-        case Settings.type.object:
-        GM_setValue(this.fullname, uneval(this.get()));
-        break;
+        scope=scope||0;
+        if (scope>=Settings.scopes.length) {
+            this.warning("This setting ("+this.fullname+") can't be stored in the default scope!");
+            return;
         }
+        var param=Settings.scopes[scope]+'.'+this.fullname;
+        switch (this.type) {
+            case Settings.type.none:
+            this.warning("This setting ("+this.fullname+") has no type and can't be stored!");
+            break;
+
+            case Settings.type.string:
+            case Settings.type.integer:
+            case Settings.type.enumeration:
+            case Settings.type.bool:
+            GM_setValue(param, this.get());
+            break;
+
+            case Settings.type.object:
+            GM_setValue(param, uneval(this.get()));
+            break;
+        }
+        this.scope=scope;
     } catch (e) {
         if (this&&this.exception)
-            this.exception("Settings.read", e);
+            this.exception("Settings.write("+this.name+")", e);
         else
             GM_log("FATAL:"+e);
     }
@@ -242,8 +255,18 @@ Settings.config=function(parent_element) {
         GM_log(e);
     }
 };
+
+// These are the scopes that can be used. Ordered from local to global.
+// For non-native pages, this might be different.
+Settings.determine_scopes=function() {
+    Settings.scopes=[
+        Settings.server+'.'+Settings.username,
+        Settings.server,
+        'global'
+    ];
+};
+
 Settings.init=function(){
-    Settings.username = Settings.get_username();
     Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     //Settings.external('', '', 'users',          {},        Settings.type.object, undefined, '', 'true');
@@ -255,6 +278,7 @@ Settings.init=function(){
 
     var s = Settings.server;
     var u = Settings.username;
+    
     // Have to make it backwards-compatible... can't go around asking users to reset Settings.users for us, can we?
     /* No point running this until we figure out global variables...
     if (Settings.users[s] == undefined)          Settings.users[s] = {};
@@ -478,6 +502,10 @@ Settings.fill=function(){
 Settings.close=function(){
     remove(Settings.window);
 };
+
+// BUG: this functions access DOM before it's fully loaded.
+Settings.username = Settings.get_username(); 
+Settings.determine_scopes();
 
 // Correctly init debug now that it's possible
 Settings.setting("global_debug_level", 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
