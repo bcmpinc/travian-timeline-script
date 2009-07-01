@@ -78,10 +78,15 @@ Settings.set=function(value) {
 // Retrieves the value from the GM persistent storage database aka about:config
 // Settings are not automatically updated.
 // Call this if the value might have changed and you want it's latest value.
-Settings.read=function() {
+// @param param, the first scope that will be used.
+Settings.read=function(scope) {
     try {
+        if (this.type==Settings.type.none) {
+            return; // intentionally no warning.
+        }
         var x;
-        for (var param=0; param<Settings.scopes.length; param++) {
+        param = scope || 0;
+        for (param; param<Settings.scopes.length; param++) {
             x = GM_getValue(Settings.scopes[param]+'.'+this.fullname);
             if (x!==undefined && x!=="") {
                 this.scope = param;
@@ -94,25 +99,26 @@ Settings.read=function() {
         }
         
         switch (this.type) {
-            case Settings.type.none:
-            break;
-
             case Settings.type.string:
-            this.set(x);
             break;
 
             case Settings.type.integer:
             case Settings.type.enumeration:
-            this.set(x-0);
+            x=x-0;
             break;
 
             case Settings.type.object:
-            this.set(eval(x));
+            x=eval(x);
             break;
 
             case Settings.type.bool:
-            this.set(x==true);
+            x=x==true;
             break;
+        }
+        if (scope!==undefined) {
+            return x;
+        } else {
+            this.set(x);
         }
     } catch (e) {
         if (this&&this.exception)
@@ -157,10 +163,31 @@ Settings.write=function(scope) {
     }
 };
 
+// Removed the value from the GM persistent storage database aka about:config
+// Scope is used to remove this setting from a higher scope.
+// Use either read() or write() after a call to this function.
+Settings.remove=function(scope) {
+    try {
+        scope=scope||0;
+        if (scope>=Settings.scopes.length) {
+            this.warning("The default setting of ("+this.fullname+") can't be changed!");
+            return;
+        }
+        var param=Settings.scopes[scope]+'.'+this.fullname;
+        GM_deleteValue(param);
+    } catch (e) {
+        if (this&&this.exception)
+            this.exception("Settings.remove("+this.name+")", e);
+        else
+            GM_log("FATAL:"+e);
+    }
+};
+
 // Appends a DOM element to parent_element that can be used to modify this setting.
 Settings.config=function(parent_element) {
     try {
-        var s = document.createElement("span");
+        var s  = document.createElement("span"); // the setting config thing
+        var sc = document.createElement("span"); // the scope
         var setting = this;
         var settingsname = this.name.replace(/_/g," ").pad(22);
         var hint="";
@@ -172,6 +199,27 @@ Settings.config=function(parent_element) {
             if (h)
                 hint = " "+h[1];
         }
+        
+        sc.style.marginRight="8px";
+        if (this.scope<Settings.scopes.length) {
+            sc.innerHTML = this.scope;
+            var sv=GM_getValue(Settings.scopes[setting.scope+1]+'.'+this.fullname);
+            if (sv===undefined) sv = this.def_val;
+            sc.title=sv;
+        
+            if (this.scope<Settings.scopes.length-1) {
+                sc.addEventListener("click",function (e) {
+                        setting.remove(setting.scope);
+                        setting.write(setting.scope+1);
+                        Settings.fill();
+                    },false);
+                sc.style.cursor="pointer";
+                sc.style.color="red";
+            }
+        } else {
+             sc.innerHTML = 'd' 
+        }
+
 
         // Create the input element.
         switch (this.type) {
@@ -246,11 +294,19 @@ Settings.config=function(parent_element) {
             if (setting.parent_el.type == 'table'){ // create the tr's and td's
                 var tr = document.createElement('tr');
                 var td = document.createElement('td');
+                td.appendChild(sc);
                 td.appendChild(s);
                 tr.appendChild(td);
                 setting.parent_el.el.appendChild(tr);
-            } else setting.parent_el.el.appendChild(s);
-        } else parent_element.appendChild(s); // Default if we have no given parent
+            } else {
+                setting.parent_el.el.appendChild(sc);
+                setting.parent_el.el.appendChild(s);
+            }
+        } else {
+            // Default if we have no given parent
+            parent_element.appendChild(sc);
+            parent_element.appendChild(s); 
+        }
     } catch (e) {
         GM_log(e);
     }
