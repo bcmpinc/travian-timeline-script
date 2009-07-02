@@ -21,6 +21,8 @@
 Feature.create("Settings");
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
 // Are we on a natural include/exclude, or one created by the user?
+// *NOTE* the login page is *not* excluded naturally, yet is still an unnatural page.
+// THERE ARE GOOD REASONS FOR THIS.
 Settings.natural_run = (location.href.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
                         !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
                         !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/));
@@ -39,27 +41,52 @@ Settings.get_server=function(){
 };
 Settings.server = Settings.get_server(); // This value is needed very early in the script. Luckily it does not rely on DOM.
 Settings.get_username=function(){
-    if (Settings.natural_run){
+    // A helper function that trys to extract the UID from the page, and returns an empty string if it fails.
+    var extract_uid=function(){
         var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-        if (uid == undefined) {
-            // If we run into an error, use the stored version. This also helps us if this accidentally runs before the DOM loads.
-            uid = GM_getValue('last_uid');
-            if (uid == undefined) {
-                GM_log("Have no record of any UID.");
-                throw "Could not find any previous UID";
-            }
-            return uid;
-        }
+        if (uid == undefined) return '';
+        // If we successfully extracted the uid
         uid = uid.textContent.match(/uid=(\d+)/)[1];
+        // Save it at *both* the local and global scope, and return it
         GM_setValue('last_uid', uid);
+        GM_setValue(Settings.server+'.last_uid', uid);
         return uid;
     }
-    var uid = GM_getValue('last_uid')
-    if (uid == undefined) {
+
+    if (Settings.natural_run){
+        // Try extracting the uid
+        var uid = extract_uid();
+        if (uid) return uid;
+
+        // If we run into an error, use the stored (local) version. As this runs before the DOM loads, this has the potential of not being loaded yet.
+        // However, we cannot just wait for the DOM because everything depends on this, so delaying this would delay the entire script.
+        uid = GM_getValue(Settings.server+'.last_uid', '');
+        if (uid) return uid;
+
+        // If we have no stored version, this is likely because it was deleted when we last visited the login page.
+        // Set a timer to extract it *after* the DOM loads (when it *should* be ready), and reload the page
+        $(document).ready(function(){ if (extract_uid()) location.reload(); });
+
+        // We failed to get the UID on this pass.
         GM_log("Have no record of any UID.");
         throw "Could not find any previous UID";
     }
-    return uid;
+
+    // *If* we're on the login page, clear the latest value in server.last_uid (don't clear the global one).
+    // This is so that we don't get cross-talk between users, as the first time we load with a new user
+    // we might depend on the saved uid. In these cases, we want to save the *true* uid after the DOM loads,
+    // and reload. We also want to be careful to not screw up other unnatural pages (hence the global version).
+    if (location.href.match(/travian.*\..*\/login\.php/)){
+        GM_setValue(Settings.server+'.last_uid', '');
+    }
+
+    // Careful - here we're running on unnatural pages, and should therefore use the *global* last_uid not the server-local one
+    var uid = GM_getValue('last_uid', '')
+    if (uid) return uid;
+
+    // It should never come to this, but just in case...
+    GM_log("Have no record of any UID.");
+    throw "Could not find any previous UID";
 };
 // Get the value of this setting.
 // Note that (for example)
@@ -418,9 +445,9 @@ Settings.run=function() {
     } catch (e) {
         // If this fails, there probably is only 1 village.
         // We should only then try loading this data from storage
-        //Settings.persist('village_name', "");
-        //Settings.persist('village_id', 0);
-        //if (Settings.village_id === 0) Settings.get_id();
+        Settings.setting('village_name', "", Settings.type.string,  undefined, "The name of the active village. Only stored if we're a single-village account.", "true");
+        Settings.setting('village_id',    0, Settings.type.integer, undefined, "The id of the active village. Again only stored if we're a single-village account.", 'true');
+        if (Settings.village_id === 0) Settings.get_id();
     }
     this.info("The active village is "+Settings.village_id+": "+Settings.village_name);
     Settings.village_names[Settings.village_id]=Settings.village_name;

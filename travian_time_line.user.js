@@ -12,7 +12,6 @@ var metadata = <><![CDATA[
 // @exclude        http://shop.travian*.*
 // @exclude        http://help.travian*.*
 // @exclude        http://*.travian*.*/manual.php*
-// @exclude        http://*.travian*.*/login.php*
 // @exclude        http://*.travian*.*/logout.php*
  
 // @copyright      2008, 2009 Bauke Conijn, Adriaan Tichler (http://github.com/bcmpinc/travian-timeline-script)
