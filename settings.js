@@ -346,60 +346,22 @@ Settings.config=function(parent_element) {
 };
 
 Settings.init=function(){
-    Settings.setting("race",         0,         Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
-    Settings.setting("time_format",  0,         Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
-    //Settings.external('', '', 'users',          {},        Settings.type.object, undefined, '', 'true');
-    //Settings.external('', '', 'g_user_display', {},        Settings.type.object, undefined, '', 'true');
-    // TODO: add documentation.
-    Settings.setting("user_display", {}, Settings.type.object,      undefined, "unknown"); // Keep a local set of enabled/disabled ones too
-    Settings.setting("village_names",{}, Settings.type.object,      undefined, "The names of the villages.");
-    Settings.setting("current_tab",  "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
+    Settings.setting("race",           0,          Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+    Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
+    Settings.setting("village_names",  {},         Settings.type.object,      undefined, "The names of the villages.");
+    Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
+    // These are both global
+    Settings.setting("users",          {},         Settings.type.object,      undefined, "This keeps track of the human-readable names of the different users. Again, this is global data; however as there is no local copy we don't need to use so many hacks to read it.", 'true');
+    Settings.setting("g_user_display", {},         Settings.type.object,      undefined, "This keeps track of which users have their data displayed. This one represents the global component (for unnatural pages) only; local and external data are both accessed with external.", 'true');
 
     var s = Settings.server;
     var u = Settings.username;
-    
-    // Have to make it backwards-compatible... can't go around asking users to reset Settings.users for us, can we?
-    /* No point running this until we figure out global variables...
+
+    // If the current user is not present in either global variable, s/he must be new. Add them.
     if (Settings.users[s] == undefined)          Settings.users[s] = {};
     if (Settings.g_user_display[s] == undefined) Settings.g_user_display[s] = {};
-    if (Settings.user_display[s] == undefined)   Settings.user_display[s] = {};
-
-    if (Settings.users[s][u] == undefined ||
-        Settings.g_user_display[s][u] == undefined ||
-        Settings.user_display[s][u] == undefined){
-        var x = document.evaluate('//div[@id="sleft"]/p/a[contains(@href, "chatname")]', document, null,
-                                  XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-        Settings.users[s][u] = x.href.split('|')[1];
-        // Update the global display
-        Settings.g_user_display[s][u] = true;
-        // Update the local lists for *all* users if the global one changes
-        // This is *technically* an n^2 solution - but these lists are unlikely to get extremely large... :-/ (and how else could we do it?)
-        for (var server in Settings.g_user_display){
-            for (var user in Settings.g_user_display[server]){
-                // Update the local list
-                if (Settings.user_display[server] == undefined)
-                    Settings.user_display[server] = {};
-                if (Settings.user_display[server][user] == undefined)
-                    Settings.user_display[server][user] = s==server && u==user;
-                if (s==server && u==user) continue; // If local, go no farther
-                var x = Settings.external(server, user, 'user_display', {}, Settings.type.object, undefined, '');
-                // now update user-specific data for *other* users - copy over new values from the global list
-                for (var s2 in Settings.g_user_display){
-                    for (var u2 in Settings.g_user_display[s2]){
-                        if (Settings[x.name][s2] == undefined)
-                            Settings[x.name][s2] = {};
-                        if (Settings[x.name][s2][u2] == undefined)
-                            Settings[x.name][s2][u2] = false;
-                    }
-                }
-                x.write();
-            }
-        }
-
-        Settings.e.users.write();
-        Settings.e.g_user_display.write();
-        Settings.s.user_display.write();
-        }*/
+    if (Settings.users[s][u] == undefined || Settings.g_user_display[s][u] == undefined)
+        Settings.add_user(s, u);
     
     if (location.href.match(/about:cache\?device=timeline&/)) {
         var params=location.href.split("&");
@@ -464,6 +426,63 @@ Settings.get_id=function(){
                 Settings.village_id = x[1]-0;
                 Settings.s.village_id.write();
             }});
+};
+
+// This is a method to add a new user. It only runs if the current user is not recognized.
+
+// To explain: every scope has its own version of this variable. Every variable has a reference to every scope.
+// The value of that reference is either true or false; if it is true, then the scope holding that variable will
+// display data from the scope inside the variable.
+
+// For example: there are two scopes, scope1 and scope2. scope1 has a user_display variable that looks like
+// {scope1: true, scope2: true}. scope2 has a user_display variable that looks like {scope1: false, scope2: true}.
+// Therefore, as it is right now scope1 will display data from *both* scope1 and scope2, and scope2 will display
+// data from *only* scope2. Scope2 is in the default setting, while scope1 has been modified by the user.
+// There is also a global copy of this variable, who's default is to display all data. As global has no data
+// of its own, no user_display variable needs to hold a copy of global, however.
+
+// Of course, it's important to remember that each scope is composed of both a server and a user. Which only complicates.
+// This would be a complete *bitch* without external. Trust me, I tried. :-/
+Settings.add_user=function(s, u){
+    // Extract the human-readable username
+    var x = document.evaluate('//div[@id="sleft"]/p/a[contains(@href, "chatname")]', document, null,
+                              XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+
+    // Update the global variables
+    Settings.users[s][u] = x.href.split('|')[1];
+    Settings.g_user_display[s][u] = true;
+
+    this.info("We have a new user! Server="+s+" UID="+u+" Name="+Settings.users[s][u]);
+
+    // And save them - to the global scope, remember
+    Settings.s.users.write(2);
+    Settings.s.g_user_display.write(2);
+
+    // Now update the local lists for *all* users
+    // This is technically an n^2 solution - but these lists are unlikely to get extremely large... :-/
+    // (and how else could we do it?)
+    for (var server in Settings.users){
+        for (var user in Settings.users[server]){
+            this.info("Checking for this user in "+server+'.'+user);
+            // First, we have to load the user_display data for *every* scope.
+            var x = Settings.external(server, user, 'user_display', {}, Settings.type.object, undefined, 'This accesses both the non-local and local data, and updates them.');
+            // And this is a shortcut to the data we just loaded. This is a two-dimensional mapping, remember.
+            var y = Settings[server][user].user_display;
+
+            // Now update user-specific data for all users - copy over new values from the global list if they don't exist
+            for (var s2 in Settings.users){
+                for (var u2 in Settings.users[s2]){
+                    // If we're copying into the local list (s==server && u==user) and we're setting whether to display
+                    // *our* data (s2==s && u2==u), we want this to be true by default. For all other occasions,
+                    // this should be false.
+                    if (y[s2] == undefined) y[s2] = {};
+                    if (y[s2][u2] == undefined) y[s2][u2] = s==s2 && s==server && u==u2 && u==user;
+                }
+            }
+            // Now we want to save the variable for each scope. Local, remember...
+            x.write();
+        }
+    }
 };
 Settings.show=function() {
     var w = document.createElement("div");
