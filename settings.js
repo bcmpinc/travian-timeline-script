@@ -92,14 +92,20 @@ Settings.get_username=function(){
 // Note that (for example)
 // "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
 Settings.get=function() {
+    if (this.external)
+        return this.parent[this.server][this.user][this.name];
     return this.parent[this.name];
 }
 
 // Set the value of this setting.
 // Note that (for example)
 // "Settings.username = u;" and "Settings.s.username.set(u);" have the same effect.
+// External values are accessed in different namespaces, so store them there.
 Settings.set=function(value) {
-    this.parent[this.name]=value;
+    if (this.external)
+        this.parent[this.server][this.user][this.name] = value;
+    else 
+        this.parent[this.name]=value;
 }
 
 // Retrieves the value from the GM persistent storage database aka about:config
@@ -113,16 +119,16 @@ Settings.read=function(scope) {
         }
         var x;
         param = scope || 0;
-        for (param; param<Settings.scopes.length; param++) {
-            x = GM_getValue(Settings.scopes[param]+'.'+this.fullname);
+        for (param; param<this.scopes.length; param++) {
+            x = GM_getValue(this.scopes[param]+'.'+this.fullname);
             if (x!==undefined && x!=="") {
                 this.scope = param;
                 break;
             }
         }
-        if (!(param<Settings.scopes.length)) {
+        if (!(param<this.scopes.length)) {
             x=this.def_val;
-            this.scope = Settings.scopes.length;
+            this.scope = this.scopes.length;
         }
         
         switch (this.type) {

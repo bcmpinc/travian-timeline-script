@@ -95,6 +95,7 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     s.typedata    = typedata;
     s.description = description;
     s.hidden      = hidden;
+    s.external    = false;
 
     s.fullname    = this.name+'.'+name;
 
@@ -132,6 +133,7 @@ Feature.external=function(server, user, name, def_val, type, typedata, descripti
     s.typedata    = typedata;
     s.description = description;
     s.hidden      = hidden;
+    s.external    = true;
 
     s.fullname    = this.name+'.'+name;
 
