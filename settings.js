@@ -104,37 +104,27 @@ Settings.set=function(value) {
 
 // Retrieves the value from the GM persistent storage database aka about:config
 // Settings are not automatically updated.
-// Call this if the value might have changed and you want its latest value.
-// @param scope: an arbitrary scope in either string or list form that specifies the scope to read the value from.
-//               If unset, it uses the local scope. The list can have an arbitrary number of elements that act as
-//               fallbacks if the first scope fails.
-//               scope = "<server1>.<uid1>" | ["<server2>.<uid2>"] | ["<server3>", "global"] | undefined
+// Call this if the value might have changed and you want it's latest value.
+// @param param, the first scope that will be used.
 Settings.read=function(scope) {
     try {
         if (this.type==Settings.type.none) {
             return; // intentionally no warning.
         }
-
-        var x, my_scope;
-
-        if (scope == undefined) my_scope = Settings.scopes;
-        if (typeof scope == 'string') my_scope = [scope];
-
-        // Regress through the scope list until we find a valid one
-        for (var param = 0; param<my_scope.length; param++) {
-            x = GM_getValue(my_scope[param]+'.'+this.fullname);
+        var x;
+        param = scope || 0;
+        for (param; param<Settings.scopes.length; param++) {
+            x = GM_getValue(Settings.scopes[param]+'.'+this.fullname);
             if (x!==undefined && x!=="") {
-                this.scope = my_scope[param];
+                this.scope = param;
                 break;
             }
         }
-        // If we didn't find a valid one...
-        if (!(param < my_scope.length)) {
+        if (!(param<Settings.scopes.length)) {
             x=this.def_val;
-            this.scope = my_scope[my_scope.length];
+            this.scope = Settings.scopes.length;
         }
-
-        // Convert x into the proper type
+        
         switch (this.type) {
             case Settings.type.string:
             break;
@@ -152,8 +142,6 @@ Settings.read=function(scope) {
             x=x==true;
             break;
         }
-
-        // If we're given a scope by the caller, don't overwrite the values we originally had
         if (scope!==undefined) {
             return x;
         } else {
@@ -168,14 +156,15 @@ Settings.read=function(scope) {
 };
 
 // Stores the value in the GM persistent storage database aka about:config
-// Scope is used to store this setting at an arbitrary scope, and has string or list type.
-// @param scope: ("<server1>.<uid1>" | ["<server2>"])
+// Scope is used to store this setting at a higher scope.
 Settings.write=function(scope) {
     try {
-        if (scope == undefined) scope = Settings.scopes[0];
-        else if (typeof scope == 'object') scope = scope[0];
-
-        var param= scope+'.'+this.fullname;
+        scope=scope||0;
+        if (scope>=Settings.scopes.length) {
+            this.warning("This setting ("+this.fullname+") can't be stored in the default scope!");
+            return;
+        }
+        var param=Settings.scopes[scope]+'.'+this.fullname;
         switch (this.type) {
             case Settings.type.none:
             this.warning("This setting ("+this.fullname+") has no type and can't be stored!");
@@ -202,14 +191,16 @@ Settings.write=function(scope) {
 };
 
 // Removed the value from the GM persistent storage database aka about:config
-// Scope is used to remove this setting from an arbitrary scope.
+// Scope is used to remove this setting from a higher scope.
 // Use either read() or write() after a call to this function.
 Settings.remove=function(scope) {
     try {
-        if (scope == undefined) scope = Settings.scopes[0];
-        else if (typeof scope == 'object') scope = scope[0];
-
-        var param = scope+'.'+this.fullname;
+        scope=scope||0;
+        if (scope>=Settings.scopes.length) {
+            this.warning("The default setting of ("+this.fullname+") can't be changed!");
+            return;
+        }
+        var param=Settings.scopes[scope]+'.'+this.fullname;
         GM_deleteValue(param);
     } catch (e) {
         if (this&&this.exception)
