@@ -160,11 +160,11 @@ Settings.read=function(scope) {
 Settings.write=function(scope) {
     try {
         scope=scope||0;
-        if (scope>=Settings.scopes.length) {
+        if (scope>=this.scopes.length) {
             this.warning("This setting ("+this.fullname+") can't be stored in the default scope!");
             return;
         }
-        var param=Settings.scopes[scope]+'.'+this.fullname;
+        var param=this.scopes[scope]+'.'+this.fullname;
         switch (this.type) {
             case Settings.type.none:
             this.warning("This setting ("+this.fullname+") has no type and can't be stored!");
@@ -196,11 +196,11 @@ Settings.write=function(scope) {
 Settings.remove=function(scope) {
     try {
         scope=scope||0;
-        if (scope>=Settings.scopes.length) {
+        if (scope>=this.scopes.length) {
             this.warning("The default setting of ("+this.fullname+") can't be changed!");
             return;
         }
-        var param=Settings.scopes[scope]+'.'+this.fullname;
+        var param=this.scopes[scope]+'.'+this.fullname;
         GM_deleteValue(param);
     } catch (e) {
         if (this&&this.exception)
@@ -228,13 +228,13 @@ Settings.config=function(parent_element) {
         }
         
         sc.style.marginRight="8px";
-        if (this.scope<Settings.scopes.length) {
+        if (this.scope<this.scopes.length) {
             sc.innerHTML = this.scope;
-            var sv=GM_getValue(Settings.scopes[setting.scope+1]+'.'+this.fullname);
+            var sv=GM_getValue(this.scopes[setting.scope+1]+'.'+this.fullname);
             if (sv===undefined) sv = this.def_val;
             sc.title=sv;
         
-            if (this.scope<Settings.scopes.length-1) {
+            if (this.scope<this.scopes.length-1) {
                 sc.addEventListener("click",function (e) {
                         setting.remove(setting.scope);
                         setting.write(setting.scope+1);
@@ -337,16 +337,6 @@ Settings.config=function(parent_element) {
     } catch (e) {
         GM_log(e);
     }
-};
-
-// These are the scopes that can be used. Ordered from local to global.
-// For non-native pages, this might be different.
-Settings.determine_scopes=function() {
-    Settings.scopes=[
-        Settings.server+'.'+Settings.username,
-        Settings.server,
-        'global'
-    ];
 };
 
 Settings.init=function(){
@@ -588,7 +578,6 @@ Settings.close=function(){
 
 // BUG: this functions access DOM before it's fully loaded.
 Settings.username = Settings.get_username(); 
-Settings.determine_scopes();
 
 // Correctly init debug now that it's possible
 Settings.setting("global_debug_level", 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
