@@ -86,6 +86,8 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     var s = new Object();
     s.__proto__   = Settings;
     s.parent      = this;
+    s.server      = Settings.server;
+    s.user        = Settings.username;
     s.name        = name;
     s.def_val     = def_val;
     s.type        = type;
@@ -98,6 +100,46 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     if (this.s==undefined) this.s=new Object();
     this.s[name] = s;
     this[name]   = def_val;
+
+    s.read();
+    return s;
+};
+
+// This creates a new setting-like variable that resides in non-local, non-global scope
+// (ie in the scope of another user). We need this because it's a pain in the ass to use
+// the read/write scoping methods otherwise - if you want to write data to x users, you
+// have to copy the data all out into the local variable x times and call the write
+// function, and then reload the original one... awful. :(
+
+// The value of the variable is at {feature}.{server}.{user}.{setting name}.
+// The associated object, methods etc is at {feature}.{server}.{user}.s.{setting name}.
+// The methods are identical to those provided to Settings.setting(), as is metadata access.
+
+// These variables will never be displayed in on the local settings tab; however, it could
+// be displayed on the internal script pages so all parameters are important.
+Feature.external=function(server, user, name, def_val, type, typedata, description, hidden){
+    if (type==undefined) type = Settings.type.none;
+    var s = new Object();
+    s.__proto__   = Settings;
+    s.parent      = this;
+    s.server      = server;
+    s.user        = user;
+    s.name        = name;
+    s.def_val     = def_val;
+    s.type        = type;
+    s.typedata    = typedata;
+    s.description = description;
+    s.hidden      = hidden;
+
+    s.fullname    = this.name+'.'+name;
+
+    // Create the storage objects...
+    if (this[server] == undefined)         this[server] = {};
+    if (this[server][user] == undefined)   this[server][user] = {};
+    if (this[server][user].s == undefined) this[server][user].s = new Object();
+
+    this[server][user].s[name] = s;
+    this[server][user][name]   = def_val;
 
     s.read();
     return s;
