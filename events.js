@@ -537,7 +537,7 @@ Events.collector.demolish = function(){
     var msg = x.parentNode.parentNode.previousSibling.previousSibling.previousSibling.previousSibling.previousSibling.textContent + ' ' + msg;
 
     // We can just index this by the time - only one thing can be demoed at any given time
-    var e = Events.get_event("d"+Settings.village_id, t);
+    var e = Events.get_event(Settings.village_id, t);
     e[0] = 'demolish';
     e[1] = d.set_seconds(event_duration);
     e[2] = msg;
