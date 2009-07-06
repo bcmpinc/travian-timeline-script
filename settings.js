@@ -350,6 +350,7 @@ Settings.init=function(){
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     Settings.setting("village_names",  {},         Settings.type.object,      undefined, "The names of the villages.");
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
+    Settings.setting("user_display",   {},         Settings.type.object,      undefined, "This is a reference to the local set of enables/disables", 'true');
     // These are both global
     Settings.setting("users",          {},         Settings.type.object,      undefined, "This keeps track of the human-readable names of the different users. Again, this is global data; however as there is no local copy we don't need to use so many hacks to read it.", 'true');
     Settings.setting("g_user_display", {},         Settings.type.object,      undefined, "This keeps track of which users have their data displayed. This one represents the global component (for unnatural pages) only; local and external data are both accessed with external.", 'true');
@@ -360,9 +361,12 @@ Settings.init=function(){
     // If the current user is not present in either global variable, s/he must be new. Add them.
     if (Settings.users[s] == undefined)          Settings.users[s] = {};
     if (Settings.g_user_display[s] == undefined) Settings.g_user_display[s] = {};
-    if (Settings.users[s][u] == undefined || Settings.g_user_display[s][u] == undefined)
+    if (Settings.users[s][u] == undefined || Settings.g_user_display[s][u] == undefined){
         Settings.add_user(s, u);
-    
+        // If we just added a user, user_display will have changed. Reload it.
+        Settings.s.user_display.read();
+    }
+
     if (location.href.match(/about:cache\?device=timeline&/)) {
         var params=location.href.split("&");
         Settings.special={};
@@ -601,7 +605,7 @@ Settings.close=function(){
     remove(Settings.window);
 };
 
-// BUG: this functions access DOM before it's fully loaded.
+// BUG: this function accesses DOM before it's fully loaded. Might cause pageload errors.
 Settings.username = Settings.get_username(); 
 
 // Correctly init debug now that it's possible

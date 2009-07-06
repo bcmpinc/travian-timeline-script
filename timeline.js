@@ -56,24 +56,6 @@ Timeline.init=function(){
                                                          (2*y/Timeline.height-1)*Timeline.scale_warp
                                                          )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
     }
-
-    // Load events from other server/users, as specified
-    var disp = Settings.natural_run ? Settings.user_display : Settings.g_user_display;
-    for (var server in disp){
-        for (var user in disp[server]){
-            if (!disp[server][user]) continue;
-            if (Settings.natural_run && server == Settings.server && user == Settings.username){
-                Events[server+'_'+user+'_events'] = Events.events; // Don't reload it if possible
-                Settings[server+'_'+user+'_village_names'] = Settings.village_names;
-                Settings[server+'_'+user+'_race'] = Settings.race;
-            } else {
-                this.info("Loading events from "+server+'.'+user);
-                Events.external(server, user, 'events', {}, Settings.type.object, undefined, '');
-                Settings.external(server, user, 'village_names', {}, Settings.type.object, undefined, '');
-                Settings.external(server, user, 'race', 0, Settings.type.integer, undefined, '');
-            }
-        }
-    }
 };
 
 Timeline.create_canvas=function() {
@@ -194,11 +176,11 @@ Timeline.change_scope=function(){
     txt += '"/></th></tr></thead><tbody><tr><td style="border-right: 1px solid black">';
     var i=0;
     var s;
-    /*for (var a in Settings.users){
+    for (var a in Settings.users){
         if (i==0) s = a;
         txt += '<input type="radio" name="'+a+'" value="'+i+'"'+(i==0?' checked=""':'')+'>'+a+'&nbsp;<br>';
         i++;
-    }*/
+    }
     txt += '<td></tbody></table>';
     div.innerHTML = txt;
     div.childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[0].addEventListener('click', Timeline.change_scope, false);
@@ -211,23 +193,26 @@ Timeline.change_scope=function(){
             Settings.s.user_display.write();
         } else {
             Settings.g_user_display[s][u] = e.target.checked==true;
-            Settings.e.g_user_display.write();
+            Settings.s.g_user_display.write();
         }
+        // The events to display just changed - so update
+        Timeline.draw(true);
     };
     var fill_users=function(){
         var txt = '';
-        /*for (var u in Settings.users[s]){
+        for (var u in Settings.users[s]){
             var checked = Settings.natural_run ? Settings.user_display[s][u] : Settings.g_user_display[s][u];
             var uname = Settings.users[s][u];
             txt += '<input type="checkbox" name="'+u+'" '+(checked?'checked=""':'')+'>'+uname+'&nbsp;<br>';
-        }*/
+        }
         users.innerHTML = txt;
         for (var i in users.childNodes)
             users.childNodes[i].addEventListener('change', check_user, false);
     };
     var switch_server=function(e){
-        // Clear everything but...
+        // Clear every checkbox
         for (var i in servers.childNodes) servers.childNodes[i].checked = false;
+        // But reset the one you just clicked on to true
         e.target.checked = true;
 
         s = e.target.name;
@@ -311,8 +296,6 @@ Timeline.draw_info=function(img,nrs) {
 
 // If once is false, this will set a timer at the end of the function call recalling this function after the update period
 Timeline.draw=function(once) {
-    // Update the event data
-    Events.s.events.read();
     Timeline.now=new Date().getTime();
 
     // Get context
@@ -426,11 +409,18 @@ Timeline.draw=function(once) {
             return q-0;
     }
 
+    // Which scopes are enabled? (This could be changed by a seperate instance running on a seperate tab)
+    Settings.s.user_display.read();
+
+    // Update the event data for *all* enabled scopes
     var disp = Settings.natural_run ? Settings.user_display : Settings.g_user_display;
     for (var server in disp){
         for (var user in disp[server]){
+            // If the scope in question is not enabled, skip it
             if (!disp[server][user]) continue;
-            //this.info('Displaying events for '+server+'.'+Settings.users[server][user]);
+
+            // Now, redraw the events
+            Timeline.info("Displaying events for "+server+'.'+Settings.users[server][user]);
             Timeline.draw_events(g, server, user);
         }
     }
@@ -440,9 +430,25 @@ Timeline.draw=function(once) {
 };
 
 Timeline.draw_events=function(g, server, user){
-    var events = Events[server+'_'+user+'_events'];
-    var village_names = Settings[server+'_'+user+'_village_names'];
-    var race = Settings[server+'_'+user+'_race'];
+    // We want to load all of the events here, rather than in the init, because otherwise new events won't
+    // show up until the *next* pageload. This is also important for when running on pages that use AJAX
+    // heavilly (such as gmail) because these pages will seldom reload, meaning the data displayed on them
+    // will quickly outdate.
+    try {
+        // If we have loaded these settings before, we can just refresh them
+        // Technically speaking, it would be better to wrap each of these in their own try/catch block
+        // but they'll likely either all fail or all succeed together anyways, and this looks cleaner.
+        Events[server][user].s.events.read();
+        Settings[server][user].s.village_names.read();
+        Settings[server][user].s.race.read();
+    } catch (e) {
+        // If it fails, we have to create the object too
+        Events.external  (server, user, 'events',        {}, Settings.type.object,  undefined, "The list of events");
+        Settings.external(server, user, 'village_names', {}, Settings.type.object,  undefined, "The human-readable list of village names");
+        Settings.external(server, user, 'race',           0, Settings.type.enumeration, ['Romans', 'Teutons', 'Gauls'], "The account's race");
+    }
+
+    var events = Events[server][user].events;
     // Draw data
     for (v in events) {
         for (e in events[v]) {
@@ -468,7 +474,7 @@ Timeline.draw_events=function(g, server, user){
             // Draw the village id. (if village number is known, otherwise there's only one village)
             if (v>0) {
                 // TODO: convert to human readable village name.
-                var v_name = village_names[v];
+                var v_name = Settings[server][user].village_names[v];
                 if (!v_name) v_name="["+v+"]";
                 g.fillStyle = "rgb(0,0,128)";
                 g.save();
@@ -504,7 +510,7 @@ Timeline.draw_events=function(g, server, user){
                     for (var i=10; i>=0; i--) {
                         // This is a serious hack, but the best we can do without tearing up the entire 'events' list...
                         if (i == 10) Timeline.draw_info(Timeline.img_unit[0], p[3][i]);
-                        else Timeline.draw_info(Timeline.img_unit[race*10+1+i], p[3][i]);
+                        else Timeline.draw_info(Timeline.img_unit[Settings[server][user].race*10+1+i], p[3][i]);
                     }
                 }
                 g.restore();
