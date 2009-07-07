@@ -605,7 +605,7 @@ Settings.close=function(){
     remove(Settings.window);
 };
 
-// BUG: this function accesses DOM before it's fully loaded. Might cause pageload errors.
+// Tested: this is *not* the cause of the pageload errors. Errors still occur without it running.
 Settings.username = Settings.get_username(); 
 
 // Correctly init debug now that it's possible
