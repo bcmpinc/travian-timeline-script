@@ -148,6 +148,8 @@ Tooltip.village_tip = function(anchor, did){
         // Clear before starting
         var events = [];
         var d = new Date();
+        // Reload the events in case something's changed
+        Events.s.events.read();
         // Run through the tasks for each village
         for (var j in Events.events[did]){
             var e = Events.events[did][j];
