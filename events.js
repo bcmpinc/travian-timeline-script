@@ -254,7 +254,7 @@ Events.collector.attack=function(){
 
         var a = document.evaluate('.//td[@class="abort"]', z, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
         if (a != undefined) a.addEventListener('click', function(e){
-                Events.info('Removing the demolition event Events.events['+Settings.village_id+'][a'+t+'_'+event_count+']');
+                Events.info('Removing the attack event Events.events['+Settings.village_id+'][a'+t+'_'+event_count+']');
                 delete Events.events[Settings.village_id]['a'+t+'_'+event_count];
                 Events.s.events.write();
             }, false);
