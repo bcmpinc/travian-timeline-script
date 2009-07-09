@@ -541,6 +541,13 @@ Events.collector.demolish = function(){
     e[0] = 'demolish';
     e[1] = d.set_seconds(event_duration);
     e[2] = msg;
+
+    // Add a listener to the cancel button, to remove the event if canceled
+    x.childNodes[0].addEventListener('click', function(e){
+            Events.info('Removing the demolition event Event.event['+Settings.village_id+']['+t+']');
+            delete Events.events[Settings.village_id][t];
+            Events.s.events.write();
+        }, false);
 };
 
 Events.collector.overflow = function(){
