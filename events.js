@@ -231,7 +231,7 @@ Events.collector.attack=function(){
         var attacking = false;
         for (var j in Settings.village_names) if (dest.indexOf(Settings.village_names[j]) >= 0){ attacking = true; break;}
         var msg = y.textContent;
-        if (!attacking) msg = dest+' : '+msg;
+        if (!attacking) msg = dest+': '+msg;
 
         // Using the time as unique id. If there are multiple with the same time increase event_count.
         // It's the best I could do.
@@ -251,6 +251,13 @@ Events.collector.attack=function(){
             e[4] = [];
             for (var j=0; j < 4; j++) if (r[j] > 0) e[4][j] = r[j];
         }
+
+        var a = document.evaluate('.//td[@class="abort"]', z, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        if (a != undefined) a.addEventListener('click', function(e){
+                Events.info('Removing the demolition event Events.events['+Settings.village_id+'][a'+t+'_'+event_count+']');
+                delete Events.events[Settings.village_id]['a'+t+'_'+event_count];
+                Events.s.events.write();
+            }, false);
     }
 };
 
