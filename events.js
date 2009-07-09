@@ -171,7 +171,6 @@ Events.collector.building=function(){
 
         e[0]="building";
     
-        // TODO: get timing more accurate.
         var d = new tl_date(Events);
         d.set_time(x.childNodes[center ? 7 : 3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
         var duration = x.childNodes[center ? 5 : 2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
@@ -180,6 +179,12 @@ Events.collector.building=function(){
         e[2] = x.childNodes[center ? 3 : 1].textContent;
 
         Events.debug("Time set to "+e[1]);
+
+        x.childNodes[center ? 1 : 0].addEventListener('click', function(e){
+                Events.info('Removing the building event Events.events['+Settings.village_id+']['+id+']');
+                delete Events.events[Settings.village_id][id];
+                Events.s.events.write();
+            }, false);
     }
 };
 
@@ -544,7 +549,7 @@ Events.collector.demolish = function(){
 
     // Add a listener to the cancel button, to remove the event if canceled
     x.childNodes[0].addEventListener('click', function(e){
-            Events.info('Removing the demolition event Event.event['+Settings.village_id+']['+t+']');
+            Events.info('Removing the demolition event Events.events['+Settings.village_id+']['+t+']');
             delete Events.events[Settings.village_id][t];
             Events.s.events.write();
         }, false);
