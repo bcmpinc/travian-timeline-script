@@ -201,26 +201,30 @@ Events.collector.attack=function(){
         x = res.snapshotItem(i);
         var units = xpath('./tbody[@class="units"]', x, 'any').singleNodeValue;
         var infos = xpath('./tbody[@class="infos"]', x, 'ordered');
-        Events.debug(infos.snapshotLength);
         if (infos.snapshotLength == 2){
-            var resources = xpath('.//td[@colspan="10"]/div[@class="res"]', infos.snapshotItem[0], 'any').singleNodeValue.textContent.split(' |');
-            var info      = infos.snapshotItem[1];
+            var resources = xpath('./tr/td/div[@class="res"]', infos.snapshotItem(0), 'any').singleNodeValue.textContent.split(' |');
+            var info      = infos.snapshotItem(1);
         }
-        else if (infos.snapshotLength == 1)
-            var info = infos.snapshotItem[0];
+        else if (infos.snapshotLength == 1){
+            var resources = [];
+            var info = infos.snapshotItem(0);
+        }
+        else return;
 
         var d = new tl_date(Events);
 
-        d.set_time(xpath('.//div[starts-with(@class, "in")]', info, 'any').singleNodeValue.textContent.match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
-        var duration = xpath('.//div[starts-with(@class, "at")]', info, 'any').singleNodeValue.textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
+        var arrival = xpath('./tr/td/div[starts-with(@class, "at")]', info, 'any').singleNodeValue;
+        if (!arrival) continue;
+        d.set_time(arrival.textContent.match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
+        var duration = xpath('./tr/td/div[starts-with(@class, "in")]', info, 'any').singleNodeValue.textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
         var t = d.adjust_day(duration);
 
         // Get the message
-        var msg = xpath('./thead/tr/td[@colspan="10"]/a[starts-with(@href, "karte.php")]', x, 'any').singleNodeValue.textContent;
+        var msg = xpath('./thead/tr/td[not(@class="role")]/a[starts-with(@href, "karte.php")]', x, 'any').singleNodeValue.textContent;
         var dest = xpath('./thead//td[@class="role"]/a', x, 'any').singleNodeValue.textContent;
         // If someone's attacking *us*, include who is doing the attacking in the message
         var attacking = false;
-        for (var j in Settings.village_names) if (dest.indexOf(Settings.village_names[j]) >= 0){ attacking = true; break;}
+        for (var j in Settings.village_names) if (msg.indexOf(Settings.village_names[j]) >= 0){ attacking = true; break;}
         if (attacking) msg = dest+': '+msg;
 
         // Using the time as unique id. If there are multiple with the same time increase event_count.
@@ -241,10 +245,10 @@ Events.collector.attack=function(){
         // Copy over the resources in the attack, if any
         if (resources != undefined){
             e[4] = [];
-            for (var j=0; j < 4; j++) if (resources[j] > 0) e[4][j] = resources[j];
+            for (var j=0; j < resources.length; j++) if (resources[j] > 0) e[4][j] = resources[j];
         }
         // Add the cancel catcher
-        var a = xpath('.//img[@class="del"]', info, 'any').singleNodeValue;
+        var a = xpath('./tr/td/img[@class="del"]', info, 'any').singleNodeValue;
         if (a != undefined) a.addEventListener('click', function(e){
                 Events.info('Removing the attack event Events.events['+Settings.village_id+'][a'+t+'_'+event_count+']');
                 delete Events.events[Settings.village_id]['a'+t+'_'+event_count];
