@@ -149,7 +149,7 @@ Events.collector={};
 Events.collector.building=function(){
     // Checking if data is available
     if (location.href.indexOf("dorf")<=0) return;
-    var build = document.evaluate('//div[starts-with(@id, "building_contract")]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var build = document.evaluate('//table[starts-with(@id, "building_contract")]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     if (build == undefined){
         var buildlist=document.getElementById("building_contract");
         Events.debug(buildlist.textContent);
@@ -160,27 +160,25 @@ Events.collector.building=function(){
         }
     }
 
-    var center = location.href.indexOf('dorf2.php') >= 0;
-
     // Collecting
     Events.debug("Collecting "+build.snapshotLength+" build tasks.");
     for (var nn = 0; nn < build.snapshotLength; nn++){
         var x = build.snapshotItem(nn);
-        var id = 'b'+x.childNodes[center ? 1 : 0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
+        var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
         var e = Events.get_event(Settings.village_id, id);
 
         e[0]="building";
     
         var d = new tl_date(Events);
-        d.set_time(x.childNodes[center ? 7 : 3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var duration = x.childNodes[center ? 5 : 2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+        d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+        var duration = x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
         d.adjust_day(duration);
         e[1] = d.set_seconds(duration);
-        e[2] = x.childNodes[center ? 3 : 1].textContent;
+        e[2] = x.childNodes[1].textContent;
 
         Events.debug("Time set to "+e[1]);
 
-        x.childNodes[center ? 1 : 0].addEventListener('click', function(e){
+        x.childNodes[0].addEventListener('click', function(e){
                 Events.info('Removing the building event Events.events['+Settings.village_id+']['+id+']');
                 delete Events.events[Settings.village_id][id];
                 Events.s.events.write();
@@ -194,44 +192,36 @@ Events.collector.attack=function(){
     // These are both constant, and the only ways of reaching the rally point...
     if (location.href.indexOf('gid=16') < 0 && location.href.indexOf('id=39') < 0) return;
 
-    var euro_server = false;
-    var res = document.evaluate('//table[@class="std troop_details"]//th[@colspan]/a[starts-with(@href, "karte.php")]', document,
-                                null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    if (res.snapshotLength == 0){
-        euro_server = true;
-        res = document.evaluate('//table[@class="troop_details"]', 
-                                    document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    }
+    var res = xpath('//table[@class="troop_details"]');
     var last_event_time=0;
     var event_count=0;
 
     for ( var i=0 ; i < res.snapshotLength; i++ ) {
         // The top of the table
         x = res.snapshotItem(i);
-        if (!euro_server) x = x.parentNode.parentNode.parentNode.parentNode;
-        // Instead of checking if this is the correct line, just act as if it's correct
-        // If it isn't this will certainly fail.
-        var d = new tl_date(Events);
-        if (x.childNodes.length == 5){
-            var z = x.childNodes[4];
-            var r = x.childNodes[3].childNodes[0].childNodes[1].textContent.split(' |');
-            Events.debug(x.childNodes[3].childNodes[0].childNodes[1].textContent);
-        } else {
-            var z = x.childNodes[3];
-            var r = [];
+        var units = xpath('./tbody[@class="units"]', x, 'any').singleNodeValue;
+        var infos = xpath('./tbody[@class="infos"]', x, 'ordered');
+        Events.debug(infos.snapshotLength);
+        if (infos.snapshotLength == 2){
+            var resources = xpath('.//td[@colspan="10"]/div[@class="res"]', infos.snapshotItem[0], 'any').singleNodeValue.textContent.split(' |');
+            var info      = infos.snapshotItem[1];
         }
+        else if (infos.snapshotLength == 1)
+            var info = infos.snapshotItem[0];
 
-        var zs=z.textContent.split('\n');
-        d.set_time(zs[euro_server ? 1 : 3].match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
-        var duration = zs[euro_server ? 1 : 2].match('(\\d\\d?):\\d\\d:\\d\\d');
+        var d = new tl_date(Events);
+
+        d.set_time(xpath('.//div[starts-with(@class, "in")]', info, 'any').singleNodeValue.textContent.match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
+        var duration = xpath('.//div[starts-with(@class, "at")]', info, 'any').singleNodeValue.textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
         var t = d.adjust_day(duration);
 
-        var y = res.snapshotItem(i).parentNode;
-        var dest = y.previousSibling.textContent;
+        // Get the message
+        var msg = xpath('./thead/tr/td[@colspan="10"]/a[starts-with(@href, "karte.php")]', x, 'any').singleNodeValue.textContent;
+        var dest = xpath('./thead//td[@class="role"]/a', x, 'any').singleNodeValue.textContent;
+        // If someone's attacking *us*, include who is doing the attacking in the message
         var attacking = false;
         for (var j in Settings.village_names) if (dest.indexOf(Settings.village_names[j]) >= 0){ attacking = true; break;}
-        var msg = y.textContent;
-        if (!attacking) msg = dest+': '+msg;
+        if (attacking) msg = dest+': '+msg;
 
         // Using the time as unique id. If there are multiple with the same time increase event_count.
         // It's the best I could do.
@@ -242,17 +232,19 @@ Events.collector.attack=function(){
         e[1] = d.set_seconds(duration);
         e[2] = msg;
         e[3] = [];
+        // Copy over the units in the attack
         for (var j = 0; j<11; j++) {
-            var y = x.childNodes[2].childNodes[1].childNodes[j+1];
+            var y = units.childNodes[1].childNodes[j+1];
             if (y!=undefined)
                 e[3][j] = y.textContent - 0;
         }
-        if (r != undefined){
+        // Copy over the resources in the attack, if any
+        if (resources != undefined){
             e[4] = [];
-            for (var j=0; j < 4; j++) if (r[j] > 0) e[4][j] = r[j];
+            for (var j=0; j < 4; j++) if (resources[j] > 0) e[4][j] = resources[j];
         }
-
-        var a = document.evaluate('.//td[@class="abort"]', z, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        // Add the cancel catcher
+        var a = xpath('.//img[@class="del"]', info, 'any').singleNodeValue;
         if (a != undefined) a.addEventListener('click', function(e){
                 Events.info('Removing the attack event Events.events['+Settings.village_id+'][a'+t+'_'+event_count+']');
                 delete Events.events[Settings.village_id]['a'+t+'_'+event_count];

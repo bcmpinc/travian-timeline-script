@@ -400,13 +400,17 @@ Settings.run=function() {
 
     // Extract the active village
     try {
-        var village_link = document.evaluate('//tr[@class="sel"]/td[@class="text"]/a', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-        Settings.village_name = village_link.textContent;
-        Settings.village_id=village_link.href.match("newdid=(\\d+)")[1]-0;
-        Settings.village_coord = village_link.parentNode.parentNode.textContent.match(/\((-?\d\d?\d?\|-?\d\d?\d?)\)/)[1].split('|');
+        var tr = document.evaluate('//table[@id="vlist"]/tbody/tr/td[@class="dot hl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+        Settings.village_name  = tr.nextSibling.textContent;
+        Settings.village_id    = tr.nextSibling.childNodes[0].href.match(/newdid=(\d+)/)[1] - 0;
+        var coord = tr.nextSibling.nextSibling.childNodes;
+        var x = coord[1].textContent.match(/\((-?\d{1,3})/)[1];
+        var y = coord[5].textContent.match(/(-?\d{1,3})\)/)[1];
+        Settings.village_coord = [x, y];
     } catch (e) {
         // If this fails, there probably is only 1 village.
         // We should only then try loading this data from storage
+        Settings.info("Failed to get the vlist table - assuming there's only found one village!");
         Settings.setting('village_name', "", Settings.type.string,  undefined, "The name of the active village. Only stored if we're a single-village account.", "true");
         Settings.setting('village_id',    0, Settings.type.integer, undefined, "The id of the active village. Again only stored if we're a single-village account.", 'true');
         if (Settings.village_id === 0) Settings.get_id();

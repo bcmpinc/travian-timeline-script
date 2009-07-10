@@ -72,6 +72,22 @@ function id_xy(id) {
     return [x, y];
 }
 
+// This is a shortcut to the document.evaluate function, because typing the damn thing in
+// all of the time is damn annoying
+function xpath(match, reference, type){
+    // These are the three we use the most often...
+    // The XPathResult variables all *do* have numerical equivalents, but those are hard to
+    // remember. Accept strings as well, for ease of comprehension
+    if (type == undefined || type == 'unordered') type = XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
+    else if (type == 'ordered')                   type = XPathResult.ORDERED_NODE_SNAPSHOT_TYPE;
+    else if (type == 'any')                       type = XPathResult.ANY_UNORDERED_NODE_TYPE;
+
+    // Again, the most often used is probably the general document
+    if (!reference) reference = document;
+
+    return document.evaluate(match, reference, null, type, null);
+}
+
 // Functions missing in Math
 Math.sinh     = function(x) { return .5*(Math.exp(x)-Math.exp(-x)); };
 Math.cosh     = function(x) { return .5*(Math.exp(x)+Math.exp(-x)); };

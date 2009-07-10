@@ -423,7 +423,7 @@ Tooltip.convert_info=function(type, index, amount) {
 
 Tooltip.run = function(){
     // The events are now sorted by village, so that simplifies our task here somewhat
-    var x = document.evaluate('//table[@class="vlist"]/tbody/tr/td[@class="text"]/a', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    var x = document.evaluate('//table[@id="vlist"]/tbody/tr/td[@class="link"]/a', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     Tooltip.href_postfix = '';
     // Run through our villages
     for (var i=0; i < x.snapshotLength; i++){
