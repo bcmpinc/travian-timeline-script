@@ -341,12 +341,21 @@ Events.collector.market=function(){
         // Categorize the event
         var send = msg.indexOf(Events.merchant_send) >= 0;
 
-        var internal = false;
-        if (x.childNodes[0].childNodes[1].childNodes[0].href.match(/uid=(\d+)/)[1] == Settings.username){
-            for (var did in Settings.village_names) if (msg.indexOf(Settings.village_names[did]) >= 0){ internal = true; break;}
+        // Can we find a village in our vlist with the correct coordinates? This is more reliable than relying
+        // on the village name, which can be repeated or screwy.
+        var coord = id_xy(hash);
+        Events.info('Looking for a village with x='+coord[0]+' and y='+coord[1]);
+        var a = xpath('//table[@id="vlist"]/tbody/tr/td[@class="aligned_coords"]');
+        for (var i=0; i < a.snapshotLength; i++){
+            var b = a.snapshotItem(i);
+            var internal = b.textContent.match('\\('+coord[0]) && b.textContent.match(coord[1]+'\\)') != null;
+            if (internal){
+                var did = b.previousSibling.childNodes[0].href.match(/\?newdid=(\d+)/)[1];
+                break;
+            }
         }
 
-        Events.debug(msg + ' | send='+send+' internal='+internal);
+        Events.info(msg + ' | send='+send+' internal='+internal);
 
         // Ensure an event of this type doesn't already exists at this time
         if (Events.test_event(Settings.village_id, 'a'+t+'_'+event_count)) return;
@@ -367,14 +376,14 @@ Events.collector.market=function(){
         }
     }
 
-    var shipment = document.evaluate('//table[@class="tbg"]/tbody', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    var shipment = xpath('//table[@class="traders"]');
     for (var i=0; i < shipment.snapshotLength; i++){
         var x = shipment.snapshotItem(i);
         var d = new tl_date(Events);
 
         // Extract the arrival time, and adjust by duration of the shipment
-        d.set_time(x.childNodes[2].childNodes[2].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var duration = x.childNodes[2].childNodes[1].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+        d.set_time(x.rows[1].cells[2].textContent.match(/(\d\d?):(\d\d) ?([a-z]*)/));
+        var duration = x.rows[1].cells[1].textContent.match(/(\d\d?):(\d\d):(\d\d)/);
         var t = d.adjust_day(duration);
         var ts = d.set_seconds(duration);
 
@@ -384,17 +393,18 @@ Events.collector.market=function(){
         else last_event_time=t;
 
         // Extract the value of the shipment
-        var res = x.childNodes[4].childNodes[1].textContent.split(' | ');
+        var res = x.rows[2].cells[1].textContent.split(' | ');
+        //var res = x.childNodes[4].childNodes[1].textContent.split(' | ');
         Events.debug("Merchant carrying "+res);
 
         // Extract the transit message
-        var msg = x.childNodes[0].childNodes[3].textContent;
+        var msg = x.rows[0].cells[1].textContent;
 
         // Extract the hash of the destination village
-        var hash = x.childNodes[0].childNodes[3].childNodes[0].href.match(/\?d=(\d*)/)[1];
+        var hash = x.rows[0].cells[1].childNodes[0].href.match(/\?d=(\d*)/)[1];
 
         // Check if merchant is returning
-        var ret = x.childNodes[4].childNodes[1].childNodes[0].className[0]=='c';
+        var ret = x.rows[2].cells[1].childNodes.className == 'none';
         if (ret) Events.debug("Merchant is returning");
 
         if (Events.predict_merchants) predict();
