@@ -404,7 +404,7 @@ Events.collector.market=function(){
         var hash = x.rows[0].cells[1].childNodes[0].href.match(/\?d=(\d*)/)[1];
 
         // Check if merchant is returning
-        var ret = x.rows[2].cells[1].childNodes.className == 'none';
+        var ret = x.rows[2].cells[1].childNodes[0].className == 'none';
         if (ret) Events.debug("Merchant is returning");
 
         if (Events.predict_merchants) predict();
