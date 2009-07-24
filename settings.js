@@ -43,7 +43,7 @@ Settings.server = Settings.get_server(); // This value is needed very early in t
 Settings.get_username=function(){
     // A helper function that trys to extract the UID from the page, and returns an empty string if it fails.
     var extract_uid=function(){
-        var uid = document.evaluate("id('sleft')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        var uid = document.evaluate("id('side_navi')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
         if (uid == undefined) return '';
         // If we successfully extracted the uid
         uid = uid.textContent.match(/uid=(\d+)/)[1];
