@@ -3,7 +3,7 @@ var metadata = <><![CDATA[
 // ==UserScript==
 // @name           Travian Time Line
 // @namespace      TravianTL
-// @version        0.36
+// @version        0.37
 // @description    Adds a time line on the right of each page to show events that have happened or will happen soon. Also adds a few other minor functions. Like: custom sidebar; resources per minute; ally lines; add to the villages list; colored marketplace.
  
 // @include        http://*.travian*.*/*.php*
@@ -20,18 +20,18 @@ var metadata = <><![CDATA[
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 
 // @require        http://code.jquery.com/jquery-latest.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/patch.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/date.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/feature.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/settings.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/images.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/lines.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/sidebar.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/resources.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/market.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/events.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/timeline.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/896ba77dcdf33f7f8be9ef405d025f5c1e754a97/tooltip.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/patch.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/date.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/feature.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/settings.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/images.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/lines.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/sidebar.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/resources.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/market.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/events.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/timeline.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/tooltip.js
 // ==/UserScript==
 ]]></>+"";
 
