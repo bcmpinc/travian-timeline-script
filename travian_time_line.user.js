@@ -66,3 +66,7 @@ var metadata = <><![CDATA[
 // attack and a merchant link button. (Currently you have to add these additional
 // villages in the scripts source code.)
 /*****************************************************************************/   
+
+GM_registerMenuCommand("Timeline Shell",function(){
+  GM_openInTab("about:cache?device=timeline&action=shell&server="+Settings.server);
+});
