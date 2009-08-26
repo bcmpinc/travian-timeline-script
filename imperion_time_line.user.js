@@ -13,7 +13,7 @@ var metadata = <><![CDATA[
 // @author         arandia
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 
-// @require        http://code.jquery.com/jquery-latest.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/jquery-latest.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/patch.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/date.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/feature.js
