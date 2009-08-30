@@ -20,117 +20,30 @@
 
 Feature.create("Settings");
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
-// Are we on a natural include/exclude, or one created by the user?
-// *NOTE* the login page is *not* excluded naturally, yet is still an unnatural page.
-// THERE ARE GOOD REASONS FOR THIS.
-Settings.natural_run = (location.href.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
-                        !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
-                        !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/));
-Settings.get_server=function(){
-    if (!Settings.natural_run) return GM_getValue('last_server', 'unknown');
-    Settings.absolute_server = location.href.match('http://[.a-z0-9]*')+'';
-    GM_setValue('absolute_server', Settings.absolute_server);
-    // This should give the server id as used by travian analyzer.
-    var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
-    if (!url) return "unknown";
-    var a=url[2];
-    if (url[1]=='speed') a='x';
-    if (url[1]=='speed2') a='y';
-    GM_setValue('last_server', url[3]+a);
-    return url[3]+a;
-};
-Settings.server = Settings.get_server(); // This value is needed very early in the script. Luckily it does not rely on DOM.
-Settings.get_username=function(){
-    // A helper function that trys to extract the UID from the page, and returns an empty string if it fails.
-    var extract_uid=function(){
-        var uid = document.evaluate("id('side_navi')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-        if (uid == undefined) return '';
-        // If we successfully extracted the uid
-        uid = uid.textContent.match(/uid=(\d+)/)[1];
-        // Save it at *both* the local and global scope, and return it
-        GM_setValue('last_uid', uid);
-        GM_setValue(Settings.server+'.last_uid', uid);
-        return uid;
-    }
 
-    if (Settings.natural_run){
-        // Try extracting the uid
-        var uid = extract_uid();
-        if (uid) return uid;
-
-        // If we run into an error, use the stored (local) version. As this runs before the DOM loads, this has the potential of not being loaded yet.
-        // However, we cannot just wait for the DOM because everything depends on this, so delaying this would delay the entire script.
-        uid = GM_getValue(Settings.server+'.last_uid', '');
-        if (uid) return uid;
-
-        // If we have no stored version, this is likely because it was deleted when we last visited the login page.
-        // Set a timer to extract it *after* the DOM loads (when it *should* be ready), and reload the page
-        $(document).ready(function(){ if (extract_uid()) location.reload(); });
-
-        // We failed to get the UID on this pass.
-        GM_log("Have no record of any UID.");
-        throw "Could not find any previous UID";
-    }
-
-    // *If* we're on the login page, clear the latest value in server.last_uid (don't clear the global one).
-    // This is so that we don't get cross-talk between users, as the first time we load with a new user
-    // we might depend on the saved uid. In these cases, we want to save the *true* uid after the DOM loads,
-    // and reload. We also want to be careful to not screw up other unnatural pages (hence the global version).
-    if (location.href.match(/travian.*\..*\/login\.php/)){
-        GM_setValue(Settings.server+'.last_uid', '');
-    }
-
-    // Careful - here we're running on unnatural pages, and should therefore use the *global* last_uid not the server-local one
-    var uid = GM_getValue('last_uid', '')
-    if (uid) return uid;
-
-    // It should never come to this, but just in case...
-    GM_log("Have no record of any UID.");
-    throw "Could not find any previous UID";
-};
 // Get the value of this setting.
 // Note that (for example)
 // "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
 Settings.get=function() {
-    if (this.external)
-        return this.parent[this.server][this.user][this.name];
     return this.parent[this.name];
 }
 
 // Set the value of this setting.
 // Note that (for example)
 // "Settings.username = u;" and "Settings.s.username.set(u);" have the same effect.
-// External values are accessed in different namespaces, so store them there.
 Settings.set=function(value) {
-    if (this.external)
-        this.parent[this.server][this.user][this.name] = value;
-    else 
-        this.parent[this.name]=value;
+   this.parent[this.name]=value;
 }
 
 // Retrieves the value from the GM persistent storage database aka about:config
 // Settings are not automatically updated.
 // Call this if the value might have changed and you want it's latest value.
-// @param param, the first scope that will be used.
-Settings.read=function(scope) {
+Settings.read=function() {
     try {
         if (this.type==Settings.type.none) {
             return; // intentionally no warning.
         }
-        var x;
-        param = scope || 0;
-        for (param; param<this.scopes.length; param++) {
-            x = GM_getValue(this.scopes[param]+'.'+this.fullname);
-            if (x!==undefined && x!=="") {
-                this.scope = param;
-                break;
-            }
-        }
-        if (!(param<this.scopes.length)) {
-            x=this.def_val;
-            this.scope = this.scopes.length;
-        }
-        
+        var x = GM_getValue(this.fullname, this.def_val);
         switch (this.type) {
             case Settings.type.string:
             break;
@@ -148,11 +61,7 @@ Settings.read=function(scope) {
             x=x==true;
             break;
         }
-        if (scope!==undefined) {
-            return x;
-        } else {
-            this.set(x);
-        }
+        this.set(x);
     } catch (e) {
         if (this&&this.exception)
             this.exception("Settings.read("+this.name+")", e);
@@ -162,15 +71,9 @@ Settings.read=function(scope) {
 };
 
 // Stores the value in the GM persistent storage database aka about:config
-// Scope is used to store this setting at a higher scope.
-Settings.write=function(scope) {
+Settings.write=function() {
     try {
-        scope=scope||0;
-        if (scope>=this.scopes.length) {
-            this.warning("This setting ("+this.fullname+") can't be stored in the default scope!");
-            return;
-        }
-        var param=this.scopes[scope]+'.'+this.fullname;
+        var param=this.fullname;
         switch (this.type) {
             case Settings.type.none:
             this.warning("This setting ("+this.fullname+") has no type and can't be stored!");
@@ -187,7 +90,6 @@ Settings.write=function(scope) {
             GM_setValue(param, uneval(this.get()));
             break;
         }
-        this.scope=scope;
     } catch (e) {
         if (this&&this.exception)
             this.exception("Settings.write("+this.name+")", e);
@@ -197,17 +99,11 @@ Settings.write=function(scope) {
 };
 
 // Removed the value from the GM persistent storage database aka about:config
-// Scope is used to remove this setting from a higher scope.
-// Use either read() or write() after a call to this function.
-Settings.remove=function(scope) {
+Settings.remove=function() {
     try {
-        scope=scope||0;
-        if (scope>=this.scopes.length) {
-            this.warning("The default setting of ("+this.fullname+") can't be changed!");
-            return;
-        }
-        var param=this.scopes[scope]+'.'+this.fullname;
+        var param=this.fullname;
         GM_deleteValue(param);
+        this.set(this.def_val);
     } catch (e) {
         if (this&&this.exception)
             this.exception("Settings.remove("+this.name+")", e);
@@ -219,153 +115,102 @@ Settings.remove=function(scope) {
 // Appends a DOM element to parent_element that can be used to modify this setting.
 Settings.config=function(parent_element) {
     try {
-        var s  = document.createElement("span"); // the setting config thing
-        var sc = document.createElement("span"); // the scope
-        var setting = this;
-        var settingsname = this.name.replace(/_/g," ").pad(22);
-        var hint="";
-
-        // Add tooltip with a description (if available)
-        if (this.description) {
-            s.title = this.description;
-            var h = this.description.match("\\(([-a-zA-Z0-9.,_ ]+)\\)$");
-            if (h)
-                hint = " "+h[1];
-        }
+        var s  = $.new("span"); // the setting config thing
+        s.append(this.name.replace(/_/g," ").pad(22)+": ");
+        var setting=this
         
-        sc.style.marginRight="8px";
-        if (this.scope<this.scopes.length) {
-            sc.innerHTML = this.scope;
-            var sv=GM_getValue(this.scopes[setting.scope+1]+'.'+this.fullname);
-            if (sv===undefined) sv = this.def_val;
-            sc.title=sv;
-        
-            if (this.scope<this.scopes.length-1) {
-                sc.addEventListener("click",function (e) {
-                        setting.remove(setting.scope);
-                        setting.write(setting.scope+1);
-                        Settings.fill();
-                    },false);
-                sc.style.cursor="pointer";
-                sc.style.color="red";
-            }
-        } else {
-             sc.innerHTML = 'd' 
-        }
-
-
         // Create the input element.
         switch (this.type) {
         case Settings.type.none: {
-            s.innerHTML = settingsname+": "+this.get()+hint+"\n";
+            s.append(this.get());
             break;
         }
 
         case Settings.type.string:
         case Settings.type.integer: {
-            {
-                var input = '<input value="'+this.get()+'"/>';
-                s.innerHTML = settingsname+": "+input+hint+"\n";
-            }
-            s.childNodes[1].addEventListener("change",function (e) {
+            var input = $.new("input");
+            input.attr({value: this.get});
+            s.append(input);
+            input.change(function (e) {
                     var val=e.target.value;
                     if (setting.type==Settings.type.integer) {
                         if (val=="") val = setting.def_val;
                         else val-=0;
                     }
+                    input.attr({value: val});
                     setting.set(val);
                     setting.write();
-                    Settings.fill(); // Redraw everything, in case a eval condition has changed
-                },false);
+                });
             break;
         }
 
         case Settings.type.enumeration: {
-            {
-                var select='<select>';
-                var j = this.get();
-                for (var i in this.typedata) {
-                    select+='<option value="'+i+'"';
-                    if (i==j) select+='selected="" ';
-                    select+='>'+this.typedata[i]+'</option>';
-                }
-                select+='</select>';
-                s.innerHTML = settingsname+": "+select+hint+"\n";
+            var select=$.new("select");
+            var j = this.get();
+            for (var i in this.typedata) {
+                option=$.new("option");
+                option.attr({value: i});
+                option.html(this.typedata[i]);
+                if (i==j) option.attr({selected: "selected"});
+                select.append(option);
             }
-            s.childNodes[1].addEventListener("change",function (e) {
+            s.append(select);
+            select.change(function (e) {
                     var val=e.target.value-0;
                     setting.set(val);
                     setting.write();
-                    Settings.fill(); // Redraw everything
-                },false);
+                });
             break;
         }
         
         case Settings.type.object: {
             // TODO: have some more info for this object in some special cases.
-            s.innerHTML = settingsname+": (Object)"+hint+"\n";
+            s.append("(Object)");
             break;
         }
         
         case Settings.type.bool: {
-            s.style.cursor = "pointer";
-            s.style.color = this.get()?'green':'red';
-            s.innerHTML = settingsname+": <u>"+this.get()+"</u>"+hint+"\n";
-            s.addEventListener("click",function (e) {
+            s.css({cursor: "pointer", 
+                   color: (this.get()?'green':'red')});
+            u=$.new("u");
+            u.html(""+this.get());
+            s.append(u);
+            s.click(function (e) {
                     var val=!setting.get();
-                    s.style.color = val?'green':'red';
-                    s.childNodes[1].innerHTML = val;
+                    s.css({color: (val?'green':'red')});
+                    u.html(""+val);
                     setting.set(val);
                     setting.write();
-                    Settings.fill(); // Redraw everything
-                },false);
+                });
             break;
         }
         }
-        // Insert the element.
-        if (setting.parent_el){ // If we have an expressed parent element
-            if (setting.parent_el.type == 'table'){ // create the tr's and td's
-                var tr = document.createElement('tr');
-                var td = document.createElement('td');
-                td.appendChild(sc);
-                td.appendChild(s);
-                tr.appendChild(td);
-                setting.parent_el.el.appendChild(tr);
-            } else {
-                setting.parent_el.el.appendChild(sc);
-                setting.parent_el.el.appendChild(s);
-            }
-        } else {
-            // Default if we have no given parent
-            parent_element.appendChild(sc);
-            parent_element.appendChild(s); 
+
+        // Add tooltip with a description (if available)
+        if (this.description) {
+            s.attr({title: this.description});
+            var h = this.description.match("\\(([-a-zA-Z0-9.,_ ]+)\\)$");
+            if (h)
+                s.append(" "+h[1]);
         }
+        s.append("\n");
+
+        // Default if we have no given parent
+        $(parent_element).append(s); 
     } catch (e) {
         GM_log(e);
     }
 };
 
 Settings.init=function(){
-    Settings.setting("race",           0,          Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+    Settings.setting("race",           0,          Settings.type.enumeration, ["Terrans","Titans","Xen"]);
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     Settings.setting("village_names",  {},         Settings.type.object,      undefined, "The names of the villages.");
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
-    Settings.setting("user_display",   {},         Settings.type.object,      undefined, "This is a reference to the local set of enables/disables", 'true');
+    Settings.setting("user_display",   {},         Settings.type.object,      undefined, "This is a reference to the local set of enables/disables");
     // These are both global
-    Settings.setting("users",          {},         Settings.type.object,      undefined, "This keeps track of the human-readable names of the different users. Again, this is global data; however as there is no local copy we don't need to use so many hacks to read it.", 'true');
-    Settings.setting("g_user_display", {},         Settings.type.object,      undefined, "This keeps track of which users have their data displayed. This one represents the global component (for unnatural pages) only; local and external data are both accessed with external.", 'true');
-
-    var s = Settings.server;
-    var u = Settings.username;
-
-    // If the current user is not present in either global variable, s/he must be new. Add them.
-    if (Settings.users[s] == undefined)          Settings.users[s] = {};
-    if (Settings.g_user_display[s] == undefined) Settings.g_user_display[s] = {};
-    if (Settings.users[s][u] == undefined || Settings.g_user_display[s][u] == undefined){
-        Settings.add_user(s, u);
-        // If we just added a user, user_display will have changed. Reload it.
-        Settings.s.user_display.read();
-    }
+    Settings.setting("users",          {},         Settings.type.object,      undefined, "This keeps track of the human-readable names of the different users. Again, this is global data; however as there is no local copy we don't need to use so many hacks to read it.");
+    Settings.setting("g_user_display", {},         Settings.type.object,      undefined, "This keeps track of which users have their data displayed. This one represents the global component (for unnatural pages) only; local and external data are both accessed with external.");
 
     if (location.href.match(/about:cache\?device=timeline&/)) {
         var params=location.href.split("&");
@@ -421,75 +266,6 @@ Settings.run=function() {
     
     if (Settings.special && Settings.special.page=="settings") {
         Settings.show();
-    }
-};
-Settings.get_id=function(){
-    GM_xmlhttpRequest({
-            method: 'GET',
-            url: Settings.absolute_server + '/dorf3.php',
-            onload: function(e){
-                var x = e.responseText.match('newdid=(\\d+)">([^<]*)<');
-                Settings.village_name = x[2];
-                Settings.s.village_name.write();
-                Settings.village_id = x[1]-0;
-                Settings.s.village_id.write();
-            }});
-};
-
-// This is a method to add a new user. It only runs if the current user is not recognized.
-
-// To explain: every scope has its own version of this variable. Every variable has a reference to every scope.
-// The value of that reference is either true or false; if it is true, then the scope holding that variable will
-// display data from the scope inside the variable.
-
-// For example: there are two scopes, scope1 and scope2. scope1 has a user_display variable that looks like
-// {scope1: true, scope2: true}. scope2 has a user_display variable that looks like {scope1: false, scope2: true}.
-// Therefore, as it is right now scope1 will display data from *both* scope1 and scope2, and scope2 will display
-// data from *only* scope2. Scope2 is in the default setting, while scope1 has been modified by the user.
-// There is also a global copy of this variable, who's default is to display all data. As global has no data
-// of its own, no user_display variable needs to hold a copy of global, however.
-
-// Of course, it's important to remember that each scope is composed of both a server and a user. Which only complicates.
-// This would be a complete *bitch* without external. Trust me, I tried. :-/
-Settings.add_user=function(s, u){
-    // Extract the human-readable username
-    var x = document.evaluate('//div[@id="sleft"]/p/a[contains(@href, "chatname")]', document, null,
-                              XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-
-    // Update the global variables
-    Settings.users[s][u] = x.href.split('|')[1];
-    Settings.g_user_display[s][u] = true;
-
-    this.info("We have a new user! Server="+s+" UID="+u+" Name="+Settings.users[s][u]);
-
-    // And save them - to the global scope, remember
-    Settings.s.users.write(2);
-    Settings.s.g_user_display.write(2);
-
-    // Now update the local lists for *all* users
-    // This is technically an n^2 solution - but these lists are unlikely to get extremely large... :-/
-    // (and how else could we do it?)
-    for (var server in Settings.users){
-        for (var user in Settings.users[server]){
-            this.info("Checking for this user in "+server+'.'+user);
-            // First, we have to load the user_display data for *every* scope.
-            var x = Settings.external(server, user, 'user_display', {}, Settings.type.object, undefined, 'This accesses both the non-local and local data, and updates them.');
-            // And this is a shortcut to the data we just loaded. This is a two-dimensional mapping, remember.
-            var y = Settings[server][user].user_display;
-
-            // Now update user-specific data for all users - copy over new values from the global list if they don't exist
-            for (var s2 in Settings.users){
-                for (var u2 in Settings.users[s2]){
-                    // If we're copying into the local list (s==server && u==user) and we're setting whether to display
-                    // *our* data (s2==s && u2==u), we want this to be true by default. For all other occasions,
-                    // this should be false.
-                    if (y[s2] == undefined) y[s2] = {};
-                    if (y[s2][u2] == undefined) y[s2][u2] = s==s2 && s==server && u==u2 && u==user;
-                }
-            }
-            // Now we want to save the variable for each scope. Local, remember...
-            x.write();
-        }
     }
 };
 Settings.show=function() {
@@ -608,9 +384,6 @@ Settings.fill=function(){
 Settings.close=function(){
     remove(Settings.window);
 };
-
-// Tested: this is *not* the cause of the pageload errors. Errors still occur without it running.
-Settings.username = Settings.get_username(); 
 
 // Correctly init debug now that it's possible
 Settings.setting("global_debug_level", 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");

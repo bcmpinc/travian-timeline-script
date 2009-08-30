@@ -77,3 +77,8 @@ Math.round_sig= function(amount, sigfig){
 };
 
 function nothing(){}
+
+// Some add-ons to jquery
+jQuery.new = function(element) {
+    return jQuery(document.createElement(element));
+}
