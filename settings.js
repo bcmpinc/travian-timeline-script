@@ -18,7 +18,7 @@
  * SETTINGS
  ****************************************/
 
-Feature.create("Settings");
+Feature.create("Settings",new Error().lineNumber-21);
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
 
 // Get the value of this setting.

@@ -18,7 +18,7 @@
  * LINES (and circles)
  ****************************************/
 
-Feature.create("Lines");
+Feature.create("Lines",new Error().lineNumber-21);
 
 Lines.s.enabled.description="Enable map enhacements";
 Lines.init=function(){
@@ -172,21 +172,27 @@ Lines.tag_tool=function() {
     x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
 };
 Lines.run=function() {
-    var x = $("#mapGalaxy");
-    if (x.length>0) { // If this page has a map ...
+    var x = $("#mapContent");
+    if (x.size()>0) { // If this page has a map ...
         //Lines.create_canvas(x);
         //Lines.update();
         if (Lines.hide_buttons)
-          GM_style("#gridX, #gridY, #gridCorner, #mapNaviSmall, #mapNaviBig {display: none;}");
-        document.addEventListener('click', Lines.delayed_update,true);
-        document.addEventListener('keydown',Lines.delayed_update,true);
-        document.addEventListener('keyup', Lines.delayed_update,true);
+          GM_addStyle("#gridX, #gridY, #gridCorner, #mapNaviSmall, #mapNaviBig {display: none !important;} #mapContent {cursor: move;}");
+        var map = $("mapGalaxy");
+        x.mouseDown(function(e) {
+          Lines.start_x=e.x;
+          Lines.start_y=e.y;
+        });
+        x.mouseMove(function(e) {
+          if (Lines.start_x||Lines.start_y) {
+            var map = $("mapGalaxy");
+            
+          }
+        });
     }
 
     //Lines.tag_tool();
 };
 
-if (Settings.natural_run){
-    Lines.call('init', true);
-    $(function(){Lines.call('run',true);});
-}
+Lines.call('init', true);
+$(function(){Lines.call('run',true);});

@@ -106,12 +106,13 @@ Feature.setting=function(name, def_val, type, typedata, description) {
 // This new feature will be available in the global namespace.
 // Override run and init for respectively 'DOM accessing and modifying code' and 
 // 'initialization code that does not touch the DOM (document)'.
-Feature.create=function(name){
+Feature.create=function(name,lineshift){
     var x=new Object();
     x.__proto__=Feature;
     x.name = name;
     x.s=new Object();
     Feature.list[name]=x;
+    x.lineshift=lineshift||0;
     x.init_debug();
     if (global.Settings) x.setting("enabled", true, Settings.type.bool, undefined, "Is '"+name+"' enabled?");
     global[name]=x;
@@ -131,6 +132,7 @@ Feature.call=function(fn_name, once) {
     try {
         this[fn_name]();
     } catch (e) {
+        e.lineNumber-=this.lineshift;
         this.exception("call "+this.name+'.'+fn_name, e);
     }
     if (once) this[fn_name]=nothing;
