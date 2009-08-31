@@ -171,27 +171,60 @@ Lines.tag_tool=function() {
     x.appendChild(select);
     x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
 };
-Lines.run=function() {
-    var x = $("#mapContent");
-    if (x.size()>0) { // If this page has a map ...
-        //Lines.create_canvas(x);
-        //Lines.update();
-        if (Lines.hide_buttons)
-          GM_addStyle("#gridX, #gridY, #gridCorner, #mapNaviSmall, #mapNaviBig {display: none !important;} #mapContent {cursor: move;}");
-        var map = $("mapGalaxy");
-        x.mouseDown(function(e) {
-          Lines.start_x=e.x;
-          Lines.start_y=e.y;
-        });
-        x.mouseMove(function(e) {
-          if (Lines.start_x||Lines.start_y) {
-            var map = $("mapGalaxy");
-            
-          }
-        });
-    }
+Lines.next_move=0;
+Lines.mousemove=function(e) {
+  var t=new Date().getTime();
+  if (t<Lines.next_move) return;
+  Lines.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
+  var map = $("#mapGalaxy");
+  var pos = map.position();
+  map.css({left: (pos.left+e.screenX-Lines.start_x)+"px",
+           top:  (pos.top +e.screenY-Lines.start_y)+"px"});
+  $(".starLayer").each(function(){
+    q=$(this);
+    var layer = q.attr("id").substring(6)-0;
+    var factor= Math.pow(Lines.starBasis, layer+1);
+    var pos = q.position();
+    q.css({left: (pos.left+(e.screenX-Lines.start_x)*factor)+"px",
+           top:  (pos.top +(e.screenY-Lines.start_y)*factor)+"px"});
+    
+  });
+  Lines.start_x=e.screenX;
+  Lines.start_y=e.screenY;
+};
+Lines.mousedown=function(e) {
+  Lines.start_x=e.screenX;
+  Lines.start_y=e.screenY;
+  $("body").get(0).addEventListener("mousemove",Lines.mousemove,false);
+};
+Lines.end_drag = function(e) {
+  if (Lines.start_x == undefined) return;
+  $("body").get(0).removeEventListener("mousemove",Lines.mousemove,false);
+  Lines.last_move=0; 
+  Lines.mousemove(e);
+  Lines.start_x=undefined;
+  Lines.start_y=undefined;
+};
 
-    //Lines.tag_tool();
+Lines.run=function() {
+  
+  var x = $("#mapContent");
+  if (x.size()>0) { // If this page has a map ...
+    if (Lines.hide_buttons)
+      GM_addStyle("#gridX, #gridY, #gridCorner, #mapNaviSmall, #mapNaviBig {display: none !important;} #mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal};");
+
+    // These come from imperion's 'config.js'
+    Lines.starBasis = 1.0 / 2.5;
+    //Lines.quadrantWidth  = x.width()/7;
+    //Lines.quadrantHeight = x.height()/5;
+
+    y=$("body");
+    y.mouseleave(Lines.end_drag);
+    y.mouseup(Lines.end_drag);
+    x.mousedown(Lines.mousedown);
+  }
+
+  //Lines.tag_tool();
 };
 
 Lines.call('init', true);
