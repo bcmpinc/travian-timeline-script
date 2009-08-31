@@ -176,25 +176,30 @@ Lines.mousemove=function(e) {
   var t=new Date().getTime();
   if (t<Lines.next_move) return;
   Lines.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
-  var map = $("#mapGalaxy");
-  var pos = map.position();
   var dx = -(e.screenX-Lines.start_x);
   var dy = -(e.screenY-Lines.start_y);
-  Lines.unsafeMap.positionLeft-=dx;
-  Lines.unsafeMap.positionTop -=dy;
-  map.css({left: (Lines.unsafeMap.positionLeft)+"px",
-           top:  (Lines.unsafeMap.positionTop )+"px"});
-  Lines.unsafeMap.center.x = Lines.center.x+Math.round(Lines.unsafeMap.positionLeft/Lines.quadrantWidth );
-  Lines.unsafeMap.center.y = Lines.center.y+Math.round(Lines.unsafeMap.positionTop /Lines.quadrantHeight);
+  var map = $(Lines.unsafeMap.output)
+  var pos = map.position();
+  pos.left-=dx;
+  pos.top -=dy;
+  map.css({left: (pos.left)+"px",
+           top:  (pos.top )+"px"});
+  
+  var ix=Math.round(pos.left/Lines.quadrantWidth );
+  var iy=Math.round(pos.top /Lines.quadrantHeight);
+  Lines.unsafeMap.center.x = Lines.center.x-ix;
+  Lines.unsafeMap.center.y = Lines.center.y-iy;
+  Lines.unsafeMap.positionLeft = ix*Lines.quadrantWidth;
+  Lines.unsafeMap.positionTop  = iy*Lines.quadrantHeight;
   
   for (var i=0; i<Lines.starLayerCount; i++) {
     var layer = Lines.unsafeMap.starLayers[i];
     var factor= Math.pow(Lines.starBasis, layer.layerNr-(-1)); // '--' is used to ensure it's a number
-    Lines.debug(factor);
     layer.positionLeft-=dx*factor; // same idea here
     layer.positionTop -=dy*factor; // same idea here
     $(layer.output).css({left: layer.positionLeft+"px",
                          top:  layer.positionTop +"px"});
+    layer._setStarPositions(-dy*factor,-dx*factor);
   }
   Lines.start_x=e.screenX;
   Lines.start_y=e.screenY;
