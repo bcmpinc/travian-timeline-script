@@ -226,7 +226,7 @@ Settings.run=function() {
 Settings.show=function() {
     var w = $.new("div");
     w.css({position:   "fixed",
-           zIndex:     "750",
+           zIndex:     "30000", // imperion developers like to exagerate
            left:       "0px",
            top:        "0px",
            right:      "0px",

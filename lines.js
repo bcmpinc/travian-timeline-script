@@ -20,16 +20,9 @@
 
 Feature.create("Lines");
 
-Lines.s.enabled.description="Enable the map lines";
+Lines.s.enabled.description="Enable map enhacements";
 Lines.init=function(){
-    //Lines.setting("update_owned", true, Settings.type.bool, undefined, "Automatically create and remove lines to your villages.");
-    //Lines.setting("update_ally", true, Settings.type.bool, undefined, "Automatically create and remove lines to ally members.");
-    //Lines.setting("update_allies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of allied alliances.");
-    //Lines.setting("update_naps", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of nap-alliances.");
-    //Lines.setting("update_enemies", true, Settings.type.bool, undefined, "Automatically create and remove lines to members of alliances, with which your ally is at war.");
-    //Lines.setting("update_crop", true, Settings.type.bool, undefined, "Automatically create and remove lines to 9- and 15-croppers.");
-    Lines.setting("list_extra_villages", true, Settings.type.bool, undefined, "Append villages in the 'extra' category to the villages list.");
-    Lines.setting("analyze_neighbourhood", true, Settings.type.bool, undefined, "Add links to travian analyzer on the map page, for analyzing the neighbourhood.");
+    Lines.setting("hide_buttons", true, Settings.type.boolean,undefined, "Hide the movemente buttons and sector numbers on the system map.");
     Lines.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
     Lines.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             none: ["",false], // ie. remove from 'locations'.
@@ -38,12 +31,9 @@ Lines.init=function(){
                 allies: ["rgba(0,255,0,0.5)", true],
                 naps: ["rgba(0,255,255,0.5)", false],
                 enemies: ["rgba(255,0,0,0.5)", true],
-                crop9: ["rgba(255,128,0.5)", true],
-                crop15: ["rgba(255,128,1.0)", true],
                 extra: ["rgba(128,128,128,1)", true],
                 farms: ["rgba(255,255,255,1)", true],
                 ban: ["rgba(0,0,0,0.5)", false],
-                natar: ["rgba(128,64,0,0.5)", false],
                 other: ["rgba(255,0,255,0.5)", true]
                 }, Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
     Lines.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");
@@ -51,43 +41,6 @@ Lines.init=function(){
     // name is optional.
 };
 
-Lines.new_table_cell=function(c,innerhtml) {
-    cell = document.createElement("td");
-    cell.innerHTML = innerhtml;
-    cell.className = c;
-    return cell;
-};
-// Adds the location to the villages list.
-Lines.append_villages=function(){
-    var color = Lines.categories.extra[0];
-    for (var l in Lines.locations) {
-        var location = Lines.locations[l];
-        if (location[2]=="extra") {
-            var row = document.createElement("tr");
-            row.appendChild(Lines.new_table_cell("dot","&#x25CF;"));
-            row.appendChild(Lines.new_table_cell("text","<a style=\"color: "+color+";\">"+location[3]+"</a>"));
-            row.appendChild(Lines.new_table_cell("x","("+location[0]));
-            row.appendChild(Lines.new_table_cell(""," | "));
-            row.appendChild(Lines.new_table_cell("y",location[1]+")"));
-            Lines.village_list.appendChild(row);
-        }
-    }
-};
-// Adds a diff to the page below the map that can contain links to
-// travian analyzer.
-Lines.create_analyzer_links=function(){
-    var rdiv=document.createElement("div");
-    rdiv.style.position = "absolute";
-    rdiv.style.left = "315px";
-    rdiv.style.top = "500px";
-    rdiv.style.border = "solid 1px #000";
-    rdiv.style.background = "#ffc";
-    rdiv.style.zIndex = 16;
-    rdiv.style.padding = "3px";
-    rdiv.style.MozBorderRadius = "6px";
-    document.body.appendChild(rdiv);
-    Lines.analyzer_links = rdiv;
-};
 // Creates the canvas for drawing the lines.
 Lines.create_canvas=function(x){
     var pos = [x.offsetLeft, x.offsetTop, x.offsetWidth, x.offsetHeight];
@@ -181,17 +134,6 @@ Lines.update=function() {
 
     // Reset render context
     g.restore();
-
-    // Update the travian analyzer links:
-    if (Lines.analyzer_links) {
-        var linkstart = "<a href=\"http://travian.ws/analyser.pl?s="+Settings.server+"&q="+Lines.posx+","+Lines.posy;
-        Lines.analyzer_links.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
-            linkstart+",5\" > 5</a>, "+
-            linkstart+",10\">10</a>, "+
-            linkstart+",15\">15</a>, "+
-            linkstart+",20\">20</a>, "+
-            linkstart+",25\">25</a>";
-    }
 }
 // The event listener (used by tag_tool)
 Lines.tag_change=function(e) {
@@ -230,30 +172,18 @@ Lines.tag_tool=function() {
     x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
 };
 Lines.run=function() {
-    if (Lines.list_extra_villages) {
-        var vlist=document.getElementById("vlist");
-        if (vlist) {
-            Lines.village_list = vlist.childNodes[1];
-            if (Lines.village_list) {
-                Lines.append_villages();
-            } else {
-                this.warning("Could not find village list.");
-            }
-        }
-    }
-
-    var x = document.getElementById("map");
-    if (x != null) { // If this page has a map ...
-        if (Lines.analyze_neighbourhood)
-            Lines.create_analyzer_links();
-        Lines.create_canvas(x);
-        Lines.update();
+    var x = $("#mapGalaxy");
+    if (x.length>0) { // If this page has a map ...
+        //Lines.create_canvas(x);
+        //Lines.update();
+        if (Lines.hide_buttons)
+          GM_style("#gridX, #gridY, #gridCorner, #mapNaviSmall, #mapNaviBig {display: none;}");
         document.addEventListener('click', Lines.delayed_update,true);
         document.addEventListener('keydown',Lines.delayed_update,true);
         document.addEventListener('keyup', Lines.delayed_update,true);
     }
 
-    Lines.tag_tool();
+    //Lines.tag_tool();
 };
 
 if (Settings.natural_run){
