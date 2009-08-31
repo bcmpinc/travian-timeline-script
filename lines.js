@@ -178,28 +178,35 @@ Lines.mousemove=function(e) {
   Lines.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
   var map = $("#mapGalaxy");
   var pos = map.position();
-  map.css({left: (pos.left+e.screenX-Lines.start_x)+"px",
-           top:  (pos.top +e.screenY-Lines.start_y)+"px"});
-  $(".starLayer").each(function(){
-    q=$(this);
-    var layer = q.attr("id").substring(6)-0;
-    var factor= Math.pow(Lines.starBasis, layer+1);
-    var pos = q.position();
-    q.css({left: (pos.left+(e.screenX-Lines.start_x)*factor)+"px",
-           top:  (pos.top +(e.screenY-Lines.start_y)*factor)+"px"});
-    
-  });
+  var dx = -(e.screenX-Lines.start_x);
+  var dy = -(e.screenY-Lines.start_y);
+  Lines.unsafeMap.positionLeft-=dx;
+  Lines.unsafeMap.positionTop -=dy;
+  map.css({left: (Lines.unsafeMap.positionLeft)+"px",
+           top:  (Lines.unsafeMap.positionTop )+"px"});
+  Lines.unsafeMap.center.x = Lines.center.x+Math.round(Lines.unsafeMap.positionLeft/Lines.quadrantWidth );
+  Lines.unsafeMap.center.y = Lines.center.y+Math.round(Lines.unsafeMap.positionTop /Lines.quadrantHeight);
+  
+  for (var i=0; i<Lines.starLayerCount; i++) {
+    var layer = Lines.unsafeMap.starLayers[i];
+    var factor= Math.pow(Lines.starBasis, layer.layerNr-(-1)); // '--' is used to ensure it's a number
+    Lines.debug(factor);
+    layer.positionLeft-=dx*factor; // same idea here
+    layer.positionTop -=dy*factor; // same idea here
+    $(layer.output).css({left: layer.positionLeft+"px",
+                         top:  layer.positionTop +"px"});
+  }
   Lines.start_x=e.screenX;
   Lines.start_y=e.screenY;
 };
 Lines.mousedown=function(e) {
   Lines.start_x=e.screenX;
   Lines.start_y=e.screenY;
-  $("body").get(0).addEventListener("mousemove",Lines.mousemove,false);
+  $("body").get(0).addEventListener("mousemove",Lines.mousemove,false); // jquery's unbind did not work.
 };
 Lines.end_drag = function(e) {
   if (Lines.start_x == undefined) return;
-  $("body").get(0).removeEventListener("mousemove",Lines.mousemove,false);
+  $("body").get(0).removeEventListener("mousemove",Lines.mousemove,false); // jquery's unbind did not work.
   Lines.last_move=0; 
   Lines.mousemove(e);
   Lines.start_x=undefined;
@@ -214,9 +221,14 @@ Lines.run=function() {
       GM_addStyle("#gridX, #gridY, #gridCorner, #mapNaviSmall, #mapNaviBig {display: none !important;} #mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal};");
 
     // These come from imperion's 'config.js'
-    Lines.starBasis = 1.0 / 2.5;
-    //Lines.quadrantWidth  = x.width()/7;
-    //Lines.quadrantHeight = x.height()/5;
+    Lines.starBasis = 1.0 / (unsafeWindow.config.performance.starBasis-0); // this is intentionally 1.0 devided by the original value
+    Lines.starLayerCount = unsafeWindow.config.performance.starLayerCount-0; 
+    Lines.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
+    Lines.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
+    Lines.unsafeMap = unsafeWindow.config.registry.currentObject; // This is supposed to be the central instance of imperion's Map class.
+    Lines.center={x: Lines.unsafeMap.center.x-0,
+                  y: Lines.unsafeMap.center.y-0};
+    
 
     y=$("body");
     y.mouseleave(Lines.end_drag);
