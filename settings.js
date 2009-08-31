@@ -112,12 +112,12 @@ Settings.remove=function() {
     }
 };
 
-// Appends a DOM element to parent_element that can be used to modify this setting.
-Settings.config=function(parent_element) {
+// Returns a jQuery object that can be used to modify this setting.
+Settings.config=function() {
     try {
-        var s  = $.new("span"); // the setting config thing
+        var s = $.new("span"); // the setting config thing
         s.append(this.name.replace(/_/g," ").pad(22)+": ");
-        var setting=this
+        var setting=this;
         
         // Create the input element.
         switch (this.type) {
@@ -129,7 +129,7 @@ Settings.config=function(parent_element) {
         case Settings.type.string:
         case Settings.type.integer: {
             var input = $.new("input");
-            input.attr({value: this.get});
+            input.val(this.get());
             s.append(input);
             input.change(function (e) {
                     var val=e.target.value;
@@ -148,9 +148,7 @@ Settings.config=function(parent_element) {
             var select=$.new("select");
             var j = this.get();
             for (var i in this.typedata) {
-                option=$.new("option");
-                option.attr({value: i});
-                option.html(this.typedata[i]);
+                option=$.new("option").attr({value: i}).html(this.typedata[i]);
                 if (i==j) option.attr({selected: "selected"});
                 select.append(option);
             }
@@ -170,17 +168,14 @@ Settings.config=function(parent_element) {
         }
         
         case Settings.type.bool: {
+            var u=$.new("u").html(""+this.get());
+            s.append(u);
             s.css({cursor: "pointer", 
                    color: (this.get()?'green':'red')});
-            u=$.new("u");
-            u.html(""+this.get());
-            s.append(u);
             s.click(function (e) {
-                    var val=!setting.get();
-                    s.css({color: (val?'green':'red')});
-                    u.html(""+val);
-                    setting.set(val);
+                    setting.set(!setting.get());
                     setting.write();
+                    s.replaceWith(setting.config());
                 });
             break;
         }
@@ -195,8 +190,7 @@ Settings.config=function(parent_element) {
         }
         s.append("\n");
 
-        // Default if we have no given parent
-        $(parent_element).append(s); 
+        return s;
     } catch (e) {
         GM_log(e);
     }
@@ -205,12 +199,7 @@ Settings.config=function(parent_element) {
 Settings.init=function(){
     Settings.setting("race",           0,          Settings.type.enumeration, ["Terrans","Titans","Xen"]);
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
-    Settings.setting("village_names",  {},         Settings.type.object,      undefined, "The names of the villages.");
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
-    Settings.setting("user_display",   {},         Settings.type.object,      undefined, "This is a reference to the local set of enables/disables");
-    // These are both global
-    Settings.setting("users",          {},         Settings.type.object,      undefined, "This keeps track of the human-readable names of the different users. Again, this is global data; however as there is no local copy we don't need to use so many hacks to read it.");
-    Settings.setting("g_user_display", {},         Settings.type.object,      undefined, "This keeps track of which users have their data displayed. This one represents the global component (for unnatural pages) only; local and external data are both accessed with external.");
 
     if (location.href.match(/about:cache\?device=timeline&/)) {
         var params=location.href.split("&");
@@ -224,165 +213,124 @@ Settings.init=function(){
 };
 Settings.run=function() {
     // Create link for opening the settings menu.
-    var div = document.createElement("div");
-    div.style.position = "absolute";
-    div.style.zIndex   = "2";
-    var right = Timeline.width;
-    if (Timeline.collapse) right = Timeline.collapse_width;
-    if (!Timeline.enabled) right = 0;
-    right+=5;
-    div.style.right           = right+"px";
-    div.style.top             = "-5px";
-    div.style.MozBorderRadius = "6px";
-    div.style.padding         = "3px";
-    div.style.border          = "1px solid #999";
-    div.style.background      = "#ccc";
-    div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
-    document.body.appendChild(div);
-    var link = div.firstChild;
-    link.style.cursor="pointer";
-    link.addEventListener("click",Settings.show,false);
-
-    // Extract the active village
-    try {
-        var tr = document.evaluate('//table[@id="vlist"]/tbody/tr/td[@class="dot hl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-        Settings.village_name  = tr.nextSibling.textContent;
-        Settings.village_id    = tr.nextSibling.childNodes[0].href.match(/newdid=(\d+)/)[1] - 0;
-        var coord = tr.nextSibling.nextSibling.childNodes;
-        var x = coord[1].textContent.match(/\((-?\d{1,3})/)[1];
-        var y = coord[5].textContent.match(/(-?\d{1,3})\)/)[1];
-        Settings.village_coord = [x, y];
-    } catch (e) {
-        // If this fails, there probably is only 1 village.
-        // We should only then try loading this data from storage
-        Settings.info("Failed to get the vlist table - assuming there's only found one village!");
-        Settings.setting('village_name', "", Settings.type.string,  undefined, "The name of the active village. Only stored if we're a single-village account.", "true");
-        Settings.setting('village_id',    0, Settings.type.integer, undefined, "The id of the active village. Again only stored if we're a single-village account.", 'true');
-        if (Settings.village_id === 0) Settings.get_id();
-    }
-    this.info("The active village is "+Settings.village_id+": "+Settings.village_name);
-    Settings.village_names[Settings.village_id]=Settings.village_name;
-    Settings.s.village_names.write();
+    var link = $.new("a").attr({href: "javascript:"}).text("Time Line Settings");
+    link.click(Settings.show);
+    var links = $("#head>.floatRight");
+    links.prepend($.new("li").text("|").attr({class: "colorLightGrey"}));
+    links.prepend($.new("li").append(link));
     
     if (Settings.special && Settings.special.page=="settings") {
         Settings.show();
     }
 };
 Settings.show=function() {
-    var w = document.createElement("div");
-    w.style.position = "fixed";
-    w.style.zIndex   = "750";
-    w.style.left     = "0px";
-    w.style.top      = "0px";
-    w.style.right    = "0px";
-    w.style.bottom   = "0px";
-    w.style.background = "rgba(192,192,192,0.8)";
-    w.innerHTML = '<a style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;">'+
-                  '<span style="position: absolute; right: 30px; top: 20px;">[x] Close</span></a>'+
-                  '<div style="position: absolute; left: 50%; top: 50%;">'+
-                  '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
-                  ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
-                  ' -moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;">'+
-                  '</pre></div>';
-    document.body.appendChild(w);
+    var w = $.new("div");
+    w.css({position:   "fixed",
+           zIndex:     "750",
+           left:       "0px",
+           top:        "0px",
+           right:      "0px",
+           bottom:     "0px",
+           background: "rgba(192,192,192,0.8)"});
+    w.html('<a style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;">'+
+           '<span style="position: absolute; right: 30px; top: 20px;">[x] Close</span></a>'+
+           '<div style="position: absolute; left: 50%; top: 50%;">'+
+           '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
+           ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
+           ' -moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;" id="settings_container">'+
+           '</pre></div>');
+    w.find("a").click(Settings.close);
     Settings.window = w;
     try {
-        var p = w.childNodes[1];
-        function add_el(type) {
-            var el=document.createElement(type);
-            p.appendChild(el);
-            return el;
-        }
+        var p = w.find("div");
 
         // First we need to create the tabs...
-        var txt = '<tbody>';
+        var tablebody = $.new('tbody');
         for (var n in Feature.list){
             var f = Feature.list[n];
+            
+            // Skip features without settings
             if (f.s == undefined || isempty(f.s)) continue;
 
-            txt += '<tr align="right"><td style="padding: 5px 2px; text-align: right; border: none;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
+            tablebody.append('<tr align="right"><td style="padding: 5px 2px; text-align: right; border: none;"><a href="javascript:" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
                 'padding:1px 11px 2px; border: 2px solid #000; '+
                 (n==Settings.current_tab?'background: #fff; border-right: none;':'background: #ddd; border-right: 3px solid black;')+
                 ' color:black; outline: none; cursor:pointer;">'+
-                f.name + '</a></td></tr>';
+                f.name + '</a></td></tr>');
         }
-        txt += '</tbody>';
 
         // Then we need to create the tab bar, to switch between tabs
-        var tabbar = add_el('table');
-        tabbar.innerHTML = txt;
-        tabbar.style.position="absolute";
-        tabbar.style.width = "150px";
-        tabbar.style.left  = "-445px";
-        tabbar.style.top   = "-200px";
-        tabbar.style.border= "none";
-        tabbar.style.borderCollapse = "collapse";
+        var tabbar = $.new('table');        
+        tabbar.append(tablebody);
+        tabbar.css({position: "absolute",
+                    width:    "150px",
+                    left:     "-445px",
+                    top:      "-200px",
+                    border:   "none",
+                    borderCollapse: "collapse"});
+        p.append(tabbar);
         
-        Settings.fill();
-        
-        var notice = add_el('pre'); // Add the copyright
-        notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
+        var notice = $.new('pre'); // Add the copyright
+        notice.text("Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
             "GNU General Public License as published by the Free Software Foundation;\n"+
             "either version 3 of the License, or (at your option) any later version.\n"+
-            "This program comes with ABSOLUTELY NO WARRANTY!";
-        notice.style.color="#666";
-        notice.style.fontStyle="italic";
-        notice.style.fontSize="75%";
-        notice.style.textAlign="center";
-        notice.style.position="absolute";
-        notice.style.left="-300px";
-        notice.style.top="180px";
-        notice.style.width="600px";
-        notice.style.padding="1px 8px";
-        notice.style.border="3px solid #000";
-        notice.style.background="#fff";
-        notice.style.MozBorderRadiusBottomleft ="12px";
-        notice.style.MozBorderRadiusBottomright="12px";
+            "This program comes with ABSOLUTELY NO WARRANTY!");
+        notice.css({color: "#666",
+                    fontStyle: "italic",
+                    fontSize: "75%",
+                    textAlign: "center",
+                    position: "absolute",
+                    left: "-300px",
+                    top: "180px",
+                    width: "600px",
+                    padding: "1px 8px",
+                    border: "3px solid #000",
+                    background: "#fff",
+                    MozBorderRadiusBottomleft : "12px",
+                    MozBorderRadiusBottomright: "12px"});
+        p.append(notice);
 
         // Add click listeners to all of the tab buttons
-        var tabs=tabbar.childNodes[0].childNodes;
-        for (var n in tabs){
-            var a = tabs[n].childNodes[0].childNodes[0];
-            a.addEventListener('click', function(e){
-                var el = e.target;
-                var f = Feature.list[el.textContent];
-                Settings.current_tab=el.textContent;
-                Settings.s.current_tab.write();
+        var tabs=tabbar.find("a");
+        tabs.click(function(e){
+            var el = $(e.target);
+            var f = Feature.list[el.text()];
+            Settings.current_tab=el.text();
+            Settings.s.current_tab.write();
 
-                // Reset the background colours of *all* tab buttons
-                for (var i in tabs){
-                    tabs[i].childNodes[0].childNodes[0].style.background = "#ddd";
-                    tabs[i].childNodes[0].childNodes[0].style.borderRight = "3px solid black";
-                }
+            // Reset the background colours of *all* tab buttons
+            tabs.css({background: "#ddd",
+                      borderRight: "3px solid black"});
 
-                el.style.background = "#fff"; // Turn the colour of the clicked element white
-                el.style.borderRight = "none"; // Simulate that the tab is connected to the settings page
-
-                Settings.fill();
-            }, false);
-        }
+            el.css({background: "#fff", // Turn the colour of the clicked element white
+                    borderRight: "none"}); // Simulate that the tab is connected to the settings page
+            Settings.fill();
+        });
+        Settings.fill();
     } catch (e) {
-        this.exception("Settings.show", e);
+        if (this&&this.exception)
+            this.exception("Settings.show", e);
+        else
+            GM_log("FATAL:"+e);
     }
-    w.firstChild.addEventListener("click",Settings.close,false);
+    $("body").append(w);
 };
 
 // This fills/refreshes the display portion of the settings table
 Settings.fill=function(){
-    var disp = Settings.window.childNodes[1].childNodes[0];
+    var disp = Settings.window.find("#settings_container");
     var f = Feature.list[Settings.current_tab];
     if (f){
-        disp.innerHTML = '';
+        disp.empty();
         for (var i in f.s){ // And refill it
-            if (eval(f.s[i].hidden)) continue; // Ignore hidden elements
             f.s[i].read();
-            f.s[i].config(disp);
+            disp.append(f.s[i].config());
         }
     }
 }
 
 Settings.close=function(){
-    remove(Settings.window);
+    Settings.window.remove();
 };
 
 // Correctly init debug now that it's possible

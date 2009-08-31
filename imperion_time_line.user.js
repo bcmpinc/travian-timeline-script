@@ -45,5 +45,5 @@ var metadata = <><![CDATA[
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
   
-// This script improves does a few things to ease playing Imperion.
+// This script improves a few things to ease playing Imperion.
 /*****************************************************************************/   
