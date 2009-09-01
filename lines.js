@@ -133,7 +133,11 @@ Map.update=function() {
         g.moveTo(px,0);
         g.lineTo(px,Map.canvas.height());
         g.stroke();
-        Map.text(ix-10+Map.posx+"",(ix+0.5)*Map.quadrantWidth,Map.canvas.height()/2-Map.quadrantHeight/2);
+        px = (ix+0.5)*Map.quadrantWidth;
+        var ps=ix-10+Map.posx+"";
+        var py=-Map.posy%5-2;
+        for (var i=0; i<20; i+=5)
+          Map.text(ps,px,(py+i)*Map.quadrantHeight);
     }
     for (var iy=1; iy<15; iy++) {
         g.beginPath();
@@ -141,7 +145,11 @@ Map.update=function() {
         g.moveTo(0,py);
         g.lineTo(Map.canvas.width(),py);
         g.stroke();
-        Map.text(iy-7+Map.posy+"",Map.canvas.width()/2-Map.quadrantWidth/2,(iy+0.5)*Map.quadrantHeight);
+        py=(iy+0.5)*Map.quadrantHeight;
+        var ps=iy-7+Map.posy+"";
+        var px=-Map.posx%5;
+        for (var i=0; i<25; i+=5)
+          Map.text(ps,(px+i)*Map.quadrantWidth,py);
     }
     
     /*g.beginPath();
