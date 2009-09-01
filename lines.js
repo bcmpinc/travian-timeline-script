@@ -27,6 +27,7 @@ Map.init=function(){
     Map.setting("remove_border_buttons", false, Settings.type.bool,undefined, "Remove buttons at the border of the map.");
     Map.setting("remove_sectors", false, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging.");
     Map.setting("enable_dragging", false, Settings.type.bool,undefined, "Allow the map to be dragged. Note that this is not completely stable and heavily relies on GreaseMonkey's unsafeWindow.");
+    Map.setting("enable_new_grid", false, Settings.type.bool,undefined, "Adds a grid to the map, to replace the original sector numbers. This grid is more accurate than the original sector numbering and works well with dragging enabled.");
     Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
     Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             none: ["",false], // ie. remove from 'locations'.
@@ -45,24 +46,6 @@ Map.init=function(){
     // name is optional.
 };
 
-// Creates the canvas for drawing the lines.
-Map.create_canvas=function(x){
-    var pos = [x.offsetLeft, x.offsetTop, x.offsetWidth, x.offsetHeight];
-
-    var canvas=document.createElement("canvas");
-    canvas.style.position = "absolute";
-    canvas.style.left = pos[0]+"px";
-    canvas.style.top = pos[1]+"px";
-    canvas.style.zIndex = 14;
-    canvas.width = pos[2];
-    canvas.height = pos[3];
-    
-    x.parentNode.insertBefore(canvas, x.nextSibling);
-
-    var g = canvas.getContext("2d");
-    Map.context = g;
-    Map.pos = pos;
-};
 // Draws a line to the specified location
 Map.touch=function(location) {
     var x = location[0]-Map.posx;
@@ -105,36 +88,76 @@ Map.touch=function(location) {
 };
 Map.delayed_update=function() {
     setTimeout(Map.update,10);
-}
+};
+Map.text=function(s,x,y) {
+    var g = Map.context;
+    g.save();
+    g.translate(x-g.mozMeasureText(s)/2-(s[0]=="-"?2:0),y+4);
+    g.mozDrawText(s);
+    g.restore();
+};
 Map.update=function() {
-    // But don't do an update when it's not necessary.
+    if (!Map.canvas) return; // Check if canvas is enabled.
+
+    // Due to the many ways the grid can require an update, we just look if an update is necessary.
+    // (Especially keyup is a problem)
+    setTimeout(Map.update,500);
+
+    // Don't do an update when it's not necessary.
     try {
-        z = unsafeWindow.m_c.z;
-        if (z == null) return;
-        if (Map.posx == z.x && Map.posy == z.y) return;
-        Map.posx = z.x - 0;
-        Map.posy = z.y - 0;
+        var pos = Map.unsafeMap.center;
+        if (Map.posx == pos.x && Map.posy == pos.y) return;
+        Map.posx = pos.x - 0;
+        Map.posy = pos.y - 0;
     } catch (e) {
-        this.exception("Map.update", e);
+        Map.exception("Map.update", e);
     }
-    // Make sure the locations variable is up to date
-    Map.s.locations.read();
+
+    Map.canvas.css({
+      left: (100*(Map.posx-Map.center.x)*Map.quadrantWidth /Map.map.width() )-100+"%",
+      top:  (100*(Map.posy-Map.center.y)*Map.quadrantHeight/Map.map.height())-100+"%"
+    });
 
     // Get the drawing context
     var g = Map.context;
 
     // Clear map
-    g.clearRect(0,0,Map.pos[2],Map.pos[3]);
+    g.clearRect(0,0,Map.canvas.width(),Map.canvas.height());
     g.save()
+            
+    g.fillStyle="cyan";
+    g.strokeStyle="green";
+    for (var ix=1; ix<21; ix++) {
+        g.beginPath();
+        var px = ix*Map.quadrantWidth ;
+        g.moveTo(px,0);
+        g.lineTo(px,Map.canvas.height());
+        g.stroke();
+        Map.text(ix-10+Map.posx+"",(ix+0.5)*Map.quadrantWidth,Map.canvas.height()/2-Map.quadrantHeight/2);
+    }
+    for (var iy=1; iy<15; iy++) {
+        g.beginPath();
+        var py = iy*Map.quadrantHeight;
+        g.moveTo(0,py);
+        g.lineTo(Map.canvas.width(),py);
+        g.stroke();
+        Map.text(iy-7+Map.posy+"",Map.canvas.width()/2-Map.quadrantWidth/2,(iy+0.5)*Map.quadrantHeight);
+    }
+    
+    /*g.beginPath();
+        var px = x*Map.quadrantWidth +Map.posx;
+        var py = y*Map.quadrantHeight+Map.posy;
+        g.moveTo(px+20,py);
+        g.arc(px,py,20,0,Math.PI*2,true);
+    g.stroke();*/
 
-    // Initialize render context
-    g.translate(Map.pos[2]/2-1,Map.pos[3]/2 + 5.5);
-    g.fillStyle = "rgba(128,128,128,0.8)";
+    // Make sure the locations variable is up to date
+    //Map.s.locations.read();
 
     // Draw lines
-    for (var l in Map.locations) {
-        Map.touch(Map.locations[l]);
-    }
+    //for (var l in Map.locations) {
+    //  Map.touch(Map.locations[l]);
+    //}
 
     // Reset render context
     g.restore();
@@ -175,6 +198,8 @@ Map.tag_tool=function() {
     x.appendChild(select);
     x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
 };
+
+//=== Dragging ===
 Map.next_move=0;
 Map.mouse_distance=0;
 Map.mousedown=function(e) {
@@ -207,13 +232,13 @@ Map.update_systems=function(pos) {
   }catch(e){
     unsafeWindow.console.dir(e);
   }
-  Map.unsafeMap.positionLeft = ix*Map.quadrantWidth;
-  Map.unsafeMap.positionTop  = iy*Map.quadrantHeight;
+  Map.unsafeMap.positionLeft = pos.left; //ix*Map.quadrantWidth;
+  Map.unsafeMap.positionTop  = pos.top;  //iy*Map.quadrantHeight;
 }
 Map.mousemove=function(e) {
   var t=new Date().getTime();
   if (t<Map.next_move) return;
-  Map.next_move=t+100; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
+  Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
 
   var dx = -(e.screenX-Map.start_x);
   var dy = -(e.screenY-Map.start_y);
@@ -251,7 +276,7 @@ Map.clean_dirty = function() {
   var pos = map.position();
   Map.update_systems(pos);
   
-  setTimeout(Map.clean_dirty, 100);
+  setTimeout(Map.clean_dirty, 50);
 };
 Map.end_drag = function(e) {
   if (Map.start_x == undefined) return;
@@ -308,34 +333,52 @@ Map.patch_map=function() {
   $("body").append(s);
 }
 
+// === run ===
 Map.run=function() {
   
-  var x = $("#mapContent");
-  if (x.size()>0) { // If this page has a map ...
+  Map.map = $("#mapContent");
+  if (Map.map.size()>0) { // If this page has a map ...
+    var y=$("body");
     var style="";
-    if (Map.enable_dragging)       style+="#mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal;} ";
     if (Map.remove_nav_pad)        style+="#mapNaviSmall {display: none !important;} ";
     if (Map.remove_border_buttons) style+="#mapNaviBig {display: none !important;} ";
     if (Map.remove_sectors)        style+="#gridX, #gridY, #gridCorner {display: none !important;} ";
 
-    GM_addStyle(style);
+    Map.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
+    Map.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
+    Map.starBasis = 1.0 / (unsafeWindow.config.performance.starBasis-0); // this is intentionally 1.0 devided by the original value
+    Map.starLayerCount = unsafeWindow.config.performance.starLayerCount-0; 
+    Map.unsafeMap = unsafeWindow.config.registry.currentObject; // This is supposed to be the central instance of imperion's Map class.
+    Map.galaxy=$("#mapGalaxy");
     
     if (Map.enable_dragging) {
+      style+="#mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal;} ";
       // These come from imperion's 'config.js'
-      Map.starBasis = 1.0 / (unsafeWindow.config.performance.starBasis-0); // this is intentionally 1.0 devided by the original value
-      Map.starLayerCount = unsafeWindow.config.performance.starLayerCount-0; 
-      Map.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
-      Map.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
-      Map.unsafeMap = unsafeWindow.config.registry.currentObject; // This is supposed to be the central instance of imperion's Map class.
       Map.center={x: Map.unsafeMap.center.x-0,
                   y: Map.unsafeMap.center.y-0};
       Map.patch_map();
                   
-      y=$("body");
       y.mouseleave(Map.end_drag);
       y.mouseup(Map.end_drag);
-      x.mousedown(Map.mousedown);
+      Map.map.mousedown(Map.mousedown);
     }
+    if(Map.enable_new_grid) {
+      Map.canvas=$.new("canvas");
+      Map.canvas.attr({
+        width:  Map.map.width()*3,
+        height: Map.map.height()*3
+      }).css({
+        position: "absolute",
+        width: "300%",
+        height: "300%"
+      });
+      Map.galaxy.prepend(Map.canvas);
+      Map.context=Map.canvas.get(0).getContext("2d");
+      Map.context.mozTextStyle = "8pt Monospace";
+      Map.update();
+    }
+
+    GM_addStyle(style);
   }
 
   //Map.tag_tool();
