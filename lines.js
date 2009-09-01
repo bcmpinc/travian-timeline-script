@@ -254,28 +254,28 @@ Map.patch_map=function() {
     var oldPreloadData = IMap.preloadData;\
     var oldSetMapData  = IMap.setMapData;\
     IMap.preloadData=function(galaxy, direction) {\
-      console.debug(\"request\"); \
+      //console.debug(\"request\"); \
       try{\
         if (!this.loadSystemIds) {\
           window.requesting_map_data=true;\
           oldPreloadData.call(this, galaxy, direction); \
-          console.debug(\"receiving:\"+this.loadSystemIds); \
+          //console.debug(\"receiving:\"+this.loadSystemIds); \
         }\
-      }catch(e){\
-        console.dir(e);\
-      }\
+      //}catch(e){\
+      //  console.dir(e);\
+      //}\
     };\
     IMap.setMapData =function(reqData) {\
-      if (console) console.debug(\"handling\"); \
-      try{\
+      //console.debug(\"handling\"); \
+      //try{\
         oldSetMapData.call(this, reqData); \
         this.loadSystemIds=null;\
         window.requesting_map_data=false;\
-      }catch(e){\
-        console.dir(e);\
-      }\
+      //}catch(e){\
+      //  console.dir(e);\
+      //}\
     };\
-    if (console) console.info(\"Applied patch\");\
+    if (console) console.info(\"Applied imperion map patch\");\
   })();");
   $("body").append(s);
 }
