@@ -23,9 +23,9 @@ Feature.create("Map",new Error().lineNumber-22);
 
 Map.s.enabled.description="Enable map enhacements";
 Map.init=function(){
-    Map.setting("remove_nav_pad", true, Settings.type.boolean,undefined, "Remove the movemente joypad.");
-    Map.setting("remove_border_buttons", true, Settings.type.boolean,undefined, "Remove buttons at the border of the map.");
-    Map.setting("remove_sectors", true, Settings.type.boolean,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging.");
+    Map.setting("remove_nav_pad", true, Settings.type.bool,undefined, "Remove the movemente joypad.");
+    Map.setting("remove_border_buttons", true, Settings.type.bool,undefined, "Remove buttons at the border of the map.");
+    Map.setting("remove_sectors", true, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging.");
     Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
     Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             none: ["",false], // ie. remove from 'locations'.
@@ -183,9 +183,37 @@ Map.mousedown=function(e) {
   Map.mouse_distance=0;
   $("body").get(0).addEventListener("mousemove",Map.mousemove,false); // jquery's unbind did not work.
 };
+Map.is_dirty=false; // This is set when the previous update_systems did an update (and still might need to do another update).
+Map.update_systems=function(pos) {
+  var ix=Math.round(pos.left/Map.quadrantWidth );
+  var iy=Math.round(pos.top /Map.quadrantHeight);
+  try{
+    Map.is_dirty=true;
+    // imperion's scripts can't handle updates when requesting data. 
+    // This following variable is set and cleared by the patch.
+    if (!unsafeWindow.requesting_map_data) { 
+      var targetx=Map.center.x-ix;
+      var targety=Map.center.y-iy;
+      var temp=Map.unsafeMap.fx.start;
+      Map.unsafeMap.fx.start=nothing;
+      /**/ if (Map.unsafeMap.center.x > targetx) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_LEFT );
+      else if (Map.unsafeMap.center.x < targetx) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_RIGHT);
+      else if (Map.unsafeMap.center.y > targety) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_UP   );
+      else if (Map.unsafeMap.center.y < targety) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_DOWN );
+      else Map.is_dirty=false;
+      Map.unsafeMap.fx.start=temp;
+    }
+  }catch(e){
+    unsafeWindow.console.dir(e);
+  }
+  Map.unsafeMap.positionLeft = ix*Map.quadrantWidth;
+  Map.unsafeMap.positionTop  = iy*Map.quadrantHeight;
+}
 Map.mousemove=function(e) {
   var t=new Date().getTime();
   if (t<Map.next_move) return;
+  Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
+
   var dx = -(e.screenX-Map.start_x);
   var dy = -(e.screenY-Map.start_y);
   if (Map.mouse_distance<15) {
@@ -195,35 +223,14 @@ Map.mousemove=function(e) {
   Map.start_x=e.screenX;
   Map.start_y=e.screenY;
 
-  Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
-  var map = $(Map.unsafeMap.output)
+  var map = $(Map.unsafeMap.output);
   var pos = map.position();
   pos.left-=dx;
   pos.top -=dy;
   map.css({left: (pos.left)+"px",
            top:  (pos.top )+"px"});
   
-  var ix=Math.round(pos.left/Map.quadrantWidth );
-  var iy=Math.round(pos.top /Map.quadrantHeight);
-  try{
-    // imperion's scripts can't handle updates when requesting data. 
-    // This following variable is set and cleared by the patch.
-    if (!unsafeWindow.requesting_map_data) { 
-      var targetx=Map.center.x-ix;
-      var targety=Map.center.y-iy;
-      var temp=Map.unsafeMap.fx.start;
-      Map.unsafeMap.fx.start=nothing;
-      if (Map.unsafeMap.center.x > targetx) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_LEFT );
-      if (Map.unsafeMap.center.x < targetx) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_RIGHT);
-      if (Map.unsafeMap.center.y > targety) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_UP   );
-      if (Map.unsafeMap.center.y < targety) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_DOWN );
-      Map.unsafeMap.fx.start=temp;
-      positionLeft = ix*Map.quadrantWidth;
-      positionTop  = iy*Map.quadrantHeight;
-    }
-  }catch(e){
-    unsafeWindow.console.dir(e);
-  }
+  Map.update_systems(pos);
   
   for (var i=0; i<Map.starLayerCount; i++) {
     var layer = Map.unsafeMap.starLayers[i];
@@ -235,6 +242,16 @@ Map.mousemove=function(e) {
     layer._setStarPositions(-dy*factor,-dx*factor);
   }
 };
+Map.clean_dirty = function() {
+  if (Map.start_x != undefined) return; // clean_dirty is only needed when no drag is being performed.
+  if (!Map.is_dirty) return; // and when the map is dirty.
+  
+  var map = $(Map.unsafeMap.output);
+  var pos = map.position();
+  Map.update_systems(pos);
+  
+  setTimeout(Map.clean_dirty, 50);
+};
 Map.end_drag = function(e) {
   if (Map.start_x == undefined) return;
   $("body").get(0).removeEventListener("mousemove",Map.mousemove,false); // jquery's unbind did not work.
@@ -242,6 +259,7 @@ Map.end_drag = function(e) {
   Map.mousemove(e);
   Map.start_x=undefined;
   Map.start_y=undefined;
+  Map.clean_dirty();
 };
 
 // Patch some sloppy coded functions in imperion's map.js. Detect when a request for new data is pending and deny new request until it's finished.
@@ -254,27 +272,35 @@ Map.patch_map=function() {
     var oldPreloadData = IMap.preloadData;\
     var oldSetMapData  = IMap.setMapData;\
     IMap.preloadData=function(galaxy, direction) {\
-      //console.debug(\"request\"); \
-      try{\
+      /*console.debug(\"request\"); \
+      try{*/\
         if (!this.loadSystemIds) {\
           window.requesting_map_data=true;\
           oldPreloadData.call(this, galaxy, direction); \
-          //console.debug(\"receiving:\"+this.loadSystemIds); \
+          /*console.debug(\"receiving:\"+this.loadSystemIds);*/ \
         }\
-      //}catch(e){\
-      //  console.dir(e);\
-      //}\
+      /*}catch(e){\
+        console.dir(e);\
+      }*/\
     };\
     IMap.setMapData =function(reqData) {\
-      //console.debug(\"handling\"); \
-      //try{\
+      /*console.debug(\"handling\"); \
+      try{*/\
         oldSetMapData.call(this, reqData); \
         this.loadSystemIds=null;\
         window.requesting_map_data=false;\
-      //}catch(e){\
-      //  console.dir(e);\
-      //}\
+      /*}catch(e){\
+        console.dir(e);\
+      }*/\
     };\
+    var oldMoveLeft  = config.registry.currentObject.moveLeft; \
+    config.registry.currentObject.moveLeft =function(){if (!window.requesting_map_data) oldMoveLeft.call(this);}; \
+    var oldMoveRight = config.registry.currentObject.moveRight; \
+    config.registry.currentObject.moveRight=function(){if (!window.requesting_map_data) oldMoveRight.call(this);}; \
+    var oldMoveUp    = config.registry.currentObject.moveUp; \
+    config.registry.currentObject.moveUp   =function(){if (!window.requesting_map_data) oldMoveUp.call(this);}; \
+    var oldMoveDown  = config.registry.currentObject.moveDown; \
+    config.registry.currentObject.moveDown =function(){if (!window.requesting_map_data) oldMoveDown.call(this);}; \
     if (console) console.info(\"Applied imperion map patch\");\
   })();");
   $("body").append(s);
