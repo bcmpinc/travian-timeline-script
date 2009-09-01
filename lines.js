@@ -188,7 +188,7 @@ Map.update=function() {
       g.mozTextStyle = "6pt Monospace";
       for (id in unsafeWindow.mapData) {
         var pos = unsafeWindow.config.generator.getCoordsBySystemId(id);
-        var px = (pos.x-Map.posx+10)*Map.quadrantWidth;
+        var px = (pos.x-Map.posx+10)*Map.quadrantWidth+1;
         var py = (pos.y-Map.posy+7)*Map.quadrantHeight+10;
         g.save();
         g.translate(px,py);
@@ -416,7 +416,7 @@ Map.run=function() {
     if (Map.remove_nav_pad)        style+="#mapNaviSmall {display: none !important;} ";
     if (Map.remove_border_buttons) style+="#mapNaviBig {display: none !important;} ";
     if (Map.remove_sectors)        style+="#gridX, #gridY, #gridCorner {display: none !important;} ";
-    if (Map.system_metadata)       style+="#mapGalaxy>img {opacity: 0.5;} ";
+    if (Map.system_metadata)       style+="#mapGalaxy>img {opacity: 0.5;} #mapSystem {background: black; z-index: 2;}";
 
     Map.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
     Map.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
