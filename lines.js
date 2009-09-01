@@ -23,9 +23,10 @@ Feature.create("Map",new Error().lineNumber-22);
 
 Map.s.enabled.description="Enable map enhacements";
 Map.init=function(){
-    Map.setting("remove_nav_pad", true, Settings.type.bool,undefined, "Remove the movemente joypad.");
-    Map.setting("remove_border_buttons", true, Settings.type.bool,undefined, "Remove buttons at the border of the map.");
-    Map.setting("remove_sectors", true, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging.");
+    Map.setting("remove_nav_pad", false, Settings.type.bool,undefined, "Remove the movemente joypad.");
+    Map.setting("remove_border_buttons", false, Settings.type.bool,undefined, "Remove buttons at the border of the map.");
+    Map.setting("remove_sectors", false, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging.");
+    Map.setting("enable_dragging", false, Settings.type.bool,undefined, "Allow the map to be dragged. Note that this is not completely stable and heavily relies on GreaseMonkey's unsafeWindow.");
     Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
     Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             none: ["",false], // ie. remove from 'locations'.
@@ -212,7 +213,7 @@ Map.update_systems=function(pos) {
 Map.mousemove=function(e) {
   var t=new Date().getTime();
   if (t<Map.next_move) return;
-  Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
+  Map.next_move=t+100; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
 
   var dx = -(e.screenX-Map.start_x);
   var dy = -(e.screenY-Map.start_y);
@@ -250,7 +251,7 @@ Map.clean_dirty = function() {
   var pos = map.position();
   Map.update_systems(pos);
   
-  setTimeout(Map.clean_dirty, 50);
+  setTimeout(Map.clean_dirty, 100);
 };
 Map.end_drag = function(e) {
   if (Map.start_x == undefined) return;
@@ -264,6 +265,7 @@ Map.end_drag = function(e) {
 
 // Patch some sloppy coded functions in imperion's map.js. Detect when a request for new data is pending and deny new request until it's finished.
 Map.patch_map=function() {
+  if (!Map.enable_dragging) return; // Not really necessary, but prevents coding mistakes from injecting the patch unwanted.
   var s = $.new("script"); // We need to use a script element, because a bug in GM causes the prototype variable to be unaccessible.
   s.attr({type: "application/javascript"});
   s.html("\
@@ -310,27 +312,30 @@ Map.run=function() {
   
   var x = $("#mapContent");
   if (x.size()>0) { // If this page has a map ...
-    var style="#mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal;} ";
+    var style="";
+    if (Map.enable_dragging)       style+="#mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal;} ";
     if (Map.remove_nav_pad)        style+="#mapNaviSmall {display: none !important;} ";
     if (Map.remove_border_buttons) style+="#mapNaviBig {display: none !important;} ";
     if (Map.remove_sectors)        style+="#gridX, #gridY, #gridCorner {display: none !important;} ";
 
     GM_addStyle(style);
     
-    // These come from imperion's 'config.js'
-    Map.starBasis = 1.0 / (unsafeWindow.config.performance.starBasis-0); // this is intentionally 1.0 devided by the original value
-    Map.starLayerCount = unsafeWindow.config.performance.starLayerCount-0; 
-    Map.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
-    Map.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
-    Map.unsafeMap = unsafeWindow.config.registry.currentObject; // This is supposed to be the central instance of imperion's Map class.
-    Map.center={x: Map.unsafeMap.center.x-0,
-                y: Map.unsafeMap.center.y-0};
-    Map.patch_map();
-                
-    y=$("body");
-    y.mouseleave(Map.end_drag);
-    y.mouseup(Map.end_drag);
-    x.mousedown(Map.mousedown);
+    if (Map.enable_dragging) {
+      // These come from imperion's 'config.js'
+      Map.starBasis = 1.0 / (unsafeWindow.config.performance.starBasis-0); // this is intentionally 1.0 devided by the original value
+      Map.starLayerCount = unsafeWindow.config.performance.starLayerCount-0; 
+      Map.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
+      Map.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
+      Map.unsafeMap = unsafeWindow.config.registry.currentObject; // This is supposed to be the central instance of imperion's Map class.
+      Map.center={x: Map.unsafeMap.center.x-0,
+                  y: Map.unsafeMap.center.y-0};
+      Map.patch_map();
+                  
+      y=$("body");
+      y.mouseleave(Map.end_drag);
+      y.mouseup(Map.end_drag);
+      x.mousedown(Map.mousedown);
+    }
   }
 
   //Map.tag_tool();
