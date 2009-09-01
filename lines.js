@@ -25,9 +25,10 @@ Map.s.enabled.description="Enable map enhacements";
 Map.init=function(){
     Map.setting("remove_nav_pad", false, Settings.type.bool,undefined, "Remove the movemente joypad.");
     Map.setting("remove_border_buttons", false, Settings.type.bool,undefined, "Remove buttons at the border of the map.");
-    Map.setting("remove_sectors", false, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging.");
-    Map.setting("enable_dragging", false, Settings.type.bool,undefined, "Allow the map to be dragged. Note that this is not completely stable and heavily relies on GreaseMonkey's unsafeWindow.");
+    Map.setting("remove_sectors", false, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging the map. Use the new-grid instead.");
+    Map.setting("enable_dragging", false, Settings.type.bool,undefined, "Allow the map to be dragged. Note that this calls functions through GreaseMonkey's unsafeWindow.");
     Map.setting("enable_new_grid", false, Settings.type.bool,undefined, "Adds a grid to the map, to replace the original sector numbers. This grid is more accurate than the original sector numbering and works well with dragging enabled.");
+    Map.setting("system_metadata", false, Settings.type.bool,undefined, "Add some extra data around a planet, like resources available on asteroids or debris.");
     Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
     Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             none: ["",false], // ie. remove from 'locations'.
@@ -89,10 +90,12 @@ Map.touch=function(location) {
 Map.delayed_update=function() {
     setTimeout(Map.update,10);
 };
-Map.text=function(s,x,y) {
+Map.text=function(s,x,y,clear) {
     var g = Map.context;
     g.save();
-    g.translate(x-g.mozMeasureText(s)/2-(s[0]=="-"?2:0),y+4);
+    var w=g.mozMeasureText(s);
+    g.translate(x-w/2-1,y+4);
+    if (clear) g.clearRect(-2,-10,w+4,12);
     g.mozDrawText(s);
     g.restore();
 };
@@ -124,40 +127,51 @@ Map.update=function() {
     // Clear map
     g.clearRect(0,0,Map.canvas.width(),Map.canvas.height());
     g.save()
-            
-    g.fillStyle="cyan";
-    g.strokeStyle="green";
-    for (var ix=1; ix<21; ix++) {
-        g.beginPath();
-        var px = ix*Map.quadrantWidth ;
-        g.moveTo(px,0);
-        g.lineTo(px,Map.canvas.height());
-        g.stroke();
-        px = (ix+0.5)*Map.quadrantWidth;
-        var ps=ix-10+Map.posx+"";
-        var py=-Map.posy%5-2;
-        for (var i=0; i<20; i+=5)
-          Map.text(ps,px,(py+i)*Map.quadrantHeight);
-    }
-    for (var iy=1; iy<15; iy++) {
-        g.beginPath();
-        var py = iy*Map.quadrantHeight;
-        g.moveTo(0,py);
-        g.lineTo(Map.canvas.width(),py);
-        g.stroke();
-        py=(iy+0.5)*Map.quadrantHeight;
-        var ps=iy-7+Map.posy+"";
-        var px=-Map.posx%5;
-        for (var i=0; i<25; i+=5)
-          Map.text(ps,(px+i)*Map.quadrantWidth,py);
+    
+    if(Map.enable_new_grid) {
+      g.fillStyle="cyan";
+      g.strokeStyle="green";
+      for (var ix=1; ix<21; ix++) {
+          g.beginPath();
+          var px = ix*Map.quadrantWidth ;
+          g.moveTo(px,0);
+          g.lineTo(px,Map.canvas.height());
+          g.stroke();
+      }
+      for (var iy=1; iy<15; iy++) {
+          g.beginPath();
+          var py = iy*Map.quadrantHeight;
+          g.moveTo(0,py);
+          g.lineTo(Map.canvas.width(),py);
+          g.stroke();
+          py=(iy+0.5)*Map.quadrantHeight;
+          var ps=iy-7+Map.posy+"";
+          var px=-Map.posx%5;
+          for (var i=0; i<25; i+=5)
+            Map.text(ps,(px+i)*Map.quadrantWidth,py,true);
+      }
+      for (var ix=1; ix<21; ix++) {
+          var px = (ix+0.5)*Map.quadrantWidth;
+          var ps=ix-10+Map.posx+"";
+          var py=-Map.posy%5-2;
+          for (var i=0; i<20; i+=5)
+            Map.text(ps,px,(py+i)*Map.quadrantHeight,true);
+      }
     }
     
-    /*g.beginPath();
-        var px = x*Map.quadrantWidth +Map.posx;
-        var py = y*Map.quadrantHeight+Map.posy;
-        g.moveTo(px+20,py);
-        g.arc(px,py,20,0,Math.PI*2,true);
-    g.stroke();*/
+    if (Map.system_metadata) {
+      for (id in unsafeWindow.mapData) {
+        var pos = unsafeWindow.config.generator.getCoordsBySystemId(id);
+        g.beginPath();
+          var px = (pos.x-Map.posx+10.5)*Map.quadrantWidth;
+          var py = (pos.y-Map.posy+7.5)*Map.quadrantHeight;
+          g.moveTo(px+20,py);
+          g.arc(px,py,20,0,Math.PI*2,true);
+        g.stroke();
+        Map.text(id,px,py-4);
+        Map.text(pos.x+","+pos.y,px,py+4);
+      }
+    }
 
     // Make sure the locations variable is up to date
     //Map.s.locations.read();

@@ -28,3 +28,7 @@ Images.create = function(name, src) {
   im.src = src;
   this[name]=src;
 };
+
+Images.create("metal",  "/img/interface/informations/metal.jpg");
+Images.create("crystal","/img/interface/informations/crystal.jpg");
+Images.create("water",  "/img/interface/informations/deuterium.jpg"); // Yes, that's the same as deuterium and tritium.
