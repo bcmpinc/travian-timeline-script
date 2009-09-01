@@ -19,7 +19,7 @@
  * [actually just MAP]
  ****************************************/
 
-Feature.create("Map",new Error().lineNumber-21);
+Feature.create("Map",new Error().lineNumber-22);
 
 Map.s.enabled.description="Enable map enhacements";
 Map.init=function(){
@@ -192,6 +192,9 @@ Map.mousemove=function(e) {
     Map.mouse_distance=Math.sqrt(dx*dx+dy*dy);
     return; // Ignore small movements.
   }
+  Map.start_x=e.screenX;
+  Map.start_y=e.screenY;
+
   Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
   var map = $(Map.unsafeMap.output)
   var pos = map.position();
@@ -202,10 +205,25 @@ Map.mousemove=function(e) {
   
   var ix=Math.round(pos.left/Map.quadrantWidth );
   var iy=Math.round(pos.top /Map.quadrantHeight);
-  Map.unsafeMap.center.x = Map.center.x-ix;
-  Map.unsafeMap.center.y = Map.center.y-iy;
-  Map.unsafeMap.positionLeft = ix*Map.quadrantWidth;
-  Map.unsafeMap.positionTop  = iy*Map.quadrantHeight;
+  try{
+    // imperion's scripts can't handle updates when requesting data. 
+    // This following variable is set and cleared by the patch.
+    if (!unsafeWindow.requesting_map_data) { 
+      var targetx=Map.center.x-ix;
+      var targety=Map.center.y-iy;
+      var temp=Map.unsafeMap.fx.start;
+      Map.unsafeMap.fx.start=nothing;
+      if (Map.unsafeMap.center.x > targetx) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_LEFT );
+      if (Map.unsafeMap.center.x < targetx) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_RIGHT);
+      if (Map.unsafeMap.center.y > targety) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_UP   );
+      if (Map.unsafeMap.center.y < targety) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_DOWN );
+      Map.unsafeMap.fx.start=temp;
+      positionLeft = ix*Map.quadrantWidth;
+      positionTop  = iy*Map.quadrantHeight;
+    }
+  }catch(e){
+    unsafeWindow.console.dir(e);
+  }
   
   for (var i=0; i<Map.starLayerCount; i++) {
     var layer = Map.unsafeMap.starLayers[i];
@@ -216,8 +234,6 @@ Map.mousemove=function(e) {
                          top:  layer.positionTop +"px"});
     layer._setStarPositions(-dy*factor,-dx*factor);
   }
-  Map.start_x=e.screenX;
-  Map.start_y=e.screenY;
 };
 Map.end_drag = function(e) {
   if (Map.start_x == undefined) return;
@@ -227,6 +243,42 @@ Map.end_drag = function(e) {
   Map.start_x=undefined;
   Map.start_y=undefined;
 };
+
+// Patch some sloppy coded functions in imperion's map.js. Detect when a request for new data is pending and deny new request until it's finished.
+Map.patch_map=function() {
+  var s = $.new("script"); // We need to use a script element, because a bug in GM causes the prototype variable to be unaccessible.
+  s.attr({type: "application/javascript"});
+  s.html("\
+  (function() {\
+    var IMap = Map.prototype;\
+    var oldPreloadData = IMap.preloadData;\
+    var oldSetMapData  = IMap.setMapData;\
+    IMap.preloadData=function(galaxy, direction) {\
+      console.debug(\"request\"); \
+      try{\
+        if (!this.loadSystemIds) {\
+          window.requesting_map_data=true;\
+          oldPreloadData.call(this, galaxy, direction); \
+          console.debug(\"receiving:\"+this.loadSystemIds); \
+        }\
+      }catch(e){\
+        console.dir(e);\
+      }\
+    };\
+    IMap.setMapData =function(reqData) {\
+      if (console) console.debug(\"handling\"); \
+      try{\
+        oldSetMapData.call(this, reqData); \
+        this.loadSystemIds=null;\
+        window.requesting_map_data=false;\
+      }catch(e){\
+        console.dir(e);\
+      }\
+    };\
+    if (console) console.info(\"Applied patch\");\
+  })();");
+  $("body").append(s);
+}
 
 Map.run=function() {
   
@@ -247,7 +299,8 @@ Map.run=function() {
     Map.unsafeMap = unsafeWindow.config.registry.currentObject; // This is supposed to be the central instance of imperion's Map class.
     Map.center={x: Map.unsafeMap.center.x-0,
                 y: Map.unsafeMap.center.y-0};
-
+    Map.patch_map();
+                
     y=$("body");
     y.mouseleave(Map.end_drag);
     y.mouseup(Map.end_drag);
