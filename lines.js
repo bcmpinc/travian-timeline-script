@@ -230,18 +230,18 @@ Map.update_systems=function(pos) {
       var targety=Map.center.y-iy;
       var temp=Map.unsafeMap.fx.start;
       Map.unsafeMap.fx.start=nothing;
-      /**/ if (Map.unsafeMap.center.x > targetx) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_LEFT );
-      else if (Map.unsafeMap.center.x < targetx) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_RIGHT);
-      else if (Map.unsafeMap.center.y > targety) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_UP   );
-      else if (Map.unsafeMap.center.y < targety) Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_DOWN );
+      /**/ if (Map.unsafeMap.center.x > targetx) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_LEFT ); }
+      else if (Map.unsafeMap.center.x < targetx) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_RIGHT); }
+      else if (Map.unsafeMap.center.y > targety) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_UP   ); }
+      else if (Map.unsafeMap.center.y < targety) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_DOWN ); }
       else Map.is_dirty=false;
       Map.unsafeMap.fx.start=temp;
+      Map.unsafeMap.positionLeft = (Map.center.x-Map.unsafeMap.center.x)*Map.quadrantWidth;
+      Map.unsafeMap.positionTop  = (Map.center.y-Map.unsafeMap.center.y)*Map.quadrantHeight;
     }
   }catch(e){
     unsafeWindow.console.dir(e);
   }
-  Map.unsafeMap.positionLeft = pos.left; //ix*Map.quadrantWidth;
-  Map.unsafeMap.positionTop  = pos.top;  //iy*Map.quadrantHeight;
 }
 Map.mousemove=function(e) {
   var t=new Date().getTime();
