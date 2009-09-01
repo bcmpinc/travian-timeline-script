@@ -186,11 +186,13 @@ Map.mousedown=function(e) {
 Map.mousemove=function(e) {
   var t=new Date().getTime();
   if (t<Map.next_move) return;
-  Map.mouse_distance+=Math.sqrt((e.screenX-Map.start_x)^2+(e.screenY-Map.start_y)^2);
-  if (Map.mouse_distance<15) return; // Ignore small movements.
-  Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
   var dx = -(e.screenX-Map.start_x);
   var dy = -(e.screenY-Map.start_y);
+  if (Map.mouse_distance<15) {
+    Map.mouse_distance=Math.sqrt(dx*dx+dy*dy);
+    return; // Ignore small movements.
+  }
+  Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
   var map = $(Map.unsafeMap.output)
   var pos = map.position();
   pos.left-=dx;
