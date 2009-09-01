@@ -18,7 +18,7 @@
  * IMAGES (ours and Travians)
  ****************************************/
 
-Feature.create("Images");
+Feature.create("Images",new Error().lineNumber-21);
 Images.get = function(){
   return $.new("img").attr({src: this.src});
 };
@@ -26,9 +26,18 @@ Images.create = function(name, src) {
   var im = new Object();
   im.__proto__  = Images;
   im.src = src;
-  this[name]=src;
+  im.queue=[];
+  im.isLoaded=false;
+  this[name]=im;
+};
+Images.stamp = function() {
+  if (!this._stamp) {
+    this._stamp=new Image();
+    this._stamp.src=this.src;
+  }
+  return this._stamp;
 };
 
-Images.create("metal",  "/img/interface/informations/metal.jpg");
-Images.create("crystal","/img/interface/informations/crystal.jpg");
-Images.create("water",  "/img/interface/informations/deuterium.jpg"); // Yes, that's the same as deuterium and tritium.
+Images.create("metal",   "http://u1.imperion.org/img/interface/informations/metal.jpg");
+Images.create("crystal", "http://u1.imperion.org/img/interface/informations/crystal.jpg");
+Images.create("hydrogen","http://u1.imperion.org/img/interface/informations/deuterium.jpg"); // Yes, that's the same as deuterium and tritium.

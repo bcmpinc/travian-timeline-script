@@ -87,17 +87,41 @@ Map.touch=function(location) {
             g.lineWidth = 1;
     }
 };
-Map.delayed_update=function() {
-    setTimeout(Map.update,10);
-};
 Map.text=function(s,x,y,clear) {
-    var g = Map.context;
-    g.save();
-    var w=g.mozMeasureText(s);
-    g.translate(x-w/2-1,y+4);
-    if (clear) g.clearRect(-2,-10,w+4,12);
-    g.mozDrawText(s);
+  var g = Map.context;
+  g.save();
+  var w=g.mozMeasureText(s);
+  g.translate(x-w/2-1,y+4);
+  if (clear) g.clearRect(-2,-10,w+4,12);
+  g.mozDrawText(s);
+  g.restore();
+};
+Map.res_x=0;
+Map.res_y=0;
+Map.draw_resource=function(stamp,amount) {
+  if (amount<=0) return;
+  var g = Map.context;
+  var w = g.mozMeasureText(amount);
+  Map.res_x+=w+10;
+  if (Map.res_x>Map.quadrantWidth) {
     g.restore();
+    g.translate(0,8);
+    g.save();
+    g.translate(16,0);
+    g.fillStyle="lightgray";
+    Map.res_x=w+26;
+  }
+  g.drawImage(stamp,2,-8,10,10);
+  g.translate(10,0);
+  g.mozDrawText(amount);
+  g.translate(w,0);
+};
+Map.draw_resources=function(r1,r2,r3) {
+  var g = Map.context;
+  g.fillStyle="lightgray";
+  Map.draw_resource(Images.metal.stamp(),r1);
+  Map.draw_resource(Images.crystal.stamp(),r2);
+  Map.draw_resource(Images.hydrogen.stamp(),r3);
 };
 Map.update=function() {
     if (!Map.canvas) return; // Check if canvas is enabled.
@@ -126,11 +150,12 @@ Map.update=function() {
 
     // Clear map
     g.clearRect(0,0,Map.canvas.width(),Map.canvas.height());
-    g.save()
+    g.save();
     
     if(Map.enable_new_grid) {
       g.fillStyle="cyan";
       g.strokeStyle="green";
+      g.mozTextStyle = "8pt Monospace";
       for (var ix=1; ix<21; ix++) {
           g.beginPath();
           var px = ix*Map.quadrantWidth ;
@@ -160,16 +185,42 @@ Map.update=function() {
     }
     
     if (Map.system_metadata) {
+      g.mozTextStyle = "6pt Monospace";
       for (id in unsafeWindow.mapData) {
         var pos = unsafeWindow.config.generator.getCoordsBySystemId(id);
-        g.beginPath();
-          var px = (pos.x-Map.posx+10.5)*Map.quadrantWidth;
-          var py = (pos.y-Map.posy+7.5)*Map.quadrantHeight;
-          g.moveTo(px+20,py);
-          g.arc(px,py,20,0,Math.PI*2,true);
-        g.stroke();
-        Map.text(id,px,py-4);
-        Map.text(pos.x+","+pos.y,px,py+4);
+        var px = (pos.x-Map.posx+10)*Map.quadrantWidth;
+        var py = (pos.y-Map.posy+7)*Map.quadrantHeight+10;
+        g.save();
+        g.translate(px,py);
+        var system=unsafeWindow.mapData[id];
+        g.fillStyle="red";
+        for (var i in system.comets) {
+          var comet=system.comets[i];
+          if (!comet.id) continue;
+          g.save();
+          g.mozDrawText(comet.name);
+          var w=g.mozMeasureText(comet.name);
+          Map.res_x=w;
+          g.translate(w,0);
+          Map.draw_resources(comet.r1,comet.r2,comet.r3);
+          g.restore();
+          g.translate(0,8);
+        }
+        g.fillStyle="yellow";
+        for (var i in system.debris) {
+          var debris=system.debris[i];
+          if (!debris.planet_id) continue;
+          var name = system.planets[debris.planet_id].planet_name;
+          g.save();
+          g.mozDrawText(name);
+          var w=g.mozMeasureText(name);
+          Map.res_x=w;
+          g.translate(w,0);
+          Map.draw_resources(debris.r1,debris.r2,0);
+          g.restore();
+          g.translate(0,8);
+        }
+        g.restore();
       }
     }
 
@@ -254,7 +305,7 @@ Map.update_systems=function(pos) {
       Map.unsafeMap.positionTop  = (Map.center.y-Map.unsafeMap.center.y)*Map.quadrantHeight;
     }
   }catch(e){
-    unsafeWindow.console.dir(e);
+    Map.exception("Map.update_systems",e);
   }
 }
 Map.mousemove=function(e) {
@@ -365,6 +416,7 @@ Map.run=function() {
     if (Map.remove_nav_pad)        style+="#mapNaviSmall {display: none !important;} ";
     if (Map.remove_border_buttons) style+="#mapNaviBig {display: none !important;} ";
     if (Map.remove_sectors)        style+="#gridX, #gridY, #gridCorner {display: none !important;} ";
+    if (Map.system_metadata)       style+="#mapGalaxy>img {opacity: 0.5;} ";
 
     Map.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
     Map.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
@@ -384,7 +436,7 @@ Map.run=function() {
       y.mouseup(Map.end_drag);
       Map.map.mousedown(Map.mousedown);
     }
-    if(Map.enable_new_grid) {
+    if(Map.enable_new_grid || Map.system_metadata) {
       Map.canvas=$.new("canvas");
       Map.canvas.attr({
         width:  Map.map.width()*3,
@@ -396,7 +448,6 @@ Map.run=function() {
       });
       Map.galaxy.prepend(Map.canvas);
       Map.context=Map.canvas.get(0).getContext("2d");
-      Map.context.mozTextStyle = "8pt Monospace";
       Map.update();
     }
 
