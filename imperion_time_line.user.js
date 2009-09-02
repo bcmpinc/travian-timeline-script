@@ -19,7 +19,7 @@ var metadata = <><![CDATA[
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.03/feature.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.03/settings.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.03/images.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.03/lines.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.03/map.js
 // #@require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.03/sidebar.js
 // #@require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.03/resources.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.03/market.js
