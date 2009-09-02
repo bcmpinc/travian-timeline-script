@@ -28,8 +28,10 @@ Market.init=function() {
   Market.setting("remove_unavailable", false, Settings.type.bool,undefined, "Remove lines that have a 'not enough resources' button");
   Market.setting("append_pages", false, Settings.type.bool,undefined, "Instead of reloading the page, add the offers from the next page to the current one.");
   Market.setting("repeat_header", false, Settings.type.bool,undefined, "When appending new offers, also append the header");
+  Market.setting("initial_appends", 0, Settings.type.integer,undefined, "When loading a page, immediately append this many additional pages ((requires append pages))");
 };
 Market.append=function() {
+  if (Market.out_of_data) return;
   var url=Market.append_url+"/page/"+Market.current++;
   Market.info("Appending "+url);
   GM_xmlhttpRequest({
@@ -38,9 +40,17 @@ Market.append=function() {
     onload: Market.append_loaded
   });
 };
+Market.out_of_data=false;
 Market.append_loaded=function(contents) {
   contents=$(contents.responseText);
   var newbuy=contents.find(".buyMarket>.extraTable table");
+  if (newbuy.find("tr").length<3) {
+    // we are out of data
+    Market.next.attr({class: Market.next.attr("class").replace("buttonNext","buttonNextDisabled")});
+    Market.next.unbind("click",Market.append);
+    Market.out_of_data=true;
+    return;
+  }
   Market.update(newbuy);
   var rows=newbuy.find("tr");
   var body=Market.buy.find("tbody");
@@ -48,7 +58,13 @@ Market.append_loaded=function(contents) {
     if (i>0 || Market.repeat_header) // skip the header if requested.
       body.append(this);
   });
-  Market.update();
+  Market.check_initial_appends();
+};
+Market.check_initial_appends=function() {
+  if (Market.initial_appends>0) {
+    Market.initial_appends--;
+    setTimeout(Market.append,1000);
+  }
 };
 Market.update=function(container) {
   if (Market.add_ratio) {
@@ -101,6 +117,7 @@ Market.run=function(){
       Market.next.attr({href: "javascript:"});
       Market.next.click(Market.append);
       Market.info("Append enabled, page="+Market.current+", url="+Market.append_url);
+      Market.check_initial_appends();
     }
   }
 };
