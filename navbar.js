@@ -18,29 +18,47 @@
  * NAVIGATION BAR
  ****************************************/
 
-Feature.create("Navbar");
+Feature.create("Navbar", new Error().lineNumber);
 
 Navbar.s.enabled.description="Cutomize the sidebar";
 unsafeWindow.S=$;
 Navbar.init=function(){
   Navbar.setting("remove_plus_color", false, Settings.type.bool, undefined, "De-colors the Plus link");
 
-  Navbar.setting("links",
-                  [
-                    ["Market (buy)", ".buyMarket"],
-                    ["Market (sell)", ".sellMarket"],
-                    ["Research", ".researchCenter"],
-                    ["Accumulator", ".energyStorage"],
-                    ["Fleet Base", ".fleetBase"],
-                    ["Arms Factory", ".building_page_540,.building_page_1540"],
-                    ["Civilian Shipyard", ".building_page_630,.building_page_1630"],
-                    ["Military Shipyard", ".building_page_620,.building_page_1620"],
-                    ["Rocket Silo", ".building_page_2540"],
-                    ["Small Shipyard", ".building_page_2630"],
-                    ["Large Shipyard", ".building_page_2620"],
-                  ],Settings.type.object,undefined,"The links of the sidebar.");
+  Navbar.setting("links",{},Settings.type.object,undefined,"The (detected) links of the sidebar")
+  Navbar.setting("auto_detect", false, Settings.type.bool, undefined, "Automagically detect the targets of the links (turning this on might decrease performance) ");
+  Navbar.detectors={
+    "Market (buy)": ".buyMarket",
+    "Market (sell)": ".sellMarket",
+    "Research": "#researchCenter",
+    "Accumulator": "#energyStorage",
+    "Fleet Base": "#fleetBase",
+    "Arms Factory": ".building_page_540,.building_page_1540",
+    "Civilian Shipyard": ".building_page_630,.building_page_1630",
+    "Military Shipyard": ".building_page_620,.building_page_1620",
+    "Rocket Silo": ".building_page_2540",
+    "Small Shipyard": ".building_page_2630",
+    "Large Shipyard": ".building_page_2620"
+  };
 };
-    
+Navbar.drop=function(o) {
+  var t=o.originalTarget.parentNode;
+  if (t.tagName!="A") return;
+  t=$(t);
+  Navbar.debug("(Re)Linking "+t.text()+" to "+t.attr("href"));
+  if (Navbar.links[t.text()]) {
+    delete Navbar.links[t.text()];
+  }
+  Navbar.links[t.text()]=t.attr("href");
+  Navbar.s.links.write();
+  Navbar.bar.empty();
+  Navbar.fill();
+};
+Navbar.fill=function() {
+  for (i in Navbar.links) {
+    Navbar.bar.append($.new("a").attr({href: Navbar.links[i]}).text(i).css({border: "1px solid #333", margin: "2px"}));
+  }
+};
 Navbar.run=function() {
   if (Navbar.remove_plus_color)
     $("a[href='/plus/index']").attr({class: ""});
@@ -48,18 +66,19 @@ Navbar.run=function() {
   Navbar.bar=$($("#contentASDF>div").get(0));
   Navbar.bar.css({height: "auto", "padding-bottom": "4px"});
   var changed=false;
-  for (var i = 0; i < Navbar.links.length; i++) {
-    var x = Navbar.links[i];
-    if ($(x[1]).length>0) {
-      x[2]=location.href;
-      changed=true;
-      Navbar.info("Linked "+x[0]+" to "+x[2]);
+  if (Navbar.auto_detect) {
+    for (i in Navbar.detectors) {
+      if ($(Navbar.detectors[i]).length>0) {
+        Navbar.links[i]=location.href;
+        changed=true;
+        Navbar.info("Linked "+i+" to "+location.href);
+      }
     }
-    if (x[2])
-      Navbar.bar.append($.new("a").attr({href: x[2]}).text(x[0]).css({border: "1px solid #333", margin: "2px"}));
+    if (changed)
+      Navbar.s.links.write();
   }
-  if (changed)
-    Navbar.s.links.write();
+  Navbar.fill();
+  Navbar.bar.bind("dragend",Navbar.drop);
 };
 
 Navbar.call('init', true);
