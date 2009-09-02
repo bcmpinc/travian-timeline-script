@@ -20,54 +20,57 @@
 
 Feature.create("Market");
 
-Market.s.enabled.description="Color the market offers to quickly determine their value.";
-Market.update_colors=true; // tells whether the next call to colorify should recolor the table.
+Market.s.enabled.description="Enable market buy page enhancements";
 
-Market.colorify=function() {
-    // Run this function twice each second.
-    setTimeout(Market.colorify,500);
-    // But don't do an update when it's not necessary.
-    if (!Market.update_colors) return;
-    Market.update_colors=false;
-
-    var res = document.getElementById("market_buy").childNodes[2].childNodes
-    for ( var i=1 ; i < res.length; i++ ) {
-        x = res[i];
-        if (x.childNodes[6]!=undefined && x.childNodes[6].textContent>0) {
-            a = x.childNodes[2].textContent-0;
-            b = x.childNodes[6].textContent-0;
-            r = a/b;
-            if (r>1.5)
-                color="#ddffdd";
-            else if (r>1.001)
-                color = "#eeffdd";
-            else if (r>0.999)
-                color = "#ffffdd";
-            else if (r>0.501)
-                color = "#ffeedd";
-            else
-                color = "#ffdddd";
-
-            x.style.backgroundColor = color;
-        }
-    }
+Market.init=function() {
+  Market.setting("add_ratio", false, Settings.type.bool,undefined, "Add a column with the exchange ratio");
+  Market.setting("use_colors", false, Settings.type.bool,undefined, "Color the market offers to quickly determine their value");
+  Market.setting("remove_unavailable", false, Settings.type.bool,undefined, "Remove lines that have a 'not enough resources' button");
 };
-Market.attribute_changed=function(e) {
-    // Tell that something changed and that an update might be necessary
-    // The TravianBeyound script used to preload some more pages and merged them into this list,
-    // causing the colors to be removed. Als changing filters removed colors.
-    // This event tells that colors need updating.
-    Market.update_colors=true;
+Market.update=function() {
+  if (Market.add_ratio) {
+    var cols=Market.buy.find("col");
+    if (cols.length==5) {
+      var ths=Market.buy.find("th");
+      $(cols.get(4)).before($.new("col").css({width: "35px"}));
+      $(ths.get(4)).before($.new("th").text("Ratio"));
+    }
+  }
+  
+  var rows=Market.buy.find("tr");
+  var remove=false;
+  rows.each(function() {
+    $this=$(this);
+    var cells=$this.find(".p13");
+    if (cells.length != 2) {
+      if (remove) $this.remove();
+      if (Market.add_ratio) $this.find("td").attr({colspan: 6});
+      return;
+    }
+    if (Market.remove_unavailable && $this.find(".buttonError").length>0) {
+      $this.remove();
+      remove=true;
+    } else {
+      remove=false;
+    }
+    var a=cells.get(0).textContent.replace(",","")-0;
+    var b=cells.get(1).textContent.replace(",","")-0;
+    r = a/b;
+    var red=Math.round(255*((r<1)?1:1/r));
+    var green=Math.round(255*((r>1)?1:r));
+    if (Market.add_ratio) 
+      $($this.find("td").get(4)).before(
+        $.new("td").text(Math.round(r*100)+"%").css({"text-align": "right", "font-size": "85%", "font-weight": "bold", color: "rgb("+red+","+green+",0)"}));
+    if (Market.use_colors)
+      this.style.backgroundColor = "rgba("+red+","+green+",0,0.3)";
+  });
 };
 Market.run=function(){
-    x = document.getElementById("market_buy");
-    if (x!=null) {
-        Market.colorify();
-        document.addEventListener('DOMAttrModified',Market.attribute_changed,false);
-    }
+  Market.buy=$(".buyMarket>.extraTable table");
+  if (Market.buy.length>0) {
+    Market.update();
+  }
 };
 
-if (Settings.natural_run){
-    Market.call('init', true);
-    $(function(){Market.call('run',true);});
-}
+Market.call('init', true);
+$(function(){Market.call('run',true);});
