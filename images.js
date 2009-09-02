@@ -19,6 +19,7 @@
  ****************************************/
 
 Feature.create("Images",new Error().lineNumber-21);
+delete Images.s.enabled; // It does not care what the value is.
 Images.get = function(){
   return $.new("img").attr({src: this.src});
 };
