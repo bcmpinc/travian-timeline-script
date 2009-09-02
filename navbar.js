@@ -15,139 +15,52 @@
  *****************************************************************************/
 
 /****************************************
- * SIDEBAR
+ * NAVIGATION BAR
  ****************************************/
 
 Feature.create("Navbar");
 
 Navbar.s.enabled.description="Cutomize the sidebar";
-
+unsafeWindow.S=$;
 Navbar.init=function(){
-    Navbar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
-    Navbar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
-    Navbar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
-    //Servse no purpose: (though is an idea to add to other links)
-    //Navbar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
-    Navbar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
+  Navbar.setting("remove_plus_color", false, Settings.type.bool, undefined, "De-colors the Plus link");
 
-    // Numbers for original sidebar links
-    //-1: -- break --
-    // 0: Home
-    // 1: Instructions
-    // 2: Profile
-    // 3: Log out
-    // 4: Forum
-    // 5: Chat
-    // 6: Travian Plus
-    // 7: Support
-
-    // Original sidebar links
-    // Navbar.links = [0,1,2,3,-1,4,5,-1,6,7];
-    // TODO: make configureable?
-    Navbar.setting("links",
-                    [
-                     1,
-                     ["FAQ", "http://help.travian.nl/"],
-                     ["Travian Forum", "http://forum.travian.nl"],
-                     ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
-                     -1,
-                     2,
-                     ["Alliance Forum", "/allianz.php?s=2"],
-                     //["Alliantie Forum", "http://www.external-travian-forum.com/"],
-                     ["Alliance Overview", "allianz.php"],
-                     -1,
-                     ["Barracks", "/build.php?gid=19"],
-                     ["Stable", "/build.php?gid=20"],
-                     ["Workshop", "/build.php?gid=21"],
-                     ["Marketplace", "/build.php?gid=17"],
-                     ["Rally Point", "/build.php?gid=16"],
-                     -1,
-                     6,
-                     7
-                     ],Settings.type.object,undefined,"The links of the sidebar.");
+  Navbar.setting("links",
+                  [
+                    ["Market (buy)", ".buyMarket"],
+                    ["Market (sell)", ".sellMarket"],
+                    ["Research", ".researchCenter"],
+                    ["Accumulator", ".energyStorage"],
+                    ["Fleet Base", ".fleetBase"],
+                    ["Arms Factory", ".building_page_540,.building_page_1540"],
+                    ["Civilian Shipyard", ".building_page_630,.building_page_1630"],
+                    ["Military Shipyard", ".building_page_620,.building_page_1620"],
+                    ["Rocket Silo", ".building_page_2540"],
+                    ["Small Shipyard", ".building_page_2630"],
+                    ["Large Shipyard", ".building_page_2620"],
+                  ],Settings.type.object,undefined,"The links of the sidebar.");
 };
     
-Navbar.add=function(text, target) {
-    var el;
-    if (target=="") {
-        el=document.createElement("b"); // Create a bold header
-    } else {
-        el=document.createElement("a"); // Create a normal link
-        el.href=target;
-    }
-    el.innerHTML = text;
-    Navbar.navi.appendChild(el);
-};
-Navbar.add_break=function() {
-    if (Navbar.use_hr) {
-        Navbar.navi.appendChild(document.createElement("hr"));
-    } else {
-        Navbar.navi.appendChild(document.createElement("br"));
-        Navbar.navi.appendChild(document.createElement("br"));
-    }
-};
 Navbar.run=function() {
-    if (Navbar.remove_plus_button) {
-        var plus = document.getElementById("plus");
-        if (plus) {
-            plus.style.visibility="hidden";
-        } else {
-            this.info("Couldn't find the plus button.");
-        }
-    }
+  if (Navbar.remove_plus_color)
+    $("a[href='/plus/index']").attr({class: ""});
 
-    Navbar.navi = document.getElementById("sleft");
-    if (!Navbar.navi) {
-        this.warning("Couldn't find sidebar.");        
-        return;
+  Navbar.bar=$($("#contentASDF>div").get(0));
+  Navbar.bar.css({height: "auto", "padding-bottom": "4px"});
+  var changed=false;
+  for (var i = 0; i < Navbar.links.length; i++) {
+    var x = Navbar.links[i];
+    if ($(x[1]).length>0) {
+      x[2]=location.href;
+      changed=true;
+      Navbar.info("Linked "+x[0]+" to "+x[2]);
     }
-    
-    if (Navbar.remove_home_link)
-        Navbar.navi.childNodes[1].href=location.href;
-        
-    // Make copy of links
-    Navbar.oldnavi = [];
-    for (var i = 2; i < Navbar.navi.childNodes.length; i++) {
-        var ch=Navbar.navi.childNodes[i];
-        for (var ii = 0; ii < ch.childNodes.length; ii++) {
-            var ch2=ch.childNodes[ii];
-            if (ch2.tagName=="A") {
-                Navbar.oldnavi.push(ch2);
-            }
-        }
-    }
-    
-    // Remove all links
-    for (var i = Navbar.navi.childNodes.length - 1; i>=2; i--)
-        Navbar.navi.removeChild(Navbar.navi.childNodes[i]);
-    
-    // Create a link container (p);
-    var p=document.createElement("p");
-    Navbar.navi.appendChild(p);
-    Navbar.navi=p;
-    
-    // Add new links
-    for (var i = 0; i < Navbar.links.length; i++) {
-        var x = Navbar.links[i];
-        if (x.constructor == Array) {
-            Navbar.add(x[0], x[1]);
-        } else if (x.constructor == String) {
-            Navbar.add(x, "");
-        } else if (x<0) {
-            Navbar.add_break();
-        } else {
-            var el = Navbar.oldnavi[x];
-            this.debug(el+" i="+i+" x="+x);
-            //if (Navbar.remove_target_blank)
-            //    el.removeAttribute("target"); // Force all links to open in the current page.
-            if (Navbar.remove_plus_color)
-                el.innerHTML=el.textContent; // Remove color from Plus link.
-            Navbar.navi.appendChild(el);
-        }
-    }
+    if (x[2])
+      Navbar.bar.append($.new("a").attr({href: x[2]}).text(x[0]).css({border: "1px solid #333", margin: "2px"}));
+  }
+  if (changed)
+    Navbar.s.links.write();
 };
 
-if (Settings.natural_run){
-    Navbar.call('init', true);
-    $(function(){Navbar.call('run',true);});
-}
+Navbar.call('init', true);
+$(function(){Navbar.call('run',true);});
