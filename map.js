@@ -24,11 +24,11 @@ Feature.create("Map",new Error().lineNumber-22);
 Map.s.enabled.description="Enable map enhacements";
 Map.init=function(){
     Map.setting("remove_nav_pad", false, Settings.type.bool,undefined, "Remove the movemente joypad.");
-    Map.setting("remove_border_buttons", false, Settings.type.bool,undefined, "Remove buttons at the border of the map.");
-    Map.setting("remove_sectors", false, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging the map. Use the new-grid instead.");
-    Map.setting("enable_dragging", false, Settings.type.bool,undefined, "Allow the map to be dragged. Note that this calls functions through GreaseMonkey's unsafeWindow.");
-    Map.setting("enable_new_grid", false, Settings.type.bool,undefined, "Adds a grid to the map, to replace the original sector numbers. This grid is more accurate than the original sector numbering and works well with dragging enabled.");
-    Map.setting("system_metadata", false, Settings.type.bool,undefined, "Add some extra data around a planet, like resources available on asteroids or debris.");
+    Map.setting("remove_border_buttons", true, Settings.type.bool,undefined, "Remove buttons at the border of the map.");
+    Map.setting("remove_sectors", true, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging the map. Use the new-grid instead.");
+    Map.setting("enable_dragging", true, Settings.type.bool,undefined, "Allow the map to be dragged. Note that this calls functions through GreaseMonkey's unsafeWindow.");
+    Map.setting("enable_new_grid", true, Settings.type.bool,undefined, "Adds a grid to the map, to replace the original sector numbers. This grid is more accurate than the original sector numbering and works well with dragging enabled.");
+    Map.setting("system_metadata", true, Settings.type.bool,undefined, "Add some extra data around a planet, like resources available on asteroids or debris.");
     Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
     Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             none: ["",false], // ie. remove from 'locations'.

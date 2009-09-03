@@ -19,7 +19,7 @@
  ****************************************/
 
 Feature.create("Settings",new Error().lineNumber-21);
-Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
+Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5, set: 6};
 
 // Get the value of this setting.
 // Note that (for example)
@@ -53,6 +53,7 @@ Settings.read=function() {
             x=x-0;
             break;
 
+            case Settings.type.set:
             case Settings.type.object:
             x=eval(x);
             break;
@@ -86,6 +87,7 @@ Settings.write=function() {
             GM_setValue(param, this.get());
             break;
 
+            case Settings.type.set:
             case Settings.type.object:
             GM_setValue(param, uneval(this.get()));
             break;
@@ -177,6 +179,21 @@ Settings.config=function() {
                     setting.write();
                     s.replaceWith(setting.config());
                 });
+            break;
+        }
+        
+        case Settings.type.set: {
+            for (var i in this.typedata) {
+                var u=$.new("u").html(this.typedata[i]);
+                u.css({cursor: "pointer", 
+                      color: (this.get()?'green':'red')});
+                u.click(function (e) {
+                        setting.get()[i]^=true;
+                        setting.write();
+                        s.replaceWith(setting.config());
+                    });
+                s.append("[").append(u).append("]");
+            }
             break;
         }
         }

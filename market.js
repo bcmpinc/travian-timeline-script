@@ -23,11 +23,11 @@ Feature.create("Market");
 Market.s.enabled.description="Enable market buy page enhancements";
 
 Market.init=function() {
-  Market.setting("add_ratio", false, Settings.type.bool,undefined, "Add a column with the exchange ratio");
-  Market.setting("use_colors", false, Settings.type.bool,undefined, "Color the market offers to quickly determine their value");
+  Market.setting("add_ratio", true, Settings.type.bool,undefined, "Add a column with the exchange ratio");
+  Market.setting("use_colors", true, Settings.type.bool,undefined, "Color the market offers to quickly determine their value");
   Market.setting("remove_unavailable", false, Settings.type.bool,undefined, "Remove lines that have a 'not enough resources' button");
-  Market.setting("append_pages", false, Settings.type.bool,undefined, "Instead of reloading the page, add the offers from the next page to the current one.");
-  Market.setting("repeat_header", false, Settings.type.bool,undefined, "When appending new offers, also append the header");
+  Market.setting("append_pages", true, Settings.type.bool,undefined, "Instead of reloading the page, add the offers from the next page to the current one.");
+  Market.setting("repeat_header", true, Settings.type.bool,undefined, "When appending new offers, also append the header");
   Market.setting("initial_appends", 0, Settings.type.integer,undefined, "When loading a page, immediately append this many additional pages ((requires append pages))");
 };
 Market.append=function() {

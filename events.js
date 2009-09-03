@@ -29,28 +29,19 @@ Events.init=function(){
                 attack :   ['rgb(255,0,0)',     true],
                 market :   ['rgb(0,128,0)',     true],
                 research:  ['rgb(0,0,255)',     true],
-                party :    ['rgb(255,128,128)', true],
                 demolish : ['rgb(128,128,128)', true],
                 overflow : ['rgb(150,0,150)',   true]
-            }, Settings.type.object, undefined, "List of event types", 'true');
-    Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.", 'true');
+            }, Settings.type.object, undefined, "List of event types");
+    Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
-    Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
+    display_options = ['Timeline']; //, 'Villagelist'];
+    Events.setting('building',  [1], Settings.type.set, display_options, "Keep track of what you build [from the planet overview]");
+    Events.setting('attack',    [1], Settings.type.set, display_options, "Keep track of all incoming and outgoing troops [from the fleet base]");
+    Events.setting('market',    [1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
+    Events.setting('research',  [1], Settings.type.set, display_options, "Keep track of what is being researched [from the research center]");
+    Events.setting('demolish',  [1], Settings.type.set, display_options, "Keep track of demolished buildings [from the construction yard]");
+    Events.setting('overflow',  [1], Settings.type.set, display_options, "Keep track of resource overflows [from every page]");
 
-    Events.setting("merchant_send",        'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-    Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-    Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-
-    display_options = ['Timeline & Tooltip', 'Timeline', 'Tooltip', 'Neither'];
-    Events.setting('building',   0, Settings.type.enumeration, display_options, 'Keep track of what you build [from village center and overview]');
-    Events.setting('attack',     0, Settings.type.enumeration, display_options, 'Keep track of all incoming and outgoing troops [from the rally point]');
-    Events.setting('market',     0, Settings.type.enumeration, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
-    Events.setting('research',   0, Settings.type.enumeration, display_options, 'Keep track of what is being researched [from the Acadamy, Blacksmith and Armoury]');
-    Events.setting('party',      0, Settings.type.enumeration, display_options, 'Keep track of parties [from the town hall]');
-    Events.setting('demolish',   0, Settings.type.enumeration, display_options, 'Keep track of demolished buildings [from the main building]');
-    Events.setting('overflow',   1, Settings.type.enumeration, display_options, 'Keep track of resource overflows [from every page]');
-
-    Events.setting('send_twice',  false, Settings.type.boolean, undefined, "Internal persistent data only. This records whether the 'send twice' box was checked on the previous page, when sending merchants.");
 };
 // There is no report type, because there are different types of reports, which can also be divided over the currently
 // available types.

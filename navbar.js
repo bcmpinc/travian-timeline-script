@@ -21,12 +21,14 @@
 Feature.create("Navbar", new Error().lineNumber);
 
 Navbar.s.enabled.description="Cutomize the sidebar";
+Navbar.enabled=false;
 unsafeWindow.S=$;
 Navbar.init=function(){
   Navbar.setting("remove_plus_color", false, Settings.type.bool, undefined, "De-colors the Plus link");
 
   Navbar.setting("links",{},Settings.type.object,undefined,"The (detected) links of the sidebar")
   Navbar.setting("auto_detect", false, Settings.type.bool, undefined, "Automagically detect the targets of the links (turning this on might decrease performance) ");
+  Navbar.setting("enable_reordering", false, Settings.type.bool, undefined, "Allow the links to be reordered by dragging");
   Navbar.detectors={
     "Market (buy)": ".buyMarket",
     "Market (sell)": ".sellMarket",
@@ -78,7 +80,8 @@ Navbar.run=function() {
       Navbar.s.links.write();
   }
   Navbar.fill();
-  Navbar.bar.bind("dragend",Navbar.drop);
+  if (Navbar.enable_reordering)
+    Navbar.bar.bind("dragend",Navbar.drop);
 };
 
 Navbar.call('init', true);
