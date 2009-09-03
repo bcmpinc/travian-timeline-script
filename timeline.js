@@ -66,7 +66,7 @@ Timeline.create_canvas=function() {
       top: "0px",
       right: "0px",
       width: (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px",
-      height: Timeline.height + "px",
+      height: "100%",
       zIndex: "20000",
       backgroundColor: Timeline.color,
       visibility: Timeline.visible?'visible':'hidden',
@@ -77,11 +77,13 @@ Timeline.create_canvas=function() {
       width: Timeline.width,
       height: unsafeWindow.getHeight()-0
     }).css({
-      position: "relative",
-      left: (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px"
+      position: "absolute",
+      right: "0px"
     });
     tlc.append(tl);
     $("body").append(tlc);
+    
+    $(window).resize(function(){tl.attr({height: unsafeWindow.getHeight()-0}); Timeline.draw();});
 
     // Code for expanding/collapsing the timeline.
     if (Timeline.collapse) {
