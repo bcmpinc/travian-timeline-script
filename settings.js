@@ -22,8 +22,8 @@ Feature.create("Settings",new Error().lineNumber-21);
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5, set: 6};
 
 // Determine server
-Settings.server = location.href.match(/^.*?\w\//)[0];
-Settings.server_id = Settings.server.replace(/http:\/\/(\w+)\.imperion\.(\w+)\//,"$2_$1");
+Settings.server = location.href.match(/^(.*?\w)\//)[1];
+Settings.server_id = Settings.server.replace(/http:\/\/(\w+)\.imperion\.(\w+)/,"$2_$1");
 
 // Get the value of this setting.
 // Note that (for example)
@@ -224,8 +224,9 @@ Settings.init=function(){
     Settings.setting("race",           0,          Settings.type.enumeration, ["Terrans","Titans","Xen"]);
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
-
-    if (location.href.match(/about:cache\?device=timeline&/)) {
+    Settings.setting("planet_names",   {},         Settings.type.object,      undefined, "The names of yout planets");
+    
+    /*if (location.href.match(/about:cache\?device=timeline&/)) {
         var params=location.href.split("&");
         Settings.special={};
         for (var i=1; i<params.length; i++) {
@@ -233,11 +234,13 @@ Settings.init=function(){
             Settings.special[z[0]]=z[1];
             GM_log("Param:"+params[i]);
         }
-    }
+    }*/
 };
 Settings.run=function() {
     // Determine current planet
     Settings.planet=$(".planet a.icon").attr("href").replace("/planet/buildings/","")-0;
+    Settings.planet_names[Settings.planet]=$("#planetList").text();
+    Settings.s.planet_names.write();
     
     // Create link for opening the settings menu.
     var link = $.new("a").attr({href: "javascript:"}).text("Time Line Settings");

@@ -26,6 +26,8 @@ Images.get = function(){
 Images.create = function(name, src) {
   var im = new Object();
   im.__proto__  = Images;
+  if (src[0]=="/")
+    src=Settings.server+src;
   im.src = src;
   im.queue=[];
   im.isLoaded=false;
@@ -38,8 +40,13 @@ Images.stamp = function() {
   }
   return this._stamp;
 };
+Images.init=function() {
+  Images.create("metal",   "/img/interface/informations/metal.jpg");
+  Images.create("crystal", "/img/interface/informations/crystal.jpg");
+  Images.create("hydrogen","/img/interface/informations/deuterium.jpg"); // Yes, that's the same as deuterium and tritium.
+  Images.create("energy",  "/img/interface/icon/energy1.png");
+};
 
-Images.create("metal",   "http://u1.imperion.org/img/interface/informations/metal.jpg");
-Images.create("crystal", "http://u1.imperion.org/img/interface/informations/crystal.jpg");
-Images.create("hydrogen","http://u1.imperion.org/img/interface/informations/deuterium.jpg"); // Yes, that's the same as deuterium and tritium.
-Images.create("energy",  "http://u1.imperion.org/img/interface/icon/energy1.png");
+Images.call('init', true);
+$(function(){Images.call('run',true);});
+

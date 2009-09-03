@@ -24,14 +24,14 @@ Events.s.enabled.description="Enable the event data collector";
 Events.init=function(){
     Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
     Events.setting("type", {
-                /* <tag> : [<color>             <visible>] */
-                building:  ['rgb(0,0,0)',       true],
-                attack :   ['rgb(255,0,0)',     true],
-                market :   ['rgb(0,128,0)',     true],
-                research:  ['rgb(0,0,255)',     true],
-                demolish : ['rgb(128,128,128)', true],
-                overflow : ['rgb(150,0,150)',   true]
-            }, Settings.type.object, undefined, "List of event types");
+                /* <tag> : <color> */
+                building: 'rgb(0,0,0)',
+                attack:   'rgb(255,0,0)',
+                market:   'rgb(0,128,0)',
+                research: 'rgb(0,0,255)',
+                demolish: 'rgb(128,128,128)',
+                overflow: 'rgb(150,0,150)'
+            }, Settings.type.none, undefined, "List of event types");
     Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
     display_options = ['Collect','Show in Time Line']; //, 'Villagelist'];
