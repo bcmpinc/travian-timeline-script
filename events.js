@@ -83,7 +83,8 @@ Events.test_event=function(village, id){
 // village = id of the village.
 // id = The consistent unique event identifier.
 // overwrite = optionally overwrite any matching events
-Events.get_event=function(village, id, overwrite) {
+Events.get_event=function(id, overwrite) {
+    var village = Events.planet;
     var e = Events.events[village];
     if (e == undefined) {
         e = {};
@@ -102,13 +103,12 @@ Events.get_event=function(village, id, overwrite) {
 Events.update_data=function() {
     Events.s.events.read(); // Make sure the variable data is up to date.
     // Collect new stuff
-    if (Settings.natural_run){
-        for (var c in Events.collector) {
-            try {
-                Events.collector[c]();
-            } catch (e) {
-                this.exception("Events.collector."+c,e);
-            }
+    for (var c in Events.collector) {
+        try {
+            if (Events[c][0])
+              Events.collector[c]();
+        } catch (e) {
+            this.exception("Events.collector."+c,e);
         }
     }
 
@@ -128,6 +128,7 @@ Events.update_data=function() {
 };
 
 Events.run=function() {
+    Events.planet=$(".planet a.icon").attr("href").replace("/planet/buildings/","")-0;
     Events.update_data();
 };
 
@@ -138,43 +139,25 @@ Events.run=function() {
 Events.collector={};
 
 Events.collector.building=function(){
-    // Checking if data is available
-    if (location.href.indexOf("dorf")<=0) return;
-    var build = document.evaluate('//table[starts-with(@id, "building_contract")]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    if (build == undefined){
-        var buildlist=document.getElementById("building_contract");
-        Events.debug(buildlist.textContent);
-        build = document.evaluate('./tbody/tr', buildlist, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-        if (build == undefined) {
-            Events.debug("No build tasks found.");
-            return;
-        }
-    }
+    var table = $("#buildingQueue table tr");
 
-    // Collecting
-    Events.debug("Collecting "+build.snapshotLength+" build tasks.");
-    for (var nn = 0; nn < build.snapshotLength; nn++){
-        var x = build.snapshotItem(nn);
-        var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
-        var e = Events.get_event(Settings.village_id, id);
+    Events.debug("Collecting "+table.length+" build tasks.");
+    table.each(function() {
+        var $this=$(this);
+        var id = "b"+($this.find("a").attr("href").replace("/building/delEvent/","")-0);
+        var e = Events.get_event(id);
 
         e[0]="building";
     
         var d = new tl_date(Events);
-        d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var duration = x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
-        d.adjust_day(duration);
-        e[1] = d.set_seconds(duration);
-        e[2] = x.childNodes[1].textContent;
+        var cells=$this.find("td");
+        d.set_time(cells.get(3).textContent.match('(\\d\\d):(\\d\\d):(\\d\\d) ?([a-z]*)'));
+        d.adjust_day(cells.get(2).textContent.match('(\\d+):(\\d\\d):(\\d\\d)'));
+        e[1] = d.get_time();
+        e[2] = cells.get(1).textContent;
 
         Events.debug("Time set to "+e[1]);
-
-        x.childNodes[0].addEventListener('click', function(e){
-                Events.info('Removing the building event Events.events['+Settings.village_id+']['+id+']');
-                delete Events.events[Settings.village_id][id];
-                Events.s.events.write();
-            }, false);
-    }
+    });
 };
 
 // Travelling armies (rally point)
@@ -485,36 +468,6 @@ Events.collector.research = function(){
     e[0] = 'research';
     e[1] = d.set_seconds(duration);
     e[2] = building + ': '+type+(level==undefined ? '' : ' '+level);
-};
-
-Events.collector.party = function(){
-    // Make sure we're on a building page
-    if (location.href.indexOf('build.php') < 0) return;
-    // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
-    // This should be exclusive for Town Halls, hence parties.
-    var x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
-                              document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    if (x.snapshotLength != 1) return;
-    x = x.snapshotItem(0).parentNode;
-
-    Events.info('Found a party event!');
-
-    var d = new tl_date(Events);
-    d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
-    var duration = x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
-    d.adjust_day(duration);
-    var t = d.set_seconds(duration);
-
-    var msg = x.childNodes[1].textContent;
-    Events.info('Party type = '+msg);
-
-    // We can only have one party per village max; overwrite any pre-existing party records
-    // (how the hell could we ever get pre-existing parties??? You can't cancel the damn things...)
-    // BUG: So the event entry of parties that finished already will be removed when a new party is detected. 
-    var e = Events.get_event(Settings.village_id, 'party', true);
-    e[0] = 'party';
-    e[1] = t;
-    e[2] = msg;
 };
 
 Events.collector.demolish = function(){

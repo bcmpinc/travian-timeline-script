@@ -187,8 +187,9 @@ Settings.config=function() {
                 var u=$.new("u").html(this.typedata[i]);
                 u.css({cursor: "pointer", 
                       color: (this.get()[i]?'green':'red')});
+                u.attr("id",this.name+"."+i);
                 u.click(function (e) {
-                        setting.get()[i]^=true;
+                        setting.get()[e.target.id.match(/\.(\d+)/)[1]-0]^=true;
                         setting.write();
                         s.replaceWith(setting.config());
                     });
@@ -209,7 +210,7 @@ Settings.config=function() {
 
         return s;
     } catch (e) {
-        GM_log(e);
+        Settings.debug(e);
     }
 };
 
