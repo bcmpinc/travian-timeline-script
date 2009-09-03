@@ -83,26 +83,24 @@ Timeline.create_canvas=function() {
     tlc.append(tl);
     $("body").append(tlc);
     
-    $(window).resize(function(){tl.attr({height: unsafeWindow.getHeight()-0}); Timeline.draw();});
+    $(window).resize(function(){
+      tl.attr({height: unsafeWindow.getHeight()-0}); 
+      Timeline.draw(true);
+    });
 
     // Code for expanding/collapsing the timeline.
     if (Timeline.collapse) {
-        tlc.mouseenter(function() {tlc.stop().animate({width: Timeline.width},500);});
-        tlc.mouseleave(function() {tlc.stop().animate({width: Timeline.collapse_width},500);});
-    }
-
-    // Mouse Scroll Wheel
-    function tl_mouse_wheel(e){
-        Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
-
-        e.stopPropagation(); // Kill the event to the standard window...
-        e.preventDefault();
-        Timeline.draw(true);
+        tlc.mouseenter(function() {
+          tlc.stop().animate({width: Timeline.width},500);
+        });
+        tlc.mouseleave(function() {
+          tlc.stop().animate({width: Timeline.collapse_width},500);
+        });
     }
 
     // Could scroll backwards and forwards on the timeline
     // We also probably want to stop the mouse scrolling from propegating in this case...
-    tlc.bind('DOMMouseScroll', tl_mouse_wheel);
+    tlc.bind('DOMMouseScroll', Timeline.mouse_wheel);
 
     // The click event listener for the link with the 'travian task queue'-script.
     /*function setAt(e) {
@@ -124,6 +122,13 @@ Timeline.create_canvas=function() {
     Timeline.context.mozTextStyle = "8pt Monospace";
 };
 
+Timeline.mouse_wheel=function(e) {
+    Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
+    e.stopPropagation(); // Kill the event to the standard window...
+    e.preventDefault();
+    Timeline.draw(true);
+};
+
 Timeline.toggle=function() {
     Timeline.visible=!Timeline.visible;
     Timeline.element.css({visibility:(Timeline.visible?'visible':'hidden')});
@@ -136,19 +141,17 @@ Timeline.create_button=function() {
       position: Timeline.element.css("position"),
       backgroundColor: "rgba(64,64,64,0.5)",
       right: "0px",
-      top: "-2px",
       width: "60px",
-      height: "21px",
+      height: "17px",
       zIndex: 40000,
       textAlign: "center",
-      color: "#fff",
+      color: "#ccc",
       fontWeight: "bold",
-      fontSize: "12px",
       MozBorderRadiusBottomleft: "6px",
       cursor: "pointer"
     });
     button.click(Timeline.toggle);
-    button.text("timeline");
+    button.text("time line");
     $("body").append(button);
 };
 

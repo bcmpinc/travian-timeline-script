@@ -6,7 +6,7 @@ var metadata = <><![CDATA[
 // @version        I_0.03
 // @description    Adds a buildqueue.
  
-// @include        http://*.imperion.org/*
+// @include        http://*.imperion.*/*
  
 // @copyright      2008, 2009 Bauke Conijn, Adriaan Tichler (http://github.com/bcmpinc/travian-timeline-script)
 // @author         bcmpinc
