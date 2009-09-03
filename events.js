@@ -36,11 +36,11 @@ Events.init=function(){
 
     display_options = ['Collect','Show in Time Line']; //, 'Villagelist'];
     Events.setting('building',  [1,1], Settings.type.set, display_options, "Keep track of what you build [from the planet overview]");
-    Events.setting('attack',    [1,1], Settings.type.set, display_options, "Keep track of all incoming and outgoing troops [from the fleet base]");
-    Events.setting('market',    [1,1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
-    Events.setting('research',  [1,1], Settings.type.set, display_options, "Keep track of what is being researched [from the research center]");
-    Events.setting('demolish',  [1,1], Settings.type.set, display_options, "Keep track of demolished buildings [from the construction yard]");
-    Events.setting('overflow',  [1,1], Settings.type.set, display_options, "Keep track of resource overflows [from every page]");
+    //Events.setting('attack',    [1,1], Settings.type.set, display_options, "Keep track of all incoming and outgoing troops [from the fleet base]");
+    //Events.setting('market',    [1,1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
+    //Events.setting('research',  [1,1], Settings.type.set, display_options, "Keep track of what is being researched [from the research center]");
+    //Events.setting('demolish',  [1,1], Settings.type.set, display_options, "Keep track of demolished buildings [from the construction yard]");
+    //Events.setting('overflow',  [1,1], Settings.type.set, display_options, "Keep track of resource overflows [from every page]");
 
 };
 // There is no report type, because there are different types of reports, which can also be divided over the currently
