@@ -186,7 +186,7 @@ Settings.config=function() {
             for (var i in this.typedata) {
                 var u=$.new("u").html(this.typedata[i]);
                 u.css({cursor: "pointer", 
-                      color: (this.get()?'green':'red')});
+                      color: (this.get()[i]?'green':'red')});
                 u.click(function (e) {
                         setting.get()[i]^=true;
                         setting.write();
