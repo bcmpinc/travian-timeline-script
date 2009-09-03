@@ -23,7 +23,6 @@ delete Images.s.enabled; // It does not care what the value is.
 Images.get = function(){
   return $.new("img").attr({src: this.src});
 };
-Images.server=location.href.match(/^.*?\w\//)[0];
 Images.create = function(name, src) {
   var im = new Object();
   im.__proto__  = Images;

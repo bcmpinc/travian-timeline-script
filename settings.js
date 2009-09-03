@@ -21,6 +21,10 @@
 Feature.create("Settings",new Error().lineNumber-21);
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5, set: 6};
 
+// Determine server
+Settings.server = location.href.match(/^.*?\w\//)[0];
+Settings.server_id = Settings.server.replace(/http:\/\/(\w+)\.imperion\.(\w+)\//,"$2_$1");
+
 // Get the value of this setting.
 // Note that (for example)
 // "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
@@ -43,7 +47,8 @@ Settings.read=function() {
         if (this.type==Settings.type.none) {
             return; // intentionally no warning.
         }
-        var x = GM_getValue(this.fullname, this.def_val);
+        var param = Settings.server_id+"."+this.fullname;
+        var x = GM_getValue(param, this.def_val);
         switch (this.type) {
             case Settings.type.string:
             break;
@@ -74,7 +79,7 @@ Settings.read=function() {
 // Stores the value in the GM persistent storage database aka about:config
 Settings.write=function() {
     try {
-        var param=this.fullname;
+        var param=Settings.server_id+"."+this.fullname;
         switch (this.type) {
             case Settings.type.none:
             this.warning("This setting ("+this.fullname+") has no type and can't be stored!");
@@ -103,7 +108,7 @@ Settings.write=function() {
 // Removed the value from the GM persistent storage database aka about:config
 Settings.remove=function() {
     try {
-        var param=this.fullname;
+        var param=Settings.server_id+"."+this.fullname;
         GM_deleteValue(param);
         this.set(this.def_val);
     } catch (e) {
@@ -215,6 +220,7 @@ Settings.config=function() {
 };
 
 Settings.init=function(){
+    // Add some settings
     Settings.setting("race",           0,          Settings.type.enumeration, ["Terrans","Titans","Xen"]);
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
@@ -230,6 +236,9 @@ Settings.init=function(){
     }
 };
 Settings.run=function() {
+    // Determine current planet
+    Settings.planet=$(".planet a.icon").attr("href").replace("/planet/buildings/","")-0;
+    
     // Create link for opening the settings menu.
     var link = $.new("a").attr({href: "javascript:"}).text("Time Line Settings");
     link.click(Settings.show);
