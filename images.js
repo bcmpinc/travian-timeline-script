@@ -42,3 +42,4 @@ Images.stamp = function() {
 Images.create("metal",   "http://u1.imperion.org/img/interface/informations/metal.jpg");
 Images.create("crystal", "http://u1.imperion.org/img/interface/informations/crystal.jpg");
 Images.create("hydrogen","http://u1.imperion.org/img/interface/informations/deuterium.jpg"); // Yes, that's the same as deuterium and tritium.
+Images.create("energy",  "http://u1.imperion.org/img/interface/icon/energy1.png");

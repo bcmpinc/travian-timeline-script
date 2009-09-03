@@ -30,7 +30,6 @@ Timeline.init=function(){
 
     Timeline.setting("color", "rgba(255, 255, 204, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
-    Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
     Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
     Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
     Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
@@ -60,68 +59,34 @@ Timeline.init=function(){
 
 Timeline.create_canvas=function() {
     // Create timeline canvas + container
-    var tl = document.createElement("canvas");
-    var tlc = document.createElement("div");
-    tlc.style.position = (Timeline.position_fixed?"fixed":"absolute");
-    tlc.style.top = "0px";
-    tlc.style.right = "0px";
-    tlc.style.width = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
-    tlc.style.height = Timeline.height + "px";
-    tlc.style.zIndex = "20000";
-    tlc.style.backgroundColor=Timeline.color;
-    tlc.style.visibility = Timeline.visible?'visible':'hidden';
-    tlc.style.overflow = "hidden";
-
-    tl.id = "tl";
-    tl.width = Timeline.width;
-    tl.height = Timeline.height;
-    tl.style.position = "relative";
-    tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
-    tlc.appendChild(tl);
-    document.body.appendChild(tlc);
+    var tl = $.new("canvas");
+    var tlc = $.new("div");
+    tlc.css({
+      position: (Timeline.position_fixed?"fixed":"absolute"),
+      top: "0px",
+      right: "0px",
+      width: (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px",
+      height: Timeline.height + "px",
+      zIndex: "20000",
+      backgroundColor: Timeline.color,
+      visibility: Timeline.visible?'visible':'hidden',
+      overflow: "hidden"
+    });
+    tl.attr({
+      id: "tl",
+      width: Timeline.width,
+      height: unsafeWindow.getHeight()-0
+    }).css({
+      position: "relative",
+      left: (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px"
+    });
+    tlc.append(tl);
+    $("body").append(tlc);
 
     // Code for expanding/collapsing the timeline.
-    // TODO: Move to seperate function(s)?
     if (Timeline.collapse) {
-        var tl_col_cur = Timeline.collapse_width;
-        var tl_col_tar = Timeline.collapse_width;
-        var tl_col_run = false;
-        var tl_col_prev = 0;
-        function tlc_fade() {
-            var tl_col_next = new Date().getTime();
-            var diff = (tl_col_next - tl_col_prev) / 1000.0;
-            tl_col_prev = tl_col_next;
-            tl_col_run = true;
-            if (tl_col_cur==tl_col_tar) {
-                tl_col_run = false;
-                return;
-            }
-            if (tl_col_cur<tl_col_tar) {
-                tl_col_cur+=Timeline.collapse_speed*diff;
-                if (tl_col_cur>tl_col_tar)
-                    tl_col_cur=tl_col_tar;
-            }
-            if (tl_col_cur>tl_col_tar) {
-                tl_col_cur-=Timeline.collapse_speed*diff;
-                if (tl_col_cur<tl_col_tar)
-                    tl_col_cur=tl_col_tar;
-            }
-            tlc.style.width = tl_col_cur + "px";
-            tlc.firstChild.style.left = (tl_col_cur-Timeline.width)+"px";
-            setTimeout(tlc_fade, 1000/Timeline.collapse_rate);
-        }
-        function tlc_expand(e) {
-            tl_col_tar = Timeline.width;
-            tl_col_prev = new Date().getTime();
-            if (!tl_col_run) tlc_fade();
-        }
-        function tlc_collapse(e) {
-            tl_col_tar = Timeline.collapse_width;
-            tl_col_prev = new Date().getTime();
-            if (!tl_col_run) tlc_fade();
-        }
-        tlc.addEventListener('mouseover',tlc_expand,false);
-        tlc.addEventListener('mouseout',tlc_collapse,false);
+        tlc.mouseenter(function() {tlc.stop().animate({width: Timeline.width},500);});
+        tlc.mouseleave(function() {tlc.stop().animate({width: Timeline.collapse_width},500);});
     }
 
     // Mouse Scroll Wheel
@@ -135,10 +100,10 @@ Timeline.create_canvas=function() {
 
     // Could scroll backwards and forwards on the timeline
     // We also probably want to stop the mouse scrolling from propegating in this case...
-    tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
+    tlc.bind('DOMMouseScroll', tl_mouse_wheel);
 
     // The click event listener for the link with the 'travian task queue'-script.
-    function setAt(e) {
+    /*function setAt(e) {
         var at = document.getElementById("at");
         if (at) {
             var n = new Date();
@@ -147,13 +112,13 @@ Timeline.create_canvas=function() {
             at.value=s;
         }
     }
-    tlc.addEventListener("click",setAt,false);
+    tlc.addEventListener("click",setAt,false);*/
 
     // Add the doubleclick listener to change scopes
-    tlc.addEventListener('dblclick', Timeline.change_scope, false);
+    //tlc.addEventListener('dblclick', Timeline.change_scope, false);
 
     Timeline.element=tlc;
-    Timeline.context=tl.getContext("2d");
+    Timeline.context=tl.get(0).getContext("2d");
     Timeline.context.mozTextStyle = "8pt Monospace";
 };
 
