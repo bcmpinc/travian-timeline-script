@@ -34,25 +34,25 @@ Events.init=function(){
             }, Settings.type.object, undefined, "List of event types");
     Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
-    display_options = ['Timeline']; //, 'Villagelist'];
-    Events.setting('building',  [1], Settings.type.set, display_options, "Keep track of what you build [from the planet overview]");
-    Events.setting('attack',    [1], Settings.type.set, display_options, "Keep track of all incoming and outgoing troops [from the fleet base]");
-    Events.setting('market',    [1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
-    Events.setting('research',  [1], Settings.type.set, display_options, "Keep track of what is being researched [from the research center]");
-    Events.setting('demolish',  [1], Settings.type.set, display_options, "Keep track of demolished buildings [from the construction yard]");
-    Events.setting('overflow',  [1], Settings.type.set, display_options, "Keep track of resource overflows [from every page]");
+    display_options = ['Collect','Show in Time Line']; //, 'Villagelist'];
+    Events.setting('building',  [1,1], Settings.type.set, display_options, "Keep track of what you build [from the planet overview]");
+    Events.setting('attack',    [1,1], Settings.type.set, display_options, "Keep track of all incoming and outgoing troops [from the fleet base]");
+    Events.setting('market',    [1,1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
+    Events.setting('research',  [1,1], Settings.type.set, display_options, "Keep track of what is being researched [from the research center]");
+    Events.setting('demolish',  [1,1], Settings.type.set, display_options, "Keep track of demolished buildings [from the construction yard]");
+    Events.setting('overflow',  [1,1], Settings.type.set, display_options, "Keep track of resource overflows [from every page]");
 
 };
 // There is no report type, because there are different types of reports, which can also be divided over the currently
 // available types.
 
-/* A event-data-packet torn apart:
-   Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
-   129390: #### ~ The village id
-   'b9930712': #### ~ Some identifier that is both unqiue and consistent between page loads.
+/* An event-data-packet torn apart:
+   Example: { 32541108: {'b2251337':["building",1225753710000,"01. Someville","Crystal mine (Level 9)",undefined,undefined]} }
+   32541108: #### ~ The plannet id
+   'b2251337': #### ~ Some identifier for the event that is both unqiue and consistent between page loads.
    ["building", 0 ~ Type of event
    1225753710000, 1 ~ Estimated time at which this event occure(s|d).
-   "Granary (level 6)", 2 ~ Event message.
+   "Crystal mine (Level 9)", 2 ~ Event message.
    3 ~ For events that might include armies (can be 'undefined')
    [0, 3. 0 ~ Amount of farm-men involved
    0, 3. 1 ~ Amount of defense-men involved
@@ -66,11 +66,11 @@ Events.init=function(){
    0, 3. 9 ~ Amount of settlers involved
    0], 3.10 ~ Amount of heros involved
    4 ~ For events that might include resources (can be 'undefined')
-   [0, 4. 0 ~ Amount of wood involved
-   0, 4. 1 ~ Amount of clay involved
-   0, 4. 2 ~ Amount of iron involved
-   0]] 4. 3 ~ Amount of grain involved
-   Instead of a number, the fields in field 4 and 5 are also allowed to be a tuple (list).
+   [0, 4. 0 ~ Amount of metal involved
+   0, 4. 1 ~ Amount of crystal involved
+   0, 4. 2 ~ Amount of hydrogen involved
+   0]] 4. 3 ~ Amount of energy involved
+   Instead of a number, the fields in field 3 and 4 are also allowed to be a tuple (list).
    In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
 */
 

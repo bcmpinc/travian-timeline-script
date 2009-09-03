@@ -21,7 +21,7 @@
 Feature.create("Navbar", new Error().lineNumber);
 
 Navbar.s.enabled.description="Cutomize the sidebar";
-Navbar.enabled=false;
+
 unsafeWindow.S=$;
 Navbar.init=function(){
   Navbar.setting("remove_plus_color", false, Settings.type.bool, undefined, "De-colors the Plus link");
