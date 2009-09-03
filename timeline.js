@@ -28,7 +28,7 @@ Timeline.init=function(){
     Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
     Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
 
-    Timeline.setting("color", "rgba(255, 255, 204, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
+    Timeline.setting("color", "rgba(204, 230, 255, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
     Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
     Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
@@ -124,97 +124,32 @@ Timeline.create_canvas=function() {
     Timeline.context.mozTextStyle = "8pt Monospace";
 };
 
-Timeline.change_scope=function(){
-    if (Timeline.scope_changer != undefined){
-        document.body.removeChild(Timeline.scope_changer);
-        delete Timeline.scope_changer;
-        return;
-    }
-    Timeline.scope_changer = document.createElement('div');
-    var div = Timeline.scope_changer;
-    div.style.position = 'fixed';
-    div.style.zIndex   = '1000';
-    div.style.left     = '150px';
-    div.style.top      = '150px';
-    div.style.border   = '3px solid black';
-    div.style.background = 'rgb(255, 255, 255)';
-    div.style.MozBorderRadius = '6px';
-    var txt = '<table><thead><tr><th colspan="2" style="border-bottom: 1px solid black; text-align: center"><img style="cursor:pointer" src="'+Images.cross;
-    txt += '"/></th></tr></thead><tbody><tr><td style="border-right: 1px solid black">';
-    var i=0;
-    var s;
-    for (var a in Settings.users){
-        if (i==0) s = a;
-        txt += '<input type="radio" name="'+a+'" value="'+i+'"'+(i==0?' checked=""':'')+'>'+a+'&nbsp;<br>';
-        i++;
-    }
-    txt += '<td></tbody></table>';
-    div.innerHTML = txt;
-    div.childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[0].addEventListener('click', Timeline.change_scope, false);
-    var servers = div.childNodes[0].childNodes[1].childNodes[0].childNodes[0];
-    var users = servers.nextSibling;
-    var check_user=function(e){
-        var u = e.target.name;
-        if (Settings.natural_run){
-            Settings.user_display[s][u] = e.target.checked==true;
-            Settings.s.user_display.write();
-        } else {
-            Settings.g_user_display[s][u] = e.target.checked==true;
-            Settings.s.g_user_display.write();
-        }
-        // The events to display just changed - so update
-        Timeline.draw(true);
-    };
-    var fill_users=function(){
-        var txt = '';
-        for (var u in Settings.users[s]){
-            var checked = Settings.natural_run ? Settings.user_display[s][u] : Settings.g_user_display[s][u];
-            var uname = Settings.users[s][u];
-            txt += '<input type="checkbox" name="'+u+'" '+(checked?'checked=""':'')+'>'+uname+'&nbsp;<br>';
-        }
-        users.innerHTML = txt;
-        for (var i in users.childNodes)
-            users.childNodes[i].addEventListener('change', check_user, false);
-    };
-    var switch_server=function(e){
-        // Clear every checkbox
-        for (var i in servers.childNodes) servers.childNodes[i].checked = false;
-        // But reset the one you just clicked on to true
-        e.target.checked = true;
-
-        s = e.target.name;
-        fill_users();
-    };
-    fill_users();
-    for (var i in servers.childNodes)
-        servers.childNodes[i].addEventListener('change', switch_server, false);
-    document.body.appendChild(div);
-};
-
 Timeline.toggle=function() {
     Timeline.visible=!Timeline.visible;
-    Timeline.element.style.visibility=Timeline.visible?'visible':'hidden';
+    Timeline.element.css({visibility:(Timeline.visible?'visible':'hidden')});
     Timeline.s.visible.write();
 };
 
 Timeline.create_button=function() {
-    button = document.createElement("div");
-    button.style.position = Timeline.element.style.position;
-    button.style.backgroundColor = "rgba(0,0,128,0.5)";
-    button.style.right = "0px";
-    button.style.top = "-2px";
-    button.style.width = "60px";
-    button.style.height = "21px";
-    button.style.zIndex = "20";
-    button.style.textAlign = "center";
-    button.style.color = "#fff";
-    button.style.fontWeight = "bold";
-    button.style.fontSize = '12px';
-    button.style.MozBorderRadiusBottomleft = "6px";
-    button.style.cursor = "pointer";
-    button.addEventListener('click',Timeline.toggle,false);
-    button.innerHTML = "timeline";
-    document.body.appendChild(button);
+    button = $.new("div");
+    button.css({
+      position: Timeline.element.css("position"),
+      backgroundColor: "rgba(64,64,64,0.5)",
+      right: "0px",
+      top: "-2px",
+      width: "60px",
+      height: "21px",
+      zIndex: 40000,
+      textAlign: "center",
+      color: "#fff",
+      fontWeight: "bold",
+      fontSize: "12px",
+      MozBorderRadiusBottomleft: "6px",
+      cursor: "pointer"
+    });
+    button.click(Timeline.toggle);
+    button.text("timeline");
+    $("body").append(button);
 };
 
 Timeline.load_images=function() {
