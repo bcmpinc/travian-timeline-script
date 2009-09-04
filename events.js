@@ -26,7 +26,7 @@ Events.init=function(){
     Events.setting("type", {
                 /* <tag> : <color> */
                 building: 'rgb(0,0,0)',
-                attack:   'rgb(255,0,0)',
+                fleet:    'rgb(255,0,0)',
                 market:   'rgb(0,128,0)',
                 research: 'rgb(0,0,255)',
                 demolish: 'rgb(128,128,128)',
@@ -36,7 +36,7 @@ Events.init=function(){
 
     display_options = ['Collect','Show in Time Line']; //, 'Villagelist'];
     Events.setting('building',  [1,1], Settings.type.set, display_options, "Keep track of what you build [from the planet overview]");
-    //Events.setting('attack',    [1,1], Settings.type.set, display_options, "Keep track of all incoming and outgoing troops [from the fleet base]");
+    Events.setting('fleet',     [1,1], Settings.type.set, display_options, "Keep track of all incoming and outgoing fleets [from the fleet base]");
     //Events.setting('market',    [1,1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
     //Events.setting('research',  [1,1], Settings.type.set, display_options, "Keep track of what is being researched [from the research center]");
     //Events.setting('demolish',  [1,1], Settings.type.set, display_options, "Keep track of demolished buildings [from the construction yard]");
@@ -54,23 +54,14 @@ Events.init=function(){
    1225753710000, 1 ~ Estimated time at which this event occure(s|d).
    "Crystal mine (Level 9)", 2 ~ Event message.
    3 ~ For events that might include armies (can be 'undefined')
-   [0, 3. 0 ~ Amount of farm-men involved
-   0, 3. 1 ~ Amount of defense-men involved
-   0, 3. 2 ~ Amount of attack-men involved
-   0, 3. 3 ~ Amount of scouts involved
-   0, 3. 4 ~ Amount of defense-horses involved
-   0, 3. 5 ~ Amount of attack-horses involved
-   0, 3. 6 ~ Amount of rams involved
-   0, 3. 7 ~ Amount of trebuchets involved
-   0, 3. 8 ~ Amount of leaders involved
-   0, 3. 9 ~ Amount of settlers involved
-   0], 3.10 ~ Amount of heros involved
+   [2, 3. 0 ~ the faction involved. (Terrans=1, Titans=2, Xen=3)
+   0,...,0] 3. 1-10 ~ Amount of units involved (one field per type)
    4 ~ For events that might include resources (can be 'undefined')
    [0, 4. 0 ~ Amount of metal involved
    0, 4. 1 ~ Amount of crystal involved
    0, 4. 2 ~ Amount of hydrogen involved
    0]] 4. 3 ~ Amount of energy involved
-   Instead of a number, the fields in field 3 and 4 are also allowed to be a tuple (list).
+   Instead of a number, the fields in field 3 and 4 are also allowed to be a tuple (list/array).
    In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
 */
 
@@ -160,75 +151,66 @@ Events.collector.building=function(){
     });
 };
 
-// Travelling armies (rally point)
-Events.collector.attack=function(){
-    if (location.href.indexOf('build.php') < 0) return;
-    // These are both constant, and the only ways of reaching the rally point...
-    if (location.href.indexOf('gid=16') < 0 && location.href.indexOf('id=39') < 0) return;
+// Travelling armies (fleet base)
+Events.collector.fleet=function(){
+    var tables = $(".fleetTable");
 
-    var res = xpath('//table[@class="troop_details"]');
-    var last_event_time=0;
-    var event_count=0;
-
-    for ( var i=0 ; i < res.snapshotLength; i++ ) {
-        // The top of the table
-        x = res.snapshotItem(i);
-        var units = xpath('./tbody[@class="units"]', x, 'any').singleNodeValue;
-        var infos = xpath('./tbody[@class="infos"]', x, 'ordered');
-        if (infos.snapshotLength == 2){
-            var resources = xpath('./tr/td/div[@class="res"]', infos.snapshotItem(0), 'any').singleNodeValue.textContent.split(' |');
-            var info      = infos.snapshotItem(1);
-        }
-        else if (infos.snapshotLength == 1){
-            var resources = [];
-            var info = infos.snapshotItem(0);
-        }
-        else return;
+    Events.debug("Collecting "+tables.length+" fleets.");
+    tables.each(function() {
+        var $this=$(this);
+        var id = $this.find("a[name]").attr("name");
 
         var d = new tl_date(Events);
-
-        var arrival = xpath('./tr/td/div[starts-with(@class, "at")]', info, 'any').singleNodeValue;
-        if (!arrival) continue;
-        d.set_time(arrival.textContent.match('(\\d\\d?)\\:(\\d\\d)\\:(\\d\\d) ?([a-z]*)'));
-        var duration = xpath('./tr/td/div[starts-with(@class, "in")]', info, 'any').singleNodeValue.textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
-        var t = d.adjust_day(duration);
+        var time = $this.find("td[colspan=9]").text();
+        var tm = time.match(/(\d\d).(\d\d).(\d\d) (\d\d?).(\d\d).(\d\d) ?([a-z]*)$/i);
+        if (tm) {
+          d.set_tm([0,tm[4],tm[5],tm[6],tm[7]]);
+          d.set_day(0,tm[1],tm[2],tm[3]);
+          d.adjust_day([0,tm[1],tm[2],tm[3]]);
+        } else {
+          tm = time.match(/(\d\d).(\d\d).(\d\d)/);
+          if (tm) 
+            d.set_seconds(tm,true);
+          else
+            return;
+        }
+        var e = Events.get_event("f"+id);
+        e[0] = "fleet";
+        e[1] = d.get_time();
 
         // Get the message
-        var msg = xpath('./thead/tr/td[not(@class="role")]/a[starts-with(@href, "karte.php")]', x, 'any').singleNodeValue.textContent;
-        var dest = xpath('./thead//td[@class="role"]/a', x, 'any').singleNodeValue.textContent;
+        var msg = $this.find("td[colspan=12]").text();
+        var who = $this.find("a.fontSize12");
+        var who_name = who.text();
+        var who_id = who.attr("href").match(/planet\/(\d+)/)[1];
+        
         // If someone's attacking *us*, include who is doing the attacking in the message
-        var attacking = false;
-        for (var j in Settings.village_names) if (msg.indexOf(Settings.village_names[j]) >= 0){ attacking = true; break;}
-        if (attacking) msg = dest+': '+msg;
-
-        // Using the time as unique id. If there are multiple with the same time increase event_count.
-        // It's the best I could do.
-        if (last_event_time==t) event_count++;
-        else last_event_time=t;
-        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
-        e[0] = "attack";
-        e[1] = d.set_seconds(duration);
+        if (!Settings.planet_names[who_id]) 
+          msg = who_name+': '+msg;
         e[2] = msg;
-        e[3] = [];
+
+        /*e[3] = [];
         // Copy over the units in the attack
         for (var j = 0; j<11; j++) {
             var y = units.childNodes[1].childNodes[j+1];
             if (y!=undefined)
                 e[3][j] = y.textContent - 0;
-        }
+        }*/
         // Copy over the resources in the attack, if any
-        if (resources != undefined){
-            e[4] = [];
-            for (var j=0; j < resources.length; j++) if (resources[j] > 0) e[4][j] = resources[j];
+        var resources=$this.find("td[colspan=6] li");
+        if (resources.length>0){
+            e[4] = [0,0,0,0];
+            for (var j=0; j < 3; j++) 
+              e[4][j] = resources.get(j).textContent.replace(",","");
         }
         // Add the cancel catcher
-        var a = xpath('./tr/td/img[@class="del"]', info, 'any').singleNodeValue;
+        /*var a = xpath('./tr/td/img[@class="del"]', info, 'any').singleNodeValue;
         if (a != undefined) a.addEventListener('click', function(e){
                 Events.info('Removing the attack event Events.events['+Settings.village_id+'][a'+t+'_'+event_count+']');
                 delete Events.events[Settings.village_id]['a'+t+'_'+event_count];
                 Events.s.events.write();
-            }, false);
-    }
+            }, false);*/
+    });
 };
 
 // Market Deliveries

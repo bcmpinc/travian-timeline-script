@@ -28,7 +28,7 @@ Timeline.init=function(){
     Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
     Timeline.setting("position_fixed", true, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
 
-    Timeline.setting("color", "rgba(204, 230, 255, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
+    Timeline.setting("color", "rgba(0, 0, 32, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
     Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
     Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
@@ -69,7 +69,8 @@ Timeline.create_canvas=function() {
       zIndex: "20000",
       backgroundColor: Timeline.color,
       visibility: Timeline.visible?'visible':'hidden',
-      overflow: "hidden"
+      overflow: "hidden",
+      outline: "1px solid #333"
     });
     tl.attr({
       id: "tl",
@@ -160,7 +161,7 @@ Timeline.draw_scale=function() {
     
     // Draw bar
     g.translate(Timeline.width - 9.5, 0);
-    g.strokeStyle = "rgb(0,0,0)";
+    g.strokeStyle = "rgb(128,192,255)";
     g.beginPath();
     g.moveTo(0, 0);
     g.lineTo(0, Timeline.height);
@@ -243,7 +244,7 @@ Timeline.draw=function() {
 
     // Highlight the 'elapsed time since last refresh'
     var y2 = Timeline.warp(Events.pageload);
-    g.fillStyle = "rgba(128,255,0,0.1)";
+    g.fillStyle = "rgba(204,255,128,0.2)";
     g.fillRect(0, y,Timeline.width, y2-y);
 
     // Darken forgotten history
@@ -282,6 +283,7 @@ Timeline.draw=function() {
             return q-0;
     }
 
+    Events.s.events.read();
     var events = Events.events;
     for (v in events) {
         try {
@@ -321,14 +323,14 @@ Timeline.draw_event=function(planet, event){
     g.stroke();
 
     // TODO: convert to human readable village name.
-    g.fillStyle = "rgb(0,0,128)";
+    g.fillStyle = "rgb(0,64,255)";
     g.save();
     g.translate(20 - Timeline.width, y-5);
     g.mozDrawText(planet);
     g.restore();
 
     // Draw the event text
-    g.fillStyle = "rgb(0,128,0)";
+    g.fillStyle = "rgb(64,255,64)";
     // TODO: prepend an * when an attack has 100% efficiency.
     //var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
     //cap = (cap<=0)?"*":"";
@@ -344,9 +346,9 @@ Timeline.draw_event=function(planet, event){
         g.save();
         g.translate(-40, y+4+12); // Move this below the message.
         if (event[4]) {
-            g.fillStyle = "rgb(64,192,64)";
+            g.fillStyle = "rgb(192,64,0)";
             for (var i=3; i>=0; i--) {
-                Timeline.draw_info([Images.metal,Images.crystal,Images.hydrogen,Images.energy][i],event[4][i]);
+                Timeline.draw_info(Timeline.resources[i],event[4][i]);
             }
         }
         /*if (p[3]) {
@@ -366,7 +368,7 @@ Timeline.draw_info=function(img,nrs) {
     var g = Timeline.context;
     try {
         g.translate(-img.width - 8, 0);
-        g.drawImage(img, -0.5, Math.round(-img.height*0.7) -0.5);
+        g.drawImage(img, -0.5, -8, 10, 10);
     } catch (e) {
         // This might fail if the image is not yet or can't be loaded.
         // Ignoring this exception prevents the script from terminating to early.
@@ -392,6 +394,7 @@ Timeline.draw_info=function(img,nrs) {
 Timeline.run=function() {
     Timeline.create_canvas();
     Timeline.create_button();
+    Timeline.resources = [Images.metal.stamp(),Images.crystal.stamp(),Images.hydrogen.stamp(),Images.energy.stamp()];
     Timeline.updater();
 };
 

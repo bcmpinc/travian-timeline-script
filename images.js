@@ -45,6 +45,10 @@ Images.init=function() {
   Images.create("crystal", "/img/interface/informations/crystal.jpg");
   Images.create("hydrogen","/img/interface/informations/deuterium.jpg"); // Yes, that's the same as deuterium and tritium.
   Images.create("energy",  "/img/interface/icon/energy1.png");
+  
+  Images.create("terrans", "/img/terrans/interface/ships/sprite.gif");
+  Images.create("titans",  "/img/titans/interface/ships/sprite.gif");
+  Images.create("xen",     "/img/xen/interface/ships/sprite.gif");
 };
 
 Images.call('init', true);
