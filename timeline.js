@@ -167,6 +167,8 @@ Timeline.draw_scale=function() {
     g.lineTo(0, Timeline.height);
     g.stroke();
     
+    g.fillStyle = "rgb(204,204,255)";
+    
     // draw scale lines
     var lastmark = 0;
     for (var i=Timeline.marker_seperation/2; i<Timeline.height; i+=Timeline.marker_seperation) {
@@ -247,9 +249,9 @@ Timeline.draw=function() {
     g.fillStyle = "rgba(204,255,128,0.2)";
     g.fillRect(0, y,Timeline.width, y2-y);
 
-    // Darken forgotten history
+    // Gray-out forgotten history
     var y3 = Timeline.warp(Events.old);
-    g.fillStyle = "rgba(0,0,0,0.5)";
+    g.fillStyle = "rgba(64,64,64,0.5)";
     if (y3>0)
         g.fillRect(0, 0,Timeline.width, y3);
 
@@ -306,7 +308,7 @@ Timeline.updater=function() {
 
 Timeline.draw_event=function(planet, event){
     // Draw data
-    var type = Events.type[event[0]];
+    var color = Events.type[event[0]];
     var y = Timeline.warp(event[1]);
 
     // Check if this type of event is visible
@@ -316,13 +318,12 @@ Timeline.draw_event=function(planet, event){
     var g = Timeline.context;
 
     // Draw the line
-    g.strokeStyle = type[0];
+    g.strokeStyle = color;
     g.beginPath();
     g.moveTo(-10, y);
     g.lineTo(-50, y);
     g.stroke();
 
-    // TODO: convert to human readable village name.
     g.fillStyle = "rgb(0,64,255)";
     g.save();
     g.translate(20 - Timeline.width, y-5);
@@ -344,31 +345,35 @@ Timeline.draw_event=function(planet, event){
     // Draw the resources info.
     if (Timeline.report_info) {
         g.save();
-        g.translate(-40, y+4+12); // Move this below the message.
+        g.translate(-45, y+4+12); // Move this below the message.
         if (event[4]) {
             g.fillStyle = "rgb(192,64,0)";
             for (var i=3; i>=0; i--) {
                 Timeline.draw_info(Timeline.resources[i],event[4][i]);
             }
         }
-        /*if (p[3]) {
-            g.fillStyle = "rgb(0,0,255)";
-            for (var i=10; i>=0; i--) {
-                // This is a serious hack, but the best we can do without tearing up the entire 'events' list...
-                if (i == 10) Timeline.draw_info(Timeline.img_unit[0], p[3][i]);
-                else Timeline.draw_info(Timeline.img_unit[Settings[server][user].race*10+1+i], p[3][i]);
+        if (event[3]) {
+            g.fillStyle = "rgb(192,64,255)";
+            var img = Timeline.units[event[3][0]-1];
+            for (var i=11; i>=0; i--) {
+                Timeline.draw_info(img,event[3][i+1],i);
             }
-        }*/
+        }
         g.restore();
     }
 };
 
-Timeline.draw_info=function(img,nrs) {
+Timeline.draw_info=function(img,nrs,pos) {
     if (!nrs) return;
     var g = Timeline.context;
     try {
-        g.translate(-img.width - 8, 0);
-        g.drawImage(img, -0.5, -8, 10, 10);
+        g.translate(-16, 0);
+        if (pos) {
+          g.translate(-8,0);
+          g.drawImage(img, 41*pos, 0, 40, 25,   -6, -15, 32, 20);
+        } else {
+          g.drawImage(img, -0.5, -10, 12, 12);
+        }
     } catch (e) {
         // This might fail if the image is not yet or can't be loaded.
         // Ignoring this exception prevents the script from terminating to early.
@@ -377,6 +382,7 @@ Timeline.draw_info=function(img,nrs) {
         g.translate(-24,0);
         g.mozDrawText("??");
         g.fillStyle = fs;
+        Timeline.exception("Timeline.draw_info",e);
     }
     if (nrs.constructor == Array) {
         g.fillStyle = "rgb(192,0,0)";
@@ -395,6 +401,7 @@ Timeline.run=function() {
     Timeline.create_canvas();
     Timeline.create_button();
     Timeline.resources = [Images.metal.stamp(),Images.crystal.stamp(),Images.hydrogen.stamp(),Images.energy.stamp()];
+    Timeline.units = [Images.terrans.stamp(),Images.titans.stamp(),Images.xen.stamp()];
     Timeline.updater();
 };
 

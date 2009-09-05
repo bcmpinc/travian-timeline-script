@@ -111,7 +111,9 @@ Map.draw_resource=function(stamp,amount) {
     g.fillStyle="lightgray";
     Map.res_x=w+26;
   }
-  g.drawImage(stamp,2,-8,10,10);
+  try{ // unfortunately the following line sometimes likes to throw an error.
+    g.drawImage(stamp,2,-8,10,10); 
+  }catch(e){}
   g.translate(10,0);
   g.mozDrawText(amount);
   g.translate(w,0);

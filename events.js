@@ -25,7 +25,7 @@ Events.init=function(){
     Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
     Events.setting("type", {
                 /* <tag> : <color> */
-                building: 'rgb(0,0,0)',
+                building: 'rgb(255,255,255)',
                 fleet:    'rgb(255,0,0)',
                 market:   'rgb(0,128,0)',
                 research: 'rgb(0,0,255)',
@@ -189,13 +189,13 @@ Events.collector.fleet=function(){
           msg = who_name+': '+msg;
         e[2] = msg;
 
-        /*e[3] = [];
+        var tr = $this.find("tr.colorGrey>td.fontCenter");
+        e[3] = [$this.find(".fleetPos1").attr("class").match(/interface_ships_all(\d)/)[1]];
         // Copy over the units in the attack
-        for (var j = 0; j<11; j++) {
-            var y = units.childNodes[1].childNodes[j+1];
-            if (y!=undefined)
-                e[3][j] = y.textContent - 0;
-        }*/
+        for (var j = 0; j<12; j++) {
+            e[3][j+1] = tr.get(j).textContent - 0;
+        }
+        
         // Copy over the resources in the attack, if any
         var resources=$this.find("td[colspan=6] li");
         if (resources.length>0){
