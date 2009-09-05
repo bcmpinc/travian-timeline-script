@@ -3,7 +3,7 @@ var metadata = <><![CDATA[
 // ==UserScript==
 // @name           Imperion Time Line
 // @namespace      ImperionTL
-// @version        I_0.04
+// @version        I_0.05
 // @description    Adds a buildqueue.
  
 // @include        http://*.imperion.*/*
@@ -18,19 +18,19 @@ var metadata = <><![CDATA[
 // @author         arandia
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/jquery-latest.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/patch.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/date.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/feature.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/settings.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/images.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/map.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/navbar.js
-// #@require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/resources.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/market.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/events.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/timeline.js
-// #@require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.04/tooltip.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/jquery-latest.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/patch.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/date.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/feature.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/settings.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/images.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/map.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/navbar.js
+// #@require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/resources.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/market.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/events.js
+// @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/timeline.js
+// #@require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.05/tooltip.js
 // ==/UserScript==
 ]]></>+"";
 
