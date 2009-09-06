@@ -118,12 +118,24 @@ Map.draw_resource=function(stamp,amount) {
   g.mozDrawText(amount);
   g.translate(w,0);
 };
-Map.draw_resources=function(r1,r2,r3) {
+Map.draw_object=function(name,r1,r2,r3) {
   var g = Map.context;
-  g.fillStyle="lightgray";
-  Map.draw_resource(Images.metal.stamp(),r1);
-  Map.draw_resource(Images.crystal.stamp(),r2);
-  Map.draw_resource(Images.hydrogen.stamp(),r3);
+  g.save();
+  g.mozDrawText(name);
+  var w=g.mozMeasureText(name);
+  Map.res_x=w;
+  g.translate(w,0);
+  if (r1==0 && r2==0 && r3==0) {
+    g.fillStyle="gray";
+    g.mozDrawText("[empty]");
+  } else {
+    g.fillStyle="lightgray";
+    Map.draw_resource(Images.metal.stamp(),r1);
+    Map.draw_resource(Images.crystal.stamp(),r2);
+    Map.draw_resource(Images.hydrogen.stamp(),r3);
+  }
+  g.restore();
+  g.translate(0,8);
 };
 Map.update=function() {
     if (!Map.canvas) return; // Check if canvas is enabled.
@@ -193,34 +205,29 @@ Map.update=function() {
         var px = (pos.x-Map.posx+10)*Map.quadrantWidth+1;
         var py = (pos.y-Map.posy+7)*Map.quadrantHeight+10;
         g.save();
-        g.translate(px,py);
-        var system=unsafeWindow.mapData[id];
-        g.fillStyle="red";
-        for (var i in system.comets) {
-          var comet=system.comets[i];
-          if (!comet.id) continue;
-          g.save();
-          g.mozDrawText(comet.name);
-          var w=g.mozMeasureText(comet.name);
-          Map.res_x=w;
-          g.translate(w,0);
-          Map.draw_resources(comet.r1,comet.r2,comet.r3);
-          g.restore();
-          g.translate(0,8);
-        }
-        g.fillStyle="yellow";
-        for (var i in system.debris) {
-          var debris=system.debris[i];
-          if (!debris.planet_id) continue;
-          var name = system.planets[debris.planet_id].planet_name;
-          g.save();
-          g.mozDrawText(name);
-          var w=g.mozMeasureText(name);
-          Map.res_x=w;
-          g.translate(w,0);
-          Map.draw_resources(debris.r1,debris.r2,0);
-          g.restore();
-          g.translate(0,8);
+        try {
+          g.translate(px,py);
+          var system=unsafeWindow.mapData[id];
+          g.fillStyle="red";
+          for (var i in system.comets) {
+            var comet=system.comets[i];
+            if (!comet.id) continue;
+            Map.draw_object(comet.name,comet.r1,comet.r2,comet.r3);
+          }
+          g.fillStyle="yellow";
+          for (var i in system.debris) {
+            var debris=system.debris[i];
+            if (!debris.planet_id) continue;
+            Map.draw_object(system.planets[debris.planet_id].planet_name,debris.r1,debris.r2,0);
+          }
+          g.fillStyle="cyan";
+          for (var i in system.asteroids) {
+            var asteroid=system.asteroids[i];
+            if (!asteroid.id) continue;
+            Map.draw_object("["+asteroid.id+"]",asteroid.r1,asteroid.r2,asteroid.r3);
+          }
+        } catch (e) {
+          Map.exception("Map.update() [metadata]",e);
         }
         g.restore();
       }
