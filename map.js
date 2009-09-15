@@ -29,8 +29,9 @@ Map.init=function(){
     Map.setting("enable_dragging", true, Settings.type.bool,undefined, "Allow the map to be dragged. Note that this calls functions through GreaseMonkey's unsafeWindow.");
     Map.setting("enable_new_grid", true, Settings.type.bool,undefined, "Adds a grid to the map, to replace the original sector numbers. This grid is more accurate than the original sector numbering and works well with dragging enabled.");
     Map.setting("system_metadata", true, Settings.type.bool,undefined, "Add some extra data around a planet, like resources available on asteroids or debris.");
-    Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
-    Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
+    Map.setting("rewire_send_troops", true, Settings.type.bool,undefined, "When clicking on a send troops button, the form is inserted into the page.");
+    /*Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");*/
+    /*Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], * /
             none: ["",false], // ie. remove from 'locations'.
                 owned: ["rgba(192,128,0,1.0)", true],
                 ally: ["rgba(0,0,255,0.5)", true],
@@ -42,7 +43,7 @@ Map.init=function(){
                 ban: ["rgba(0,0,0,0.5)", false],
                 other: ["rgba(255,0,255,0.5)", true]
                 }, Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
-    Map.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");
+    Map.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");*/
     // A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
     // name is optional.
 };
@@ -462,8 +463,76 @@ Map.run=function() {
 
     GM_addStyle(style);
   }
+  if (Map.rewire_send_troops) {
+    var buttons=$("#recycle,#colonize,#sendFleet");
+    buttons.click(Map.rewire);
+  }
 
   //Map.tag_tool();
+};
+
+Map.rewire = function(e) {
+  e.preventDefault();
+  var url = this.href;
+
+  var form=$.new("div").attr({class: "metallContent fontCenter"}).text("Loading: "+url);
+  if (Map.form) {
+    Map.form.replaceWith(form);
+  } else {
+    $("#mapToolbar").after(
+      $.new("div").attr({class: "textureCenter interface_content_building_center"}).append(
+        $.new("div").attr({class: "frame"}).append(
+          form)));
+  }
+  Map.form=form;
+  
+  GM_xmlhttpRequest({
+    method: "GET",
+    url: url,
+    onload: Map.append_fleet_form
+  });
+};
+
+Map.append_fleet_form = function(contents) {
+  contents=$(contents.responseText);
+  var form = contents.find(".frame>.metallContent");
+  Map.form.replaceWith(form);
+  Map.form=form;
+  Map.relink_action_button();
+};
+
+Map.relink_action_button = function() {
+  var link=$.new("a").attr({class: "buttonStd floatRight interface_forms_buttons_standart", href: "javascript:;"})
+  var oldlink=Map.form.find("#sendFormSubmit");
+  link.html(oldlink.html());
+  oldlink.replaceWith(link);
+  link.click(Map.send_fleet);
+};
+
+Map.send_fleet = function(e) {
+  var f = Map.form.find("#sendForm").get(0);
+  var data = post_data(f);
+  Map.debug("posting data="+data);
+
+  var form=$.new("div").attr({class: "metallContent fontCenter"}).text("Sending fleet");
+  Map.form.replaceWith(form);
+  Map.form=form;  
+
+  GM_xmlhttpRequest({
+    method: "POST",
+    url: f.action,
+    data: data,
+    headers: {"Content-type": "application/x-www-form-urlencoded"},
+    onload: Map.fleet_sent
+  });
+};
+
+Map.fleet_sent = function(contents) {
+  contents=$(contents.responseText);
+  var form = contents.find(".frame>.metallContent");
+  Map.form.replaceWith(form);
+  Map.form=form;
+  Map.relink_action_button();
 };
 
 Map.call('init', true);

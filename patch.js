@@ -80,7 +80,17 @@ function nothing(){}
 
 // Some add-ons to jquery
 jQuery.extend({
-    new: function(element) {
-      return jQuery(document.createElement(element));
+  new: function(element) {
+    return jQuery(document.createElement(element));
   }
 });
+
+// function for getting the postdata of a form
+post_data = function(form) {
+  var els = form.elements;
+  var data = [];
+  for (var i=0; i<els.length; i++) {
+    data.push(els[i].name+"="+els[i].value);
+  }
+  return data.join("&");
+};
