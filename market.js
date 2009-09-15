@@ -92,8 +92,8 @@ Market.update=function(container) {
     } else {
       remove=false;
     }
-    var a=cells.get(0).textContent.replace(",","")-0;
-    var b=cells.get(1).textContent.replace(",","")-0;
+    var a=cells.get(0).textContent.replace(/[.,]/g,"")-0;
+    var b=cells.get(1).textContent.replace(/[.,]/g,"")-0;
     r = a/b;
     var red=Math.round(255*((r<1)?1:1/r));
     var green=Math.round(255*((r>1)?1:r));
