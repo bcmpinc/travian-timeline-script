@@ -533,6 +533,7 @@ Map.fleet_sent = function(contents) {
   Map.form.replaceWith(form);
   Map.form=form;
   Map.relink_action_button();
+  if (Events.enabled) Events.update_data();
 };
 
 Map.call('init', true);
