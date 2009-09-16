@@ -18,7 +18,7 @@
  * EVENTS
  ****************************************/
 
-Feature.create("Events");
+Feature.create("Events",new Error().lineNumber-21);
 
 Events.s.enabled.description="Enable the event data collector";
 Events.init=function(){
@@ -99,7 +99,7 @@ Events.update_data=function() {
             if (Events[c][0])
               Events.collector[c]();
         } catch (e) {
-            this.exception("Events.collector."+c,e);
+            Events.exception("Events.collector."+c,e);
         }
     }
 
@@ -160,19 +160,15 @@ Events.collector.fleet=function(){
         var $this=$(this);
         var id = $this.find("a[name]").attr("name");
 
-        var d = new tl_date(Events);
         var time = $this.find("td[colspan=9]").text();
-        var tm = time.match(/(\d\d).(\d\d).(\d\d) (\d\d?).(\d\d).(\d\d) ?([a-z]*)$/i);
+        var d = new tl_date(Events);
+        var tm = time.match(/(\d\d).(\d\d).(\d\d) \r?\n?(\d\d?).(\d\d).(\d\d) ?([a-z]*)/im);
         if (tm) {
-          d.set_tm([0,tm[4],tm[5],tm[6],tm[7]]);
-          d.set_day(0,tm[1],tm[2],tm[3]);
-          d.adjust_day([0,tm[1],tm[2],tm[3]]);
+          d.set_time([0,tm[4],tm[5],tm[6],tm[7]]);
+          d.set_day([tm[1],tm[2],tm[3]]);
         } else {
-          tm = time.match(/(\d\d).(\d\d).(\d\d)/);
-          if (tm) 
-            d.set_seconds(tm,true);
-          else
-            return;
+          Events.debug("Could not determine what time is left.");
+          return;
         }
         var e = Events.get_event("f"+id);
         e[0] = "fleet";

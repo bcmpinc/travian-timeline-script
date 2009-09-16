@@ -507,6 +507,18 @@ Map.relink_action_button = function() {
   link.html(oldlink.html());
   oldlink.replaceWith(link);
   link.click(Map.send_fleet);
+  
+  // also relink the tab links:
+  $(".metallContent .tabs a").click(Map.fleet_tab);
+};
+
+Map.fleet_tab = function (e) {
+  e.preventDefault();
+  GM_xmlhttpRequest({
+    method: "GET",
+    url: this.href,
+    onload: Map.fleet_sent // This callback just happens to do all that we need.
+  });  
 };
 
 Map.send_fleet = function(e) {
@@ -533,7 +545,15 @@ Map.fleet_sent = function(contents) {
   Map.form.replaceWith(form);
   Map.form=form;
   Map.relink_action_button();
-  if (Events.enabled) Events.update_data();
+  if (Events.enabled && Events["fleet"][0]) {
+    try {
+      Events.s.events.read();
+      Events.collector.fleet();
+      Events.s.events.write();
+    } catch (e) {
+      Events.exception("Map.fleet_sent (collector)",e);
+    }
+  }   
 };
 
 Map.call('init', true);
