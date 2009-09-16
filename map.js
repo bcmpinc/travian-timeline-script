@@ -550,6 +550,8 @@ Map.fleet_sent = function(contents) {
       Events.s.events.read();
       Events.collector.fleet();
       Events.s.events.write();
+      if (Timeline.enabled)
+        Timeline.draw();
     } catch (e) {
       Events.exception("Map.fleet_sent (collector)",e);
     }
