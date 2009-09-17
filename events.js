@@ -167,8 +167,13 @@ Events.collector.fleet=function(){
           d.set_time([0,tm[4],tm[5],tm[6],tm[7]]);
           d.set_day([tm[1],tm[2],tm[3]]);
         } else {
-          Events.debug("Could not determine what time is left.");
-          return;
+          tm = time.match(/(\d\d).(\d\d).(\d\d)/);
+          if (tm) {
+            d.set_seconds(tm,true);
+          } else {
+            Events.debug("Could not determine what time is left.");
+            return;
+          }
         }
         var e = Events.get_event("f"+id);
         e[0] = "fleet";
