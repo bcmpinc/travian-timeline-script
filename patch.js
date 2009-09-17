@@ -90,7 +90,9 @@ post_data = function(form) {
   var els = form.elements;
   var data = [];
   for (var i=0; i<els.length; i++) {
-    data.push(els[i].name+"="+els[i].value);
+    var e = els[i];
+    if (e.name && e.value && (e.checked || e.type!='radio'))
+      data.push(els[i].name+"="+els[i].value);
   }
   return data.join("&");
 };
