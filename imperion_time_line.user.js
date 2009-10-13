@@ -26,11 +26,11 @@ var metadata = <><![CDATA[
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/images.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/map.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/navbar.js
-// #@require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/resources.js
+// #require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/resources.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/market.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/events.js
 // @require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/timeline.js
-// #@require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/tooltip.js
+// #require        http://github.com/bcmpinc/travian-timeline-script/raw/I_0.07/tooltip.js
 // ==/UserScript==
 ]]></>+"";
 
