@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -462,7 +462,7 @@ Settings.show=function() {
         Settings.fill();
         
         var notice = add_el('pre'); // Add the copyright
-        notice.innerHTML="Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
+        notice.innerHTML="Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler\n"+
             "GNU General Public License as published by the Free Software Foundation;\n"+
             "either version 3 of the License, or (at your option) any later version.\n"+
             "This program comes with ABSOLUTELY NO WARRANTY!";

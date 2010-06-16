@@ -14,7 +14,7 @@ var metadata = <><![CDATA[
 // @exclude        http://*.travian*.*/manual.php*
 // @exclude        http://*.travian*.*/logout.php*
  
-// @copyright      2008, 2009 Bauke Conijn, Adriaan Tichler (http://github.com/bcmpinc/travian-timeline-script)
+// @copyright      2008, 2009, 2010 Bauke Conijn, Adriaan Tichler (http://github.com/bcmpinc/travian-timeline-script)
 // @author         bcmpinc
 // @author         arandia
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
@@ -36,7 +36,7 @@ var metadata = <><![CDATA[
 ]]></>+"";
 
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
