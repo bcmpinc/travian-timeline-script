@@ -18,7 +18,7 @@
  * IMAGES (ours and Travians)
  ****************************************/
 
-Feature.create("Images");
+Feature.create("Images", new Error(21));
 // There are two formats for troops to be in. Uncompressed indexes for all races, compressed only for local
 // 'troops' and 'res' both return the class name
 Images.troops = function(index, compressed){

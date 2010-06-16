@@ -105,4 +105,8 @@ Math.round_sig= function(amount, sigfig){
     return amount;
 };
 
-function nothing(){}
+nothing = function(){};
+
+$.create=function(type) {
+    return $(document.createElement(type));
+};

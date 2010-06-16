@@ -14,7 +14,7 @@
  * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
-...
+... , new Error(21)
 
 // This is used for xmlhttprequests.
 Active.absolute_server = location.href.match('http://[.a-z0-9]*')+'';

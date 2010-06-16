@@ -18,7 +18,7 @@
  * MARKET
  ****************************************/
 
-Feature.create("Market");
+Feature.create("Market", new Error(21));
 
 Market.s.enabled.description="Color the market offers to quickly determine their value.";
 Market.update_colors=true; // tells whether the next call to colorify should recolor the table.

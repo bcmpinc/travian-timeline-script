@@ -18,16 +18,15 @@
  * SIDEBAR
  ****************************************/
 
-Feature.create("Sidebar");
+Feature.create("Sidebar", new Error(21));
 
 Sidebar.s.enabled.description="Cutomize the sidebar";
 
 Sidebar.init=function(){
-    Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <br>");
+    Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <p>");
     Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
     Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
-    //Servse no purpose: (though is an idea to add to other links)
-    //Sidebar.setting("remove_target_blank", true, Settings.type.bool, undefined, "Removes target=\"_blank\", such that all sidebar links open in the same window.");
+    Sidebar.setting("extern_in_new_window", true, Settings.type.bool, undefined, "Causes the sidebar links that point to a non-in-game page to open in a new window/tab.");
     Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
 
     // Numbers for original sidebar links
@@ -47,9 +46,9 @@ Sidebar.init=function(){
     Sidebar.setting("links",
                     [
                      1,
-                     ["FAQ", "http://help.travian.nl/"],
+                     ["FAQ", "http://help.travian.nl"],
                      ["Travian Forum", "http://forum.travian.nl"],
-                     ["Wiki","http://wiki.travianteam.com/mediawiki/index.php/"],
+                     ["Wiki","http://travian.wikia.com"],
                      -1,
                      2,
                      ["Alliance Forum", "/allianz.php?s=2"],
@@ -67,84 +66,59 @@ Sidebar.init=function(){
                      ],Settings.type.object,undefined,"The links of the sidebar.");
 };
     
-Sidebar.add=function(text, target) {
-    var el;
-    if (target=="") {
-        el=document.createElement("b"); // Create a bold header
-    } else {
-        el=document.createElement("a"); // Create a normal link
-        el.href=target;
-    }
-    el.innerHTML = text;
-    Sidebar.navi.appendChild(el);
-};
-Sidebar.add_break=function() {
-    if (Sidebar.use_hr) {
-        Sidebar.navi.appendChild(document.createElement("hr"));
-    } else {
-        Sidebar.navi.appendChild(document.createElement("br"));
-        Sidebar.navi.appendChild(document.createElement("br"));
-    }
-};
 Sidebar.run=function() {
     if (Sidebar.remove_plus_button) {
-        var plus = document.getElementById("plus");
-        if (plus) {
-            plus.style.visibility="hidden";
-        } else {
+        if ($("#plus").css("visibility", "hidden").length==0) {
             this.info("Couldn't find the plus button.");
         }
     }
 
-    Sidebar.navi = document.getElementById("sleft");
-    if (!Sidebar.navi) {
+    var navi = $("#side_navi");
+    if (navi.length==0) {
         this.warning("Couldn't find sidebar.");        
         return;
     }
     
+    var logo = navi.find("#logo");
     if (Sidebar.remove_home_link)
-        Sidebar.navi.childNodes[1].href=location.href;
+        logo.attr("href",location.href);
         
     // Make copy of links
-    Sidebar.oldnavi = [];
-    for (var i = 2; i < Sidebar.navi.childNodes.length; i++) {
-        var ch=Sidebar.navi.childNodes[i];
-        for (var ii = 0; ii < ch.childNodes.length; ii++) {
-            var ch2=ch.childNodes[ii];
-            if (ch2.tagName=="A") {
-                Sidebar.oldnavi.push(ch2);
-            }
-        }
-    }
+    var oldnavi = navi.find("p>a");
     
     // Remove all links
-    for (var i = Sidebar.navi.childNodes.length - 1; i>=2; i--)
-        Sidebar.navi.removeChild(Sidebar.navi.childNodes[i]);
+    oldnavi.detach();
+    navi.find("p").remove();
     
     // Create a link container (p);
-    var p=document.createElement("p");
-    Sidebar.navi.appendChild(p);
-    Sidebar.navi=p;
+    var newnavi = $.create("p");
     
     // Add new links
     for (var i = 0; i < Sidebar.links.length; i++) {
         var x = Sidebar.links[i];
         if (x.constructor == Array) {
-            Sidebar.add(x[0], x[1]);
+            var el=$.create("a").text(x[0]).attr("href",x[1]);
+            if (Sidebar.extern_in_new_window && x[1].match("^https?://"))
+                el.attr("target", "_blank");
+            newnavi.append(el);
         } else if (x.constructor == String) {
-            Sidebar.add(x, "");
+            newnavi.append($.create("b").text(x));
         } else if (x<0) {
-            Sidebar.add_break();
+            if (Sidebar.use_hr) {
+                newnavi.append($.create("hr"));
+            } else {
+                newnavi.append($.create("br"));
+            }
         } else {
-            var el = Sidebar.oldnavi[x];
-            this.debug(el+" i="+i+" x="+x);
-            //if (Sidebar.remove_target_blank)
-            //    el.removeAttribute("target"); // Force all links to open in the current page.
+            var el = oldnavi.eq(x);
             if (Sidebar.remove_plus_color)
-                el.innerHTML=el.textContent; // Remove color from Plus link.
-            Sidebar.navi.appendChild(el);
+                el.text(el.text()); // Remove color from Plus link.
+            newnavi.append(el);
         }
     }
+
+    // Insert new links.
+    logo.after(newnavi);
 };
 
 Sidebar.call('init', true);

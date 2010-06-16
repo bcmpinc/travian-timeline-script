@@ -18,7 +18,7 @@
  * RESOURCES
  ****************************************/
     
-Feature.create("Resources");
+Feature.create("Resources", new Error(21));
 
 Resources.s.enabled.description="Turn on resource and resource rate collection.";
 Resources.init=function(){

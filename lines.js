@@ -18,7 +18,7 @@
  * LINES (and circles)
  ****************************************/
 
-Feature.create("Lines");
+Feature.create("Lines", new Error(21));
 
 Lines.s.enabled.description="Enable the map lines";
 Lines.init=function(){

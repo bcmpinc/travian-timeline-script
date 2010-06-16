@@ -18,7 +18,7 @@
  * EVENTS
  ****************************************/
 
-Feature.create("Events");
+Feature.create("Events", new Error(21));
 
 Events.s.enabled.description="Enable the event data collector";
 Events.init=function(){

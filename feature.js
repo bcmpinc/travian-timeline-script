@@ -123,7 +123,7 @@ Feature.create=function(name, error){
     var x=new Object();
     x.__proto__=Feature;
     x.name = name;
-    x.line_number_shift = error==undefined?0:error.lineNumber - error.message;
+    x.line_number_shift = error.lineNumber - error.message;
     x.s=new Object();
     Feature.list[name]=x;
     x.init_debug();

@@ -17,7 +17,7 @@
 /****************************************
  * Village Tool Tip
  ****************************************/
-Feature.create("Tooltip");
+Feature.create("Tooltip", new Error(21));
 
 Tooltip.s.enabled.description = "Enable the Village Tooltip (ensure the event collection feature is also enabled).";
 
