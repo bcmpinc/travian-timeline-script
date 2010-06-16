@@ -441,7 +441,8 @@ Settings.show=function() {
             var f = Feature.list[n];
             if (f.s == undefined || isempty(f.s)) continue;
 
-            txt += '<tr align="right"><td style="padding: 5px 2px; text-align: right; border: none;"><a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
+            txt += '<tr align="right"><td style="padding: 5px 2px; text-align: right; border: none; background: none;">'+
+                '<a href="#" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
                 'padding:1px 11px 2px; border: 2px solid #000; '+
                 (n==Settings.current_tab?'background: #fff; border-right: none;':'background: #ddd; border-right: 3px solid black;')+
                 ' color:black; outline: none; cursor:pointer;">'+
@@ -458,6 +459,7 @@ Settings.show=function() {
         tabbar.style.top   = "-200px";
         tabbar.style.border= "none";
         tabbar.style.borderCollapse = "collapse";
+        tabbar.style.background= "none";
         
         Settings.fill();
         
