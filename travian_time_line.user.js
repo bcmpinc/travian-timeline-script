@@ -19,19 +19,19 @@ var metadata = <><![CDATA[
 // @author         arandia
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/jquery-latest.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/patch.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/date.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/feature.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/settings.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/images.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/lines.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/sidebar.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/resources.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/market.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/events.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/timeline.js
-// @require        http://github.com/bcmpinc/travian-timeline-script/raw/v0.37/tooltip.js
+// @require        jquery-latest.js
+// @require        patch.js
+// @require        date.js
+// @require        feature.js
+// @require        settings.js
+// @require        images.js
+// @require        lines.js
+// @require        sidebar.js
+// @require        resources.js
+// @require        market.js
+// @require        events.js
+// @require        timeline.js
+// @require        tooltip.js
 // ==/UserScript==
 ]]></>+"";
 
