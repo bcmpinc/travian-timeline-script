@@ -128,8 +128,8 @@ Tooltip.parse_event = function(e, time){
     var rtn = '<td vAlign="bottom">';
     if (Tooltip.relative_time){
         var diff = e[1] - time;
-        rtn += Math.floor(diff/3600000)+':'+pad2(Math.floor((diff%3600000)/60000)) + '</td>';
-    } else rtn += e_time.getHours()+':'+pad2(e_time.getMinutes())+'</td>';
+        rtn += Math.floor(diff/3600000)+':'+Math.floor((diff%3600000)/60000).pad2() + '</td>';
+    } else rtn += e_time.getHours()+':'+e_time.getMinutes().pad2()+'</td>';
 
     if (Tooltip.show_info && (e[3] || e[4])) {
         rtn += '<td vAlign="bottom" style="color:'+Events.type[e[0]][0]+'">'+e[2]+"</td><td>";
@@ -309,7 +309,7 @@ Tooltip.make_header = function(rota, time, did){
                         // Turn red if value is decreasing or overflowing, or orange if within two hours of overflowing
                         rtn += '<td style="color:'+(p < 0 ? 'red' : time < 7200 ? 'orange' : 'green')+'">';
                         if (time >= 86400) rtn += Math.floor(time/86400)+'d '; // Possibly include days
-                        rtn += Math.floor((time%86400)/3600)+':'+pad2(Math.floor((time%3600)/60))+'</td>';
+                        rtn += Math.floor((time%86400)/3600)+':'+Math.floor((time%3600)/60).pad2()+'</td>';
                         values.push(time);
                     }
                 } else {
@@ -441,7 +441,5 @@ Tooltip.run = function(){
     Tooltip.overview();
 };
 
-if (Settings.natural_run){
-    Tooltip.call('init', true);
-    $(function(){Tooltip.call('run',true);});
-}
+Tooltip.call('init', true);
+$(function(){Tooltip.call('run',true);});

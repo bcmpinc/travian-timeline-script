@@ -21,6 +21,9 @@
 // Create the Feature object (namespace)
 Feature=new Object();
 
+// Calculate Error line number shift
+Feature.line_number_shift = new Error().lineNumber - 25;
+
 // A list containing all created features.
 Feature.list=[];
 
@@ -65,7 +68,7 @@ Feature.init_debug=function(){
 };
 
 Feature.exception=function(fn_name, e) {
-    var msg = fn_name+' ('+(e.lineNumber)+'): '+e;
+    var msg = fn_name+' ('+(e.lineNumber-this.line_number_shift)+'): '+e;
     this.error(msg);
 };
 
@@ -80,21 +83,25 @@ Feature.exception=function(fn_name, e) {
 // {method} can also be replaced by a fieldname for accessing the setting's
 // meta data. For example: {feature}.s.{setting name}.description.
 //
-// @param typedata: The meaning of the typedata depends on the value of type. 
-Feature.setting=function(name, def_val, type, typedata, description, hidden) {
+// @param name:        The name of the setting. 
+// @param def_val:     The script's hard-coded default value.
+// @param type:        The type of the setting
+// @param typedata:    The meaning of the typedata depends on the value of type. 
+// @param description: A small sentence that describes the meaning of the setting.
+//                     If it has a unit (ex: sec., pixels) this should be added at
+//                     at the end in parenthesis. (ex: "(in pixels)")
+// TODO: Avoid promoting 'persistent storage only' settings.
+Feature.setting=function(name, def_val, type, typedata, description) {
     if (type==undefined) type=Settings.type.none;
     var s = new Object();
     s.__proto__   = Settings;
     s.parent      = this;
-    s.server      = Settings.server;
-    s.user        = Settings.username;
     s.scopes      = [s.server+'.'+s.user, s.server, 'global'];
     s.name        = name;
     s.def_val     = def_val;
     s.type        = type;
     s.typedata    = typedata;
     s.description = description;
-    s.hidden      = hidden;
     s.external    = false;
 
     s.fullname    = this.name+'.'+name;
@@ -107,62 +114,37 @@ Feature.setting=function(name, def_val, type, typedata, description, hidden) {
     return s;
 };
 
-// This creates a new setting-like variable that resides in non-local, non-global scope
-// (ie in the scope of another user). We need this because it's a pain in the ass to use
-// the read/write scoping methods otherwise - if you want to write data to x users, you
-// have to copy the data all out into the local variable x times and call the write
-// function, and then reload the original one... awful. :(
-
-// The value of the variable is at {feature}.{server}.{user}.{setting name}.
-// The associated object, methods etc is at {feature}.{server}.{user}.s.{setting name}.
-// The methods are identical to those provided to Settings.setting(), as is metadata access.
-
-// These variables will never be displayed in on the local settings tab; however, it could
-// be displayed on the internal script pages so all parameters are important.
-Feature.external=function(server, user, name, def_val, type, typedata, description, hidden){
-    if (type==undefined) type = Settings.type.none;
-    var s = new Object();
-    s.__proto__   = Settings;
-    s.parent      = this;
-    s.server      = server;
-    s.user        = user;
-    s.scopes      = [s.server+'.'+s.user, s.server, 'global'];
-    s.name        = name;
-    s.def_val     = def_val;
-    s.type        = type;
-    s.typedata    = typedata;
-    s.description = description;
-    s.hidden      = hidden;
-    s.external    = true;
-
-    s.fullname    = this.name+'.'+name;
-
-    // Create the storage objects...
-    if (this[server] == undefined)         this[server] = {};
-    if (this[server][user] == undefined)   this[server][user] = {};
-    if (this[server][user].s == undefined) this[server][user].s = new Object();
-
-    this[server][user].s[name] = s;
-    this[server][user][name]   = def_val;
-
-    s.read();
-    return s;
-};
-
 // This creates a new feature.
 // This new feature will be available in the global namespace.
 // Override run and init for respectively 'DOM accessing and modifying code' and 
 // 'initialization code that does not touch the DOM (document)'.
-Feature.create=function(name){
+// The error is used to get the error messages' linenumbers right.
+Feature.create=function(name, error){
     var x=new Object();
     x.__proto__=Feature;
     x.name = name;
+    x.line_number_shift = error==undefined?0:error.lineNumber - error.message;
     x.s=new Object();
     Feature.list[name]=x;
     x.init_debug();
     if (global.Settings) x.setting("enabled", true, Settings.type.bool, undefined, "Is '"+name+"' enabled?");
     global[name]=x;
     return x;
+};
+
+// Returns a function that will call the argument function and 
+// properly catch exceptions.
+// @param fn_name: Name of the gaurded function (for debugging)
+// @param fn:      The gaurded function.
+Feature.guard=function(fn_name, fn) {
+    var feat = this;
+    return function() {
+        try {
+            return fn.apply(feat, arguments);
+        } catch (e) {
+            feat.exception("guard "+feat.name+'.'+fn_name, e);
+        }
+    };
 };
 
 // Executes the function specified by fn_name wrapped by a try..catch block if
@@ -185,3 +167,4 @@ Feature.call=function(fn_name, once) {
     this.end[fn_name] = new Date().getTime();
     // TODO: make this timing info visible somewhere.
 };
+

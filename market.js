@@ -67,7 +67,5 @@ Market.run=function(){
     }
 };
 
-if (Settings.natural_run){
-    Market.call('init', true);
-    $(function(){Market.call('run',true);});
-}
+Market.call('init', true);
+$(function(){Market.call('run',true);});

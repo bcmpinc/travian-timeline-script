@@ -49,11 +49,12 @@ String.prototype.pad = function(n,s,rev) {
         return this+s.repeat(n);
 };
 
-function pad2(x) {
-    if (x<10)
-        return "0"+x;
-    return x;
-}
+// Makes sure that the number 
+Number.prototype.pad2 = function() {
+    if (this<10)
+        return "0"+this;
+    return this;
+};
 
 function isempty(ob) {
     for(var i in ob) {if(ob.hasOwnProperty(i)){return false;}}

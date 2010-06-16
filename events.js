@@ -55,30 +55,32 @@ Events.init=function(){
 // There is no report type, because there are different types of reports, which can also be divided over the currently
 // available types.
 
-/* A event-data-packet torn apart:
+/* An event-data-packet torn apart:
    Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
-   129390: #### ~ The village id
-   'b9930712': #### ~ Some identifier that is both unqiue and consistent between page loads.
-   ["building", 0 ~ Type of event
-   1225753710000, 1 ~ Estimated time at which this event occure(s|d).
-   "Granary (level 6)", 2 ~ Event message.
-   3 ~ For events that might include armies (can be 'undefined')
-   [0, 3. 0 ~ Amount of farm-men involved
-   0, 3. 1 ~ Amount of defense-men involved
-   0, 3. 2 ~ Amount of attack-men involved
-   0, 3. 3 ~ Amount of scouts involved
-   0, 3. 4 ~ Amount of defense-horses involved
-   0, 3. 5 ~ Amount of attack-horses involved
-   0, 3. 6 ~ Amount of rams involved
-   0, 3. 7 ~ Amount of trebuchets involved
-   0, 3. 8 ~ Amount of leaders involved
-   0, 3. 9 ~ Amount of settlers involved
-   0], 3.10 ~ Amount of heros involved
-   4 ~ For events that might include resources (can be 'undefined')
-   [0, 4. 0 ~ Amount of wood involved
-   0, 4. 1 ~ Amount of clay involved
-   0, 4. 2 ~ Amount of iron involved
-   0]] 4. 3 ~ Amount of grain involved
+   129390: {              #### ~ The village id
+    'b9930712':           #### ~ Some identifier that is both unqiue and consistent between page loads.
+    ["building",          0    ~ Type of event
+     1225753710000,       1    ~ Estimated time at which this event occure(s|d).
+     "Granary (level 6)", 2    ~ Event message.
+                          3    ~ For events that might include armies (can be 'undefined')
+     [0,                  3. 0 ~ Amount of farm-men involved
+      0,                  3. 1 ~ Amount of defense-men involved
+      0,                  3. 2 ~ Amount of attack-men involved
+      0,                  3. 3 ~ Amount of scouts involved
+      0,                  3. 4 ~ Amount of defense-horses involved
+      0,                  3. 5 ~ Amount of attack-horses involved
+      0,                  3. 6 ~ Amount of rams involved
+      0,                  3. 7 ~ Amount of trebuchets involved
+      0,                  3. 8 ~ Amount of leaders involved
+      0,                  3. 9 ~ Amount of settlers involved
+      0],                 3.10 ~ Amount of heros involved
+                          4    ~ For events that might include resources (can be 'undefined')
+     [0,                  4. 0 ~ Amount of wood involved
+      0,                  4. 1 ~ Amount of clay involved
+      0,                  4. 2 ~ Amount of iron involved
+      0]                  4. 3 ~ Amount of grain involved
+    ]
+   }
    Instead of a number, the fields in field 4 and 5 are also allowed to be a tuple (list).
    In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
 */
@@ -97,13 +99,13 @@ Events.get_event=function(village, id, overwrite) {
     if (e == undefined) {
         e = {};
         Events.events[village]=e;
-        this.debug("Added village: "+village);
+        Events.debug("Added village: "+village);
     }
     e = Events.events[village][id];
     if (e == undefined || overwrite === true) {
         e = [];
         Events.events[village][id]=e;
-        this.debug("Created element: "+id);
+        Events.debug("Created element: "+id);
     }
     return e;
 };
@@ -111,13 +113,11 @@ Events.get_event=function(village, id, overwrite) {
 Events.update_data=function() {
     Events.s.events.read(); // Make sure the variable data is up to date.
     // Collect new stuff
-    if (Settings.natural_run){
-        for (var c in Events.collector) {
-            try {
-                Events.collector[c]();
-            } catch (e) {
-                this.exception("Events.collector."+c,e);
-            }
+    for (var c in Events.collector) {
+        try {
+            Events.collector[c]();
+        } catch (e) {
+            Events.exception("Events.collector."+c,e);
         }
     }
 
