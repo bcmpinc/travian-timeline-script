@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -20,6 +20,9 @@
   
 // Create the Feature object (namespace)
 Feature=new Object();
+
+// Calculate Error line number shift
+Feature.line_number_shift = new Error().lineNumber - 25;
 
 // A list containing all created features.
 Feature.list=[];
@@ -65,7 +68,7 @@ Feature.init_debug=function(){
 };
 
 Feature.exception=function(fn_name, e) {
-    var msg = fn_name+' ('+(e.lineNumber)+'): '+e;
+    var msg = fn_name+' ('+(e.lineNumber-this.line_number_shift)+'): '+e;
     this.error(msg);
 };
 
@@ -80,7 +83,14 @@ Feature.exception=function(fn_name, e) {
 // {method} can also be replaced by a fieldname for accessing the setting's
 // meta data. For example: {feature}.s.{setting name}.description.
 //
-// @param typedata: The meaning of the typedata depends on the value of type. 
+// @param name:        The name of the setting. 
+// @param def_val:     The script's hard-coded default value.
+// @param type:        The type of the setting
+// @param typedata:    The meaning of the typedata depends on the value of type. 
+// @param description: A small sentence that describes the meaning of the setting.
+//                     If it has a unit (ex: sec., pixels) this should be added at
+//                     at the end in parenthesis. (ex: "(in pixels)")
+// TODO: Avoid promoting 'persistent storage only' settings.
 Feature.setting=function(name, def_val, type, typedata, description) {
     if (type==undefined) type=Settings.type.none;
     var s = new Object();
@@ -106,17 +116,33 @@ Feature.setting=function(name, def_val, type, typedata, description) {
 // This new feature will be available in the global namespace.
 // Override run and init for respectively 'DOM accessing and modifying code' and 
 // 'initialization code that does not touch the DOM (document)'.
-Feature.create=function(name,lineshift){
+// The error is used to get the error messages' linenumbers right.
+Feature.create=function(name, error){
     var x=new Object();
     x.__proto__=Feature;
     x.name = name;
+    x.line_number_shift = error.lineNumber - error.message;
     x.s=new Object();
     Feature.list[name]=x;
-    x.lineshift=lineshift||0;
     x.init_debug();
     if (global.Settings) x.setting("enabled", true, Settings.type.bool, undefined, "Is '"+name+"' enabled?");
     global[name]=x;
     return x;
+};
+
+// Returns a function that will call the argument function and 
+// properly catch exceptions.
+// @param fn_name: Name of the gaurded function (for debugging)
+// @param fn:      The gaurded function.
+Feature.guard=function(fn_name, fn) {
+    var feat = this;
+    return function() {
+        try {
+            return fn.apply(feat, arguments);
+        } catch (e) {
+            feat.exception("guard "+feat.name+'.'+fn_name, e);
+        }
+    };
 };
 
 // Executes the function specified by fn_name wrapped by a try..catch block if
@@ -132,7 +158,6 @@ Feature.call=function(fn_name, once) {
     try {
         this[fn_name]();
     } catch (e) {
-        e.lineNumber-=this.lineshift;
         this.exception("call "+this.name+'.'+fn_name, e);
     }
     if (once) this[fn_name]=nothing;
@@ -140,3 +165,4 @@ Feature.call=function(fn_name, once) {
     this.end[fn_name] = new Date().getTime();
     // TODO: make this timing info visible somewhere.
 };
+

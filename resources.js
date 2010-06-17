@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@
  * RESOURCES
  ****************************************/
     
-Feature.create("Resources");
+Feature.create("Resources", new Error(21));
 
 Resources.s.enabled.description="Turn on resource and resource rate collection.";
 Resources.init=function(){
@@ -189,7 +189,5 @@ Resources.run=function(){
     if (Resources.display) Resources.show();
 };
 
-if (Settings.natural_run){
-    Resources.call('init', true);
-    $(function(){Resources.call('run',true);});
-}
+Resources.call('init', true);
+$(function(){Resources.call('run',true);});

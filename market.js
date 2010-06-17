@@ -18,7 +18,7 @@
  * MARKET
  ****************************************/
 
-Feature.create("Market");
+Feature.create("Market", new Error(21));
 
 Market.s.enabled.description="Enable market buy page enhancements";
 

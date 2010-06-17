@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@
  * NAVIGATION BAR
  ****************************************/
 
-Feature.create("Navbar", new Error().lineNumber);
+Feature.create("Navbar", new Error(21));
 
 Navbar.s.enabled.description="Cutomize the sidebar";
 

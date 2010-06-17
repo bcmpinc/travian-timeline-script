@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@
  * SETTINGS
  ****************************************/
 
-Feature.create("Settings",new Error().lineNumber-21);
+Feature.create("Settings", new Error(21));
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5, set: 6};
 
 // Determine server

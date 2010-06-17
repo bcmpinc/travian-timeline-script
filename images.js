@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@
  * IMAGES (ours and Travians)
  ****************************************/
 
-Feature.create("Images",new Error().lineNumber-21);
+Feature.create("Images", new Error(21));
 delete Images.s.enabled; // It does not care what the value is.
 Images.get = function(){
   return $.new("img").attr({src: this.src});

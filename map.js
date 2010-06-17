@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -19,7 +19,7 @@
  * [actually just MAP]
  ****************************************/
 
-Feature.create("Map",new Error().lineNumber-22);
+Feature.create("Map",new Error(22));
 
 Map.s.enabled.description="Enable map enhacements";
 Map.init=function(){

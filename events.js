@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@
  * EVENTS
  ****************************************/
 
-Feature.create("Events",new Error().lineNumber-21);
+Feature.create("Events", new Error(21));
 
 Events.s.enabled.description="Enable the event data collector";
 Events.init=function(){
@@ -86,7 +86,7 @@ Events.get_event=function(id, overwrite) {
     if (e == undefined || overwrite === true) {
         e = [];
         Events.events[village][id]=e;
-        this.debug("Created element: "+id);
+        this.debug("Created event: "+id);
     }
     return e;
 };
@@ -130,24 +130,31 @@ Events.run=function() {
 Events.collector={};
 
 Events.collector.building=function(){
-    var table = $("#buildingQueue table tr");
+    var table = $("#buildingQueue table tr td.fontCenter a");
 
     Events.debug("Collecting "+table.length+" build tasks.");
     table.each(function() {
         var $this=$(this);
-        var id = "b"+($this.find("a").attr("href").replace("/building/delEvent/","")-0);
+        var id = "b"+($this.attr("href").replace("/building/delEvent/","")-0);
         var e = Events.get_event(id);
+        $this = $this.parent().parent();
 
         e[0]="building";
     
         var d = new tl_date(Events);
         var cells=$this.find("td");
-        d.set_time(cells.get(3).textContent.match('(\\d\\d):(\\d\\d):(\\d\\d) ?([a-z]*)'));
-        d.adjust_day(cells.get(2).textContent.match('(\\d+):(\\d\\d):(\\d\\d)'));
-        e[1] = d.get_time();
-        e[2] = cells.get(1).textContent;
+        e[2] = cells.eq(1).text();
 
-        Events.debug("Time set to "+e[1]);
+        d.set_time(cells.eq(3).text().match('(\\d\\d):(\\d\\d):(\\d\\d) ?([a-z]*)'));
+        d.adjust_day([0,0]);            
+        e[1] = d.get_time();
+
+        cells.eq(2).one("DOMSubtreeModified", function(){
+            d.adjust_day(cells.eq(2).text().match('(\\d+):(\\d\\d):(\\d\\d)'));
+            e[1] = d.get_time();
+            Events.debug("Time set to "+e[1]);
+            //Timeline.delayed_draw();
+        });
     });
 };
 

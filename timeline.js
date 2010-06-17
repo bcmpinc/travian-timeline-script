@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler
+ * Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler
  *
  * This is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@
  * TIMELINE
  ****************************************/
 
-Feature.create("Timeline", new Error().lineNumber-21);
+Feature.create("Timeline",new Error(21));
 
 Timeline.s.enabled.description = "Enable the timeline (make sure that the events feature is also enabled).";
     
@@ -306,7 +306,7 @@ Timeline.draw=Timeline.guard("draw", function() {
         }
     }
     g.restore();
-};
+});
 
 Timeline.updater=function() {
     Timeline.draw();
