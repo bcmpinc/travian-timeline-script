@@ -68,10 +68,10 @@ Timeline.create_canvas=function() {
     $(window).resize(Timeline.delayed_draw);
     
     Timeline.canvas.attr({
-      width: Timeline.width,
+        width: Timeline.width,
     }).css({
-      position: "absolute",
-      right: "0px"
+        position: "absolute",
+        right: "0px"
     });
 
     Timeline.element.css({
@@ -170,54 +170,8 @@ Timeline.load_images=function() {
     }
 };
 
-Timeline.draw_info=function(img,nrs) {
-    if (!nrs) return;
-    var g = Timeline.context;
-    try {
-        g.translate(-img.width - 8, 0);
-        g.drawImage(img, -0.5, Math.round(-img.height*0.7) -0.5);
-    } catch (e) {
-        // This might fail if the image is not yet or can't be loaded.
-        // Ignoring this exception prevents the script from terminating to early.
-        var fs = g.fillStyle;
-        g.fillStyle = "rgb(128,128,128)";
-        g.translate(-24,0);
-        g.mozDrawText("??");
-        g.fillStyle = fs;
-    }
-    if (nrs.constructor == Array) {
-        g.fillStyle = "rgb(192,0,0)";
-        g.translate(-g.mozMeasureText(-nrs[1]) - 2, 0);
-        g.mozDrawText(-nrs[1]);
-        g.fillStyle = "rgb(0,0,255)";
-        g.translate(-g.mozMeasureText(nrs[0]), 0);
-        g.mozDrawText(nrs[0]);
-    } else {
-        g.translate(-g.mozMeasureText(nrs) - 2, 0);
-        g.mozDrawText(nrs);
-    }
-}
-
-Timeline.draw=Timeline.guard("draw", function() {
-    if (Timeline.delayed_draw_timeout) clearTimeout(Timeline.delayed_draw_timeout);
-
-    // Check if the height has changed
-    if (Timeline.height != window.innerHeight) {
-        // Determine the height
-        Timeline.height = window.innerHeight;
-
-        // Apply the new height (which cleares the canvas)
-        Timeline.element.css("height", Timeline.height + "px");
-        Timeline.canvas.attr("height", Timeline.height);
-    }
-    
-    // Determine current time
-    Timeline.now=new Date().getTime();
-
-    // Get context
-    var g = Timeline.context;
-    g.clearRect(0,0,Timeline.width,Timeline.height);
-    g.save();
+Timeline.draw_scale=function() {
+    var g=Timeline.context;
     
     // Draw bar
     g.translate(Timeline.width - 9.5, 0);
@@ -252,6 +206,7 @@ Timeline.draw=Timeline.guard("draw", function() {
         if (x<=lastmark) continue;
         lastmark=x;
     
+        // Determine the marker label and length
         var a=-8;
         var b= 0;
         var m="";
@@ -272,6 +227,7 @@ Timeline.draw=Timeline.guard("draw", function() {
         else if ((x%    5000)==0) {a= 0; b=1;                } //  5 sec.
         else if ((x%    1000)==0) {a= 0; b=2;                } //  1 sec.
     
+        // Draw everything
         g.beginPath();
         g.moveTo(a, y);
         g.lineTo(b, y);
@@ -283,11 +239,49 @@ Timeline.draw=Timeline.guard("draw", function() {
             g.restore();
         }
     }
+};
+
+Timeline.draw=Timeline.guard("draw", function() {
+    if (Timeline.delayed_draw_timeout) clearTimeout(Timeline.delayed_draw_timeout);
+
+    // Check if the height has changed
+    if (Timeline.height != window.innerHeight) {
+        // Determine the height
+        Timeline.height = window.innerHeight;
+
+        // Apply the new height (which cleares the canvas)
+        Timeline.element.css("height", Timeline.height + "px");
+        Timeline.canvas.attr("height", Timeline.height);
+    }
+    
+    // Determine current time
+    Timeline.now=new Date().getTime();
+
+    // Get context
+    var g = Timeline.context;
+    g.clearRect(0,0,Timeline.width,Timeline.height);
+    g.save();
+
+    // Calculate position of 'now'
+    var y = Timeline.warp(Timeline.now);
+
+    // Highlight the 'elapsed time since last refresh'
+    var y2 = Timeline.warp(Events.pageload);
+    g.fillStyle = "rgba(0,128,255,0.1)";
+    g.fillRect(0, y,Timeline.width, y2-y);
+
+    // Gray-out forgotten history
+    var y3 = Timeline.warp(Events.old);
+    g.fillStyle = "rgba(0,0,0,0.5)";
+    if (y3>0)
+        g.fillRect(0, 0,Timeline.width, y3);
+
+    // Draw the scale (applies a coordinate trasformation)
+    Timeline.draw_scale();
 
     // Draw current time
     g.strokeStyle = "rgb(0,0,255)";
     g.beginPath();
-    var y = Timeline.warp(Timeline.now);
     g.moveTo(-8, y);
     g.lineTo( 4, y);
     g.lineTo( 6, y-2);
@@ -304,17 +298,6 @@ Timeline.draw=Timeline.guard("draw", function() {
     g.translate(-g.mozMeasureText(m)-10, 4+y);
     g.mozDrawText(m);
     g.restore();
-
-    // Highlight the 'elapsed time since last refresh'
-    var y2 = Timeline.warp(Events.pageload);
-    g.fillStyle = "rgba(0,128,255,0.1)";
-    g.fillRect(9-Timeline.width, y,Timeline.width+1, y2-y);
-
-    // Darken forgotten history
-    var y3 = Timeline.warp(Events.old);
-    g.fillStyle = "rgba(0,0,0,0.5)";
-    if (y3>0)
-        g.fillRect(9-Timeline.width, 0,Timeline.width+1, y3);
 
     function left(q) {
         if (q.constructor == Array)
@@ -408,6 +391,35 @@ Timeline.draw_events=Timeline.guard("draw_events",function(g){
         }
     }
 });
+
+Timeline.draw_info=function(img,nrs) {
+    if (!nrs) return;
+    var g = Timeline.context;
+    try {
+        g.translate(-img.width - 8, 0);
+        g.drawImage(img, -0.5, Math.round(-img.height*0.7) -0.5);
+    } catch (e) {
+        // This might fail if the image is not yet or can't be loaded.
+        // Ignoring this exception prevents the script from terminating to early.
+        var fs = g.fillStyle;
+        g.fillStyle = "rgb(128,128,128)";
+        g.translate(-24,0);
+        g.mozDrawText("??");
+        g.fillStyle = fs;
+        Timeline.exception("Timeline.draw_info",e);
+    }
+    if (nrs.constructor == Array) {
+        g.fillStyle = "rgb(192,0,0)";
+        g.translate(-g.mozMeasureText(-nrs[1]) - 2, 0);
+        g.mozDrawText(-nrs[1]);
+        g.fillStyle = "rgb(0,0,255)";
+        g.translate(-g.mozMeasureText(nrs[0]), 0);
+        g.mozDrawText(nrs[0]);
+    } else {
+        g.translate(-g.mozMeasureText(nrs) - 2, 0);
+        g.mozDrawText(nrs);
+    }
+};
 
 Timeline.run=function() {
     tp1 = document.getElementById("tp1");

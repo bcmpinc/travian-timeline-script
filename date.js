@@ -17,9 +17,7 @@
 function tl_date(parent){
     this.date = new Date();
     this.parent = parent; // Used for debugging...
-    this.date.setTime(this.date.getTime());
     this.date.setMilliseconds(0);
-    this.start_time = this.date.getTime();
 
     this.set_time = function(time){
         // This takes time as [string, hours, minutes, seconds (optional), 'am' or 'pm' or '' (optional)].
@@ -68,7 +66,7 @@ function tl_date(parent){
  
         // Cover the wrap-around cases. If an event has a duration, then it must be in the future. Hence, if the time we've set for it
         // is in the past, we've done something wrong and it's probably a midnight error.
-        // This check needs to be done carefully, or some events will get pushed 24 hours father into the future than they should be.
+        // This check needs to be done carefully, or some events will get pushed 24 hours further into the future than they should be.
         if (this.date.getTime() < this.start_time-600000) this.date.setDate(this.date.getDate() + 1);
 
         this.parent.info('time is: '+this.date);
@@ -94,6 +92,10 @@ function tl_date(parent){
   
         this.parent.debug('time is: '+this.date);
  
+        return this.date.getTime();
+    }
+    
+    this.get_time = function() {
         return this.date.getTime();
     }
 }
