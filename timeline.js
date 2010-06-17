@@ -31,9 +31,8 @@ Timeline.init=function(){
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
     Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
     Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
-    Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
-    Timeline.setting("collapse_speed", 1500, Settings.type.integer, undefined, "Collapse fade speed (in pixels per second)");
-    Timeline.setting("collapse_rate", 50, Settings.type.integer, undefined, "Update rate of the collapse fading (per second)");
+    Timeline.setting("collapse_width", 65, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
+    Timeline.setting("collapse_delay", 200, Settings.type.integer, undefined, "The time it takes to unfold/collapse the timeline (in milliseconds)");
     Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
 
     Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
@@ -64,83 +63,45 @@ Timeline.delayed_draw=function() {
 Timeline.create_canvas=function() {
 
     // Create timeline canvas + container
-    var tl  = Timeline.canvas  = document.createElement("canvas");
-    var tlc = Timeline.element = document.createElement("div");
+    Timeline.canvas  = $.create("canvas");
+    Timeline.element = $.create("div");
     $(window).resize(Timeline.delayed_draw);
     
-    tlc.style.position = "fixed";
-    tlc.style.top = "0px";
-    tlc.style.right = "0px";
-    tlc.style.width = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
-    tlc.style.zIndex = "20";
-    tlc.style.backgroundColor=Timeline.color;
-    tlc.style.visibility = Timeline.visible?'visible':'hidden';
-    tlc.style.overflow = "hidden";
+    Timeline.canvas.attr({
+      width: Timeline.width,
+    }).css({
+      position: "absolute",
+      right: "0px"
+    });
 
-    tl.id = "tl";
-    tl.width = Timeline.width;
-    tl.style.position = "relative";
-    tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
-    tlc.appendChild(tl);
+    Timeline.element.css({
+        position: "fixed",
+        top: "0px",
+        right: "0px",
+        width: (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px",
+        zIndex: "20000",
+        backgroundColor: Timeline.color,
+        visibility: Timeline.visible?'visible':'hidden',
+        overflow: "hidden",
+        outline: "1px solid #333"
+    }).append(Timeline.canvas);
     
-    document.body.appendChild(tlc);
+    $(document.body).append(Timeline.element);
 
     // Code for expanding/collapsing the timeline.
-    // TODO: Use jquery
     if (Timeline.collapse) {
-        var tl_col_cur = Timeline.collapse_width;
-        var tl_col_tar = Timeline.collapse_width;
-        var tl_col_run = false;
-        var tl_col_prev = 0;
-        function tlc_fade() {
-            var tl_col_next = new Date().getTime();
-            var diff = (tl_col_next - tl_col_prev) / 1000.0;
-            tl_col_prev = tl_col_next;
-            tl_col_run = true;
-            if (tl_col_cur==tl_col_tar) {
-                tl_col_run = false;
-                return;
-            }
-            if (tl_col_cur<tl_col_tar) {
-                tl_col_cur+=Timeline.collapse_speed*diff;
-                if (tl_col_cur>tl_col_tar)
-                    tl_col_cur=tl_col_tar;
-            }
-            if (tl_col_cur>tl_col_tar) {
-                tl_col_cur-=Timeline.collapse_speed*diff;
-                if (tl_col_cur<tl_col_tar)
-                    tl_col_cur=tl_col_tar;
-            }
-            tlc.style.width = tl_col_cur + "px";
-            tlc.firstChild.style.left = (tl_col_cur-Timeline.width)+"px";
-            setTimeout(tlc_fade, 1000/Timeline.collapse_rate);
-        }
-        function tlc_expand(e) {
-            tl_col_tar = Timeline.width;
-            tl_col_prev = new Date().getTime();
-            if (!tl_col_run) tlc_fade();
-        }
-        function tlc_collapse(e) {
-            tl_col_tar = Timeline.collapse_width;
-            tl_col_prev = new Date().getTime();
-            if (!tl_col_run) tlc_fade();
-        }
-        tlc.addEventListener('mouseover',tlc_expand,false);
-        tlc.addEventListener('mouseout',tlc_collapse,false);
-    }
-
-    // Mouse Scroll Wheel
-    function tl_mouse_wheel(e){
-        Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
-
-        e.stopPropagation(); // Kill the event to the standard window...
-        e.preventDefault();
-        Timeline.draw(true);
+        Timeline.element.mouseenter(function() {
+            if (Timeline.visible)
+                Timeline.element.stop().animate({width: Timeline.width},Timeline.collapse_delay);
+        });
+        Timeline.element.mouseleave(function() {
+            if (Timeline.visible)
+                Timeline.element.stop().animate({width: Timeline.collapse_width},Timeline.collapse_delay);
+        });
     }
 
     // Could scroll backwards and forwards on the timeline
-    // We also probably want to stop the mouse scrolling from propegating in this case...
-    tlc.addEventListener('DOMMouseScroll', tl_mouse_wheel, false);
+    Timeline.element.bind('DOMMouseScroll', Timeline.mouse_wheel);
 
     // The click event listener for the link with the 'travian task queue'-script.
     function setAt(e) {
@@ -152,36 +113,45 @@ Timeline.create_canvas=function() {
             at.value=s;
         }
     }
-    tlc.addEventListener("click",setAt,false);
+    Timeline.element.bind("click",setAt);
 
-    Timeline.context=tl.getContext("2d");
+    Timeline.context=Timeline.canvas.get(0).getContext("2d");
     Timeline.context.mozTextStyle = "8pt Monospace";
+};
+
+Timeline.mouse_wheel=function(e) {
+    Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
+    e.stopPropagation(); // Kill the event to the standard window...
+    e.preventDefault(); // Prevent the mouse scrolling from propegating
+    Timeline.draw();
 };
 
 Timeline.toggle=function() {
     Timeline.visible=!Timeline.visible;
-    Timeline.element.style.visibility=Timeline.visible?'visible':'hidden';
+    Timeline.element.css({visibility: Timeline.visible?'visible':'hidden'});
     Timeline.s.visible.write();
 };
 
 Timeline.create_button=function() {
-    button = document.createElement("div");
-    button.style.position = Timeline.element.style.position;
-    button.style.backgroundColor = "rgba(0,0,128,0.5)";
-    button.style.right = "0px";
-    button.style.top = "-2px";
-    button.style.width = "60px";
-    button.style.height = "21px";
-    button.style.zIndex = "20";
-    button.style.textAlign = "center";
-    button.style.color = "#fff";
-    button.style.fontWeight = "bold";
-    button.style.fontSize = '12px';
-    button.style.MozBorderRadiusBottomleft = "6px";
-    button.style.cursor = "pointer";
-    button.addEventListener('click',Timeline.toggle,false);
-    button.innerHTML = "timeline";
-    document.body.appendChild(button);
+    button = $.create("div");
+    button.css({
+      position: "fixed",
+      backgroundColor: "rgba(0,0,128,0.5)",
+      right: "0px",
+      top: "-2px",
+      width: "65px",
+      height: "17px",
+      zIndex: 40000,
+      textAlign: "center",
+      color: "#fff",
+      fontWeight: "bold",
+      fontSize: "12px",
+      MozBorderRadiusBottomleft: "6px",
+      cursor: "pointer"
+    });
+    button.click(Timeline.toggle);
+    button.text("time line");
+    $(document.body).append(button);
 };
 
 // TODO: this should really be in Images.
@@ -237,8 +207,8 @@ Timeline.draw=Timeline.guard("draw", function() {
         Timeline.height = window.innerHeight;
 
         // Apply the new height (which cleares the canvas)
-        Timeline.element.style.height = Timeline.height + "px";
-        Timeline.canvas.height = Timeline.height;
+        Timeline.element.css("height", Timeline.height + "px");
+        Timeline.canvas.attr("height", Timeline.height);
     }
     
     // Determine current time
