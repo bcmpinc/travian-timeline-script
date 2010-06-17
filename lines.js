@@ -33,18 +33,18 @@ Lines.init=function(){
     Lines.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");
     Lines.setting("categories", { /* <tag>: [ <color> , <drawline> ], */
             none: ["",false], // ie. remove from 'locations'.
-                owned: ["rgba(192,128,0,1.0)", true],
-                ally: ["rgba(0,0,255,0.5)", true],
-                allies: ["rgba(0,255,0,0.5)", true],
-                naps: ["rgba(0,255,255,0.5)", false],
-                enemies: ["rgba(255,0,0,0.5)", true],
-                crop9: ["rgba(255,128,0.5)", true],
-                crop15: ["rgba(255,128,1.0)", true],
-                extra: ["rgba(128,128,128,1)", true],
-                farms: ["rgba(255,255,255,1)", true],
-                ban: ["rgba(0,0,0,0.5)", false],
-                natar: ["rgba(128,64,0,0.5)", false],
-                other: ["rgba(255,0,255,0.5)", true]
+                owned:   ["rgba(128,255,  0,1.0)", true],
+                ally:    ["rgba(  0,  0,255,0.5)", true],
+                allies:  ["rgba(  0,255,  0,0.5)", true],
+                naps:    ["rgba(  0,255,255,0.5)", false],
+                enemies: ["rgba(255,  0,  0,0.5)", true],
+                crop9:   ["rgba(255,128,  0,0.5)", true],
+                crop15:  ["rgba(192,128,  0,1.0)", true],
+                extra:   ["rgba(128,128,128,1.0)", true],
+                farms:   ["rgba(255,255,255,1.0)", true],
+                ban:     ["rgba(  0,  0,  0,0.5)", false],
+                natar:   ["rgba(128, 64,  0,0.5)", false],
+                other:   ["rgba(255,  0,255,0.5)", true]
                 }, Settings.type.object, undefined, "The different types of categories. The order of this list defines the order in which they are listed and drawn.");
     Lines.setting("locations", {}, Settings.type.object, undefined, "List of special locations.");
     // A location is of the form [x,y,category,(name)]. Example: [-85,149,"ally"] or [12,-3,"extra","WW 1"]
