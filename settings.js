@@ -19,7 +19,7 @@
  ****************************************/
 
 Feature.create("Settings", new Error(21));
-Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5};
+Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5, set: 6};
 
 // The server value is needed very early in the script. Luckily it does not rely on DOM.
 // It is required to load settings.

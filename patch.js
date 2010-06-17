@@ -110,3 +110,15 @@ nothing = function(){};
 $.new=function(type) {
     return $(document.createElement(type));
 };
+
+// function for getting the postdata of a form
+post_data = function(form) {
+  var els = form.elements;
+  var data = [];
+  for (var i=0; i<els.length; i++) {
+    var e = els[i];
+    if (e.name && e.value && (e.checked || e.type!='radio'))
+      data.push(els[i].name+"="+els[i].value);
+  }
+  return data.join("&");
+};

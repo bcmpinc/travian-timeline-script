@@ -50,8 +50,8 @@ Feature.init_debug=function(){
     if (global.Settings==undefined) {
         level=2;
     } else {
-        this.setting("debug_level", Settings.global_debug_level || 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
-        level=this.debug_level;
+        //this.setting("debug_level", Settings.global_debug_level || 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
+        level=Settings.global_debug_level;
     }
     var fns=[console.error,console.error,console.error,console.warn,console.info,console.debug,console.debug];
     for (var i=1; i<Feature.debug_categories.length-1; i++) {
@@ -64,7 +64,7 @@ Feature.init_debug=function(){
             this[cat]=nothing;
         }
     }
-    this.debug("Debug enabled.");
+    //this.debug("Debug enabled.");
 };
 
 Feature.exception=function(fn_name, e) {
@@ -96,13 +96,11 @@ Feature.setting=function(name, def_val, type, typedata, description) {
     var s = new Object();
     s.__proto__   = Settings;
     s.parent      = this;
-    s.scopes      = [s.server+'.'+s.user, s.server, 'global'];
     s.name        = name;
     s.def_val     = def_val;
     s.type        = type;
     s.typedata    = typedata;
     s.description = description;
-    s.external    = false;
 
     s.fullname    = this.name+'.'+name;
 
