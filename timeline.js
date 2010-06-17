@@ -26,11 +26,9 @@ Timeline.init=function(){
     Timeline.setting("collapse", true, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
     Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
     Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
-    Timeline.setting("position_fixed", false, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
 
     Timeline.setting("color", "rgba(255, 255, 204, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
-    Timeline.setting("height", 800, Settings.type.integer, undefined, "Height of the timeline (in pixels)");
     Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
     Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
     Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
@@ -48,25 +46,32 @@ Timeline.init=function(){
         Timeline.warp = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
         Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
     } else {
-        Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
         Timeline.warp = function(x) { return (Math.arsinh(
-                                                          ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
+                                                          ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*2*Math.sinh(Timeline.scale_warp/2)
                                                           )/Timeline.scale_warp +1)/2*Timeline.height; };
         Timeline.unwarp = function(y) { return Math.sinh(
                                                          (2*y/Timeline.height-1)*Timeline.scale_warp
-                                                         )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+                                                         )/2*Math.sinh(Timeline.scale_warp/2)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
     }
 };
 
+Timeline.delayed_draw=function() {
+    // Schedule update
+    if (Timeline.delayed_draw_timeout) clearTimeout(Timeline.delayed_draw_timeout);
+    Timeline.delayed_draw_timeout = setTimeout(Timeline.draw, 100);
+}
+
 Timeline.create_canvas=function() {
+
     // Create timeline canvas + container
-    var tl = document.createElement("canvas");
-    var tlc = document.createElement("div");
-    tlc.style.position = (Timeline.position_fixed?"fixed":"absolute");
+    var tl  = Timeline.canvas  = document.createElement("canvas");
+    var tlc = Timeline.element = document.createElement("div");
+    $(window).resize(Timeline.delayed_draw);
+    
+    tlc.style.position = "fixed";
     tlc.style.top = "0px";
     tlc.style.right = "0px";
     tlc.style.width = (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px";
-    tlc.style.height = Timeline.height + "px";
     tlc.style.zIndex = "20";
     tlc.style.backgroundColor=Timeline.color;
     tlc.style.visibility = Timeline.visible?'visible':'hidden';
@@ -74,10 +79,10 @@ Timeline.create_canvas=function() {
 
     tl.id = "tl";
     tl.width = Timeline.width;
-    tl.height = Timeline.height;
     tl.style.position = "relative";
     tl.style.left = (Timeline.collapse?Timeline.collapse_width-Timeline.width:0)+"px";
     tlc.appendChild(tl);
+    
     document.body.appendChild(tlc);
 
     // Code for expanding/collapsing the timeline.
@@ -149,7 +154,6 @@ Timeline.create_canvas=function() {
     }
     tlc.addEventListener("click",setAt,false);
 
-    Timeline.element=tlc;
     Timeline.context=tl.getContext("2d");
     Timeline.context.mozTextStyle = "8pt Monospace";
 };
@@ -224,8 +228,20 @@ Timeline.draw_info=function(img,nrs) {
     }
 }
 
-// If once is false, this will set a timer at the end of the function call recalling this function after the update period
-Timeline.draw=Timeline.guard("draw", function(once) {
+Timeline.draw=Timeline.guard("draw", function() {
+    if (Timeline.delayed_draw_timeout) clearTimeout(Timeline.delayed_draw_timeout);
+
+    // Check if the height has changed
+    if (Timeline.height != window.innerHeight) {
+        // Determine the height
+        Timeline.height = window.innerHeight;
+
+        // Apply the new height (which cleares the canvas)
+        Timeline.element.style.height = Timeline.height + "px";
+        Timeline.canvas.height = Timeline.height;
+    }
+    
+    // Determine current time
     Timeline.now=new Date().getTime();
 
     // Get context
@@ -248,15 +264,15 @@ Timeline.draw=Timeline.guard("draw", function(once) {
     
         // determine local scale
         var z = Timeline.unwarp(i+Timeline.marker_seperation/2) - Timeline.unwarp(i-Timeline.marker_seperation/2);
-        /**/ if (z< 1000) z= 1000; // 1 sec.
-        else if (z< 5000) z= 5000; // 5 sec.
-        else if (z< 15000) z= 15000; // 15 sec.
-        else if (z< 60000) z= 60000; // 1 min.
-        else if (z< 300000) z= 300000; // 5 min.
-        else if (z< 900000) z= 900000; // 15 min.
-        else if (z< 3600000) z= 3600000; // 1 hr.
-        else if (z<21600000) z=21600000; // 6 hr.
-        else if (z<86400000) z=86400000; // 1 day.
+        /**/ if (z<    1000) z=    1000; //  1 sec.
+        else if (z<    5000) z=    5000; //  5 sec.
+        else if (z<   15000) z=   15000; // 15 sec.
+        else if (z<   60000) z=   60000; //  1 min.
+        else if (z<  300000) z=  300000; //  5 min.
+        else if (z<  900000) z=  900000; // 15 min.
+        else if (z< 3600000) z= 3600000; //  1 hr.
+        else if (z<21600000) z=21600000; //  6 hr.
+        else if (z<86400000) z=86400000; //  1 day.
         else continue;
 
         // determine the time and location
@@ -273,20 +289,18 @@ Timeline.draw=Timeline.guard("draw", function(once) {
         d.setTime(x);
         var t=d.getHours()+":"+d.getMinutes().pad2();
     
-        /**/ if ((x% 3600000)==0 && d.getHours()==0
-                 ) { b=8;m=
-                             ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+
-                             d.getDate()+" "+
+        // Determine the size of the tick marks
+        /**/ if ((x% 3600000)==0 && d.getHours()==0) { b=8;m=
+                             ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+d.getDate()+" "+
                              ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" - 0:00";} // 1 day.
-        else if ((x% 3600000)==0 && d.getHours()%6==0
-                 ) { b=8; if (z<21600000) m=t;} // 6 hr.
-        else if ((x% 3600000)==0) { b=4; if (z< 3600000) m=t;} // 1 hr.
-        else if ((x% 900000)==0) {a=-6; if (z< 900000) m=t;} // 15 min.
-        else if ((x% 300000)==0) {a=-4; if (z< 300000) m=t;} // 5 min.
-        else if ((x% 60000)==0) {a=-2; if (z< 60000) m=t;} // 1 min.
-        else if ((x% 15000)==0) {a=-1; } // 15 sec.
-        else if ((x% 5000)==0) {a= 0; b=1; } // 5 sec.
-        else if ((x% 1000)==0) {a= 0; b=2; } // 1 sec.
+        else if ((x% 3600000)==0 && d.getHours()%6==0) { b=8; if (z<21600000) m=t;} // 6 hr.
+        else if ((x% 3600000)==0) { b=4; if (z< 3600000) m=t;} //  1 hr.
+        else if ((x%  900000)==0) {a=-6; if (z<  900000) m=t;} // 15 min.
+        else if ((x%  300000)==0) {a=-4; if (z<  300000) m=t;} //  5 min.
+        else if ((x%   60000)==0) {a=-2; if (z<   60000) m=t;} //  1 min.
+        else if ((x%   15000)==0) {a=-1;                     } // 15 sec.
+        else if ((x%    5000)==0) {a= 0; b=1;                } //  5 sec.
+        else if ((x%    1000)==0) {a= 0; b=2;                } //  1 sec.
     
         g.beginPath();
         g.moveTo(a, y);
@@ -342,7 +356,7 @@ Timeline.draw=Timeline.guard("draw", function(once) {
     Timeline.draw_events(g);
     g.restore();
 
-    if (Timeline.keep_updated && once!==true) window.setTimeout(Timeline.draw, Timeline.update_interval)
+    window.setTimeout(Timeline.draw, Timeline.update_interval)
 });
 
 Timeline.draw_events=Timeline.guard("draw_events",function(g){
@@ -435,6 +449,9 @@ Timeline.run=function() {
     Timeline.create_canvas();
     Timeline.create_button();
     Timeline.load_images();
+    
+    if (Timeline.keep_updated)
+        window.setInterval(Timeline.draw, Timeline.update_interval);
     Timeline.draw();
 };
 
