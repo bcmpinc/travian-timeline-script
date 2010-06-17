@@ -46,11 +46,11 @@ Timeline.init=function(){
         Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
     } else {
         Timeline.warp = function(x) { return (Math.arsinh(
-                                                          ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*2*Math.sinh(Timeline.scale_warp/2)
+                                                          ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*(2*Math.sinh(Timeline.scale_warp/2))
                                                           )/Timeline.scale_warp +1)/2*Timeline.height; };
         Timeline.unwarp = function(y) { return Math.sinh(
                                                          (2*y/Timeline.height-1)*Timeline.scale_warp
-                                                         )/2*Math.sinh(Timeline.scale_warp/2)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+                                                         )/(2*Math.sinh(Timeline.scale_warp/2))*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
     }
 };
 
@@ -184,7 +184,7 @@ Timeline.draw_scale=function() {
         else if (z< 3600000) z= 3600000; //  1 hr.
         else if (z<21600000) z=21600000; //  6 hr.
         else if (z<86400000) z=86400000; //  1 day.
-        else continue;
+        else continue; // Too little pixels for too much time.
 
         // determine the time and location
         var x = Timeline.unwarp(i);
