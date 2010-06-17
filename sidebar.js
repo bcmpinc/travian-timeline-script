@@ -91,23 +91,23 @@ Sidebar.run=function() {
     navi.find("p").remove();
     
     // Create a link container (p);
-    var newnavi = $.create("p");
+    var newnavi = $.new("p");
     
     // Add new links
     for (var i = 0; i < Sidebar.links.length; i++) {
         var x = Sidebar.links[i];
         if (x.constructor == Array) {
-            var el=$.create("a").text(x[0]).attr("href",x[1]);
+            var el=$.new("a").text(x[0]).attr("href",x[1]);
             if (Sidebar.extern_in_new_window && x[1].match("^https?://"))
                 el.attr("target", "_blank");
             newnavi.append(el);
         } else if (x.constructor == String) {
-            newnavi.append($.create("b").text(x));
+            newnavi.append($.new("b").text(x));
         } else if (x<0) {
             if (Sidebar.use_hr) {
-                newnavi.append($.create("hr"));
+                newnavi.append($.new("hr"));
             } else {
-                newnavi.append($.create("br"));
+                newnavi.append($.new("br"));
             }
         } else {
             var el = oldnavi.eq(x);

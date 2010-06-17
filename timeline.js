@@ -63,8 +63,8 @@ Timeline.delayed_draw=function() {
 Timeline.create_canvas=function() {
 
     // Create timeline canvas + container
-    Timeline.canvas  = $.create("canvas");
-    Timeline.element = $.create("div");
+    Timeline.canvas  = $.new("canvas");
+    Timeline.element = $.new("div");
     $(window).resize(Timeline.delayed_draw);
     
     Timeline.canvas.attr({
@@ -133,7 +133,7 @@ Timeline.toggle=function() {
 };
 
 Timeline.create_button=function() {
-    button = $.create("div");
+    button = $.new("div");
     button.css({
       position: "fixed",
       backgroundColor: "rgba(0,0,128,0.5)",
