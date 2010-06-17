@@ -96,6 +96,7 @@ Feature.setting=function(name, def_val, type, typedata, description) {
     var s = new Object();
     s.__proto__   = Settings;
     s.parent      = this;
+    s.scopes      = [s.server+'.'+s.user, s.server, 'global'];
     s.name        = name;
     s.def_val     = def_val;
     s.type        = type;
