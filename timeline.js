@@ -26,14 +26,13 @@ Timeline.init=function(){
     Timeline.setting("collapse", true, Settings.type.bool, undefined, "Make the timeline very small by default and expand it when the mouse hovers above it.");
     Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
     Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
-    Timeline.setting("position_fixed", true, Settings.type.bool, undefined, "Keep timeline on the same position when scrolling the page.");
 
     Timeline.setting("color", "rgba(0, 0, 32, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
     Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
     Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
-    Timeline.setting("collapse_width", 60, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
-    Timeline.setting("collapse_delay", 300, Settings.type.integer, undefined, "The time it takes to unfold/collapse the timeline (in milliseconds)");
+    Timeline.setting("collapse_width", 65, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
+    Timeline.setting("collapse_delay", 200, Settings.type.integer, undefined, "The time it takes to unfold/collapse the timeline (in milliseconds)");
     Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
 
     Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
@@ -46,114 +45,115 @@ Timeline.init=function(){
         Timeline.warp = function(x) { return (((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)+1)/2*Timeline.height; };
         Timeline.unwarp = function(y) { return (2*y/Timeline.height-1)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
     } else {
-        Timeline.equalize = 2*Math.sinh(Timeline.scale_warp/2);
         Timeline.warp = function(x) { return (Math.arsinh(
-                                                          ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*Timeline.equalize
+                                                          ((x-Timeline.now-Timeline.scroll_offset)/Timeline.duration/60000)*2*Math.sinh(Timeline.scale_warp/2)
                                                           )/Timeline.scale_warp +1)/2*Timeline.height; };
         Timeline.unwarp = function(y) { return Math.sinh(
                                                          (2*y/Timeline.height-1)*Timeline.scale_warp
-                                                         )/Timeline.equalize*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
+                                                         )/2*Math.sinh(Timeline.scale_warp/2)*Timeline.duration*60000+Timeline.now+Timeline.scroll_offset; };
     }
 };
 
+Timeline.delayed_draw=function() {
+    // Schedule update
+    if (Timeline.delayed_draw_timeout) clearTimeout(Timeline.delayed_draw_timeout);
+    Timeline.delayed_draw_timeout = setTimeout(Timeline.draw, 100);
+}
+
 Timeline.create_canvas=function() {
+
     // Create timeline canvas + container
-    var tl = $.new("canvas");
-    var tlc = $.new("div");
-    tlc.css({
-      position: (Timeline.position_fixed?"fixed":"absolute"),
-      top: "0px",
-      right: "0px",
-      width: (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px",
-      height: "100%",
-      zIndex: "20000",
-      backgroundColor: Timeline.color,
-      visibility: Timeline.visible?'visible':'hidden',
-      overflow: "hidden",
-      outline: "1px solid #333"
-    });
-    tl.attr({
-      id: "tl",
-      width: Timeline.width,
-      height: unsafeWindow.getHeight()-0
-    }).css({
-      position: "absolute",
-      right: "0px"
-    });
-    tlc.append(tl);
-    $("body").append(tlc);
+    Timeline.canvas  = $.new("canvas");
+    Timeline.element = $.new("div");
+    $(window).resize(Timeline.delayed_draw);
     
-    $(window).resize(function(){
-      tl.attr({height: unsafeWindow.getHeight()-0}); 
-      Timeline.draw(true);
+    Timeline.canvas.attr({
+        width: Timeline.width,
+    }).css({
+        position: "absolute",
+        right: "0px"
     });
+
+    Timeline.element.css({
+        position: "fixed",
+        top: "0px",
+        right: "0px",
+        width: (Timeline.collapse?Timeline.collapse_width:Timeline.width) + "px",
+        zIndex: "20000",
+        backgroundColor: Timeline.color,
+        visibility: Timeline.visible?'visible':'hidden',
+        overflow: "hidden",
+        outline: "1px solid #333"
+    }).append(Timeline.canvas);
+    
+    $(document.body).append(Timeline.element);
 
     // Code for expanding/collapsing the timeline.
     if (Timeline.collapse) {
-        tlc.mouseenter(function() {
-          tlc.stop().animate({width: Timeline.width},Timeline.collapse_delay);
+        Timeline.element.mouseenter(function() {
+            if (Timeline.visible)
+                Timeline.element.stop().animate({width: Timeline.width},Timeline.collapse_delay);
         });
-        tlc.mouseleave(function() {
-          tlc.stop().animate({width: Timeline.collapse_width},Timeline.collapse_delay);
+        Timeline.element.mouseleave(function() {
+            if (Timeline.visible)
+                Timeline.element.stop().animate({width: Timeline.collapse_width},Timeline.collapse_delay);
         });
     }
 
     // Could scroll backwards and forwards on the timeline
-    // We also probably want to stop the mouse scrolling from propegating in this case...
-    tlc.bind('DOMMouseScroll', Timeline.mouse_wheel);
+    Timeline.element.bind('DOMMouseScroll', Timeline.mouse_wheel);
 
     // The click event listener for the link with the 'travian task queue'-script.
-    /*function setAt(e) {
+    /*
+    function setAt(e) {
         var at = document.getElementById("at");
         if (at) {
             var n = new Date();
             n.setTime(Timeline.unwarp(e.pageY));
-            var s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
+            var s=(n.getFullYear())+"/"+(n.getMonth()+1)+"/"+n.getDate()+" "+n.getHours()+":"+n.getMinutes().pad2()+":"+n.getSeconds().pad2();
             at.value=s;
         }
     }
-    tlc.addEventListener("click",setAt,false);*/
+    Timeline.element.bind("click",setAt);
+    */
 
-    // Add the doubleclick listener to change scopes
-    //tlc.addEventListener('dblclick', Timeline.change_scope, false);
-
-    Timeline.element=tlc;
-    Timeline.canvas =tl;
-    Timeline.context=tl.get(0).getContext("2d");
+    Timeline.context=Timeline.canvas.get(0).getContext("2d");
     Timeline.context.mozTextStyle = "8pt Monospace";
 };
 
 Timeline.mouse_wheel=function(e) {
     Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
     e.stopPropagation(); // Kill the event to the standard window...
-    e.preventDefault();
-    Timeline.draw(true);
+    e.preventDefault(); // Prevent the mouse scrolling from propegating
+    Timeline.draw();
 };
 
 Timeline.toggle=function() {
     Timeline.visible=!Timeline.visible;
-    Timeline.element.css({visibility:(Timeline.visible?'visible':'hidden')});
+    Timeline.element.css({visibility: Timeline.visible?'visible':'hidden'});
     Timeline.s.visible.write();
 };
 
 Timeline.create_button=function() {
     button = $.new("div");
     button.css({
-      position: Timeline.element.css("position"),
+      position: "fixed",
       backgroundColor: "rgba(64,64,64,0.5)",
       right: "0px",
-      width: "60px",
+      top: "-2px",
+      width: "65px",
       height: "17px",
       zIndex: 40000,
       textAlign: "center",
       color: "#ccc",
       fontWeight: "bold",
+      fontSize: "12px",
       MozBorderRadiusBottomleft: "6px",
       cursor: "pointer"
     });
     button.click(Timeline.toggle);
     button.text("time line");
-    $("body").append(button);
+    $(document.body).append(button);
 };
 
 Timeline.draw_scale=function() {
@@ -175,15 +175,15 @@ Timeline.draw_scale=function() {
     
         // determine local scale
         var z = Timeline.unwarp(i+Timeline.marker_seperation/2) - Timeline.unwarp(i-Timeline.marker_seperation/2);
-        /**/ if (z< 1000) z= 1000; // 1 sec.
-        else if (z< 5000) z= 5000; // 5 sec.
-        else if (z< 15000) z= 15000; // 15 sec.
-        else if (z< 60000) z= 60000; // 1 min.
-        else if (z< 300000) z= 300000; // 5 min.
-        else if (z< 900000) z= 900000; // 15 min.
-        else if (z< 3600000) z= 3600000; // 1 hr.
-        else if (z<21600000) z=21600000; // 6 hr.
-        else if (z<86400000) z=86400000; // 1 day.
+        /**/ if (z<    1000) z=    1000; //  1 sec.
+        else if (z<    5000) z=    5000; //  5 sec.
+        else if (z<   15000) z=   15000; // 15 sec.
+        else if (z<   60000) z=   60000; //  1 min.
+        else if (z<  300000) z=  300000; //  5 min.
+        else if (z<  900000) z=  900000; // 15 min.
+        else if (z< 3600000) z= 3600000; //  1 hr.
+        else if (z<21600000) z=21600000; //  6 hr.
+        else if (z<86400000) z=86400000; //  1 day.
         else continue;
 
         // determine the time and location
@@ -193,28 +193,26 @@ Timeline.draw_scale=function() {
         if (x<=lastmark) continue;
         lastmark=x;
     
-        // Determine the marker label en length
+        // Determine the marker label and length
         var a=-8;
         var b= 0;
         var m="";
         var d = new Date();
         d.setTime(x);
-        var t=d.getHours()+":"+pad2(d.getMinutes());
+        var t=d.getHours()+":"+d.getMinutes().pad2();
     
-        /**/ if ((x% 3600000)==0 && d.getHours()==0
-                 ) { b=8;m=
-                             ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+
-                             d.getDate()+" "+
+        // Determine the size of the tick marks
+        /**/ if ((x% 3600000)==0 && d.getHours()==0) { b=8;m=
+                             ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+d.getDate()+" "+
                              ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" - 0:00";} // 1 day.
-        else if ((x% 3600000)==0 && d.getHours()%6==0
-                 ) { b=8; if (z<21600000) m=t;} // 6 hr.
-        else if ((x% 3600000)==0) { b=4; if (z< 3600000) m=t;} // 1 hr.
-        else if ((x% 900000)==0) {a=-6; if (z< 900000) m=t;} // 15 min.
-        else if ((x% 300000)==0) {a=-4; if (z< 300000) m=t;} // 5 min.
-        else if ((x% 60000)==0) {a=-2; if (z< 60000) m=t;} // 1 min.
-        else if ((x% 15000)==0) {a=-1; } // 15 sec.
-        else if ((x% 5000)==0) {a= 0; b=1; } // 5 sec.
-        else if ((x% 1000)==0) {a= 0; b=2; } // 1 sec.
+        else if ((x% 3600000)==0 && d.getHours()%6==0) { b=8; if (z<21600000) m=t;} // 6 hr.
+        else if ((x% 3600000)==0) { b=4; if (z< 3600000) m=t;} //  1 hr.
+        else if ((x%  900000)==0) {a=-6; if (z<  900000) m=t;} // 15 min.
+        else if ((x%  300000)==0) {a=-4; if (z<  300000) m=t;} //  5 min.
+        else if ((x%   60000)==0) {a=-2; if (z<   60000) m=t;} //  1 min.
+        else if ((x%   15000)==0) {a=-1;                     } // 15 sec.
+        else if ((x%    5000)==0) {a= 0; b=1;                } //  5 sec.
+        else if ((x%    1000)==0) {a= 0; b=2;                } //  1 sec.
     
         // Draw everything
         g.beginPath();
@@ -230,11 +228,21 @@ Timeline.draw_scale=function() {
     }
 };
 
-// If once is false, this will set a timer at the end of the function call recalling this function after the update period
-Timeline.draw=function() {
-  
+Timeline.draw=Timeline.guard("draw", function() {
+    if (Timeline.delayed_draw_timeout) clearTimeout(Timeline.delayed_draw_timeout);
+
+    // Check if the height has changed
+    if (Timeline.height != window.innerHeight) {
+        // Determine the height
+        Timeline.height = window.innerHeight;
+
+        // Apply the new height (which cleares the canvas)
+        Timeline.element.css("height", Timeline.height + "px");
+        Timeline.canvas.attr("height", Timeline.height);
+    }
+    
+    // Determine current time
     Timeline.now=new Date().getTime();
-    Timeline.height=Timeline.canvas.attr("height");
 
     // Get context
     var g = Timeline.context;
@@ -272,7 +280,7 @@ Timeline.draw=function() {
     g.fillStyle = "rgb(0,0,255)";
     var d=new Date();
     d.setTime(Timeline.now);
-    var m=d.getHours()+":"+pad2(d.getMinutes());
+    var m=d.getHours()+":"+d.getMinutes().pad2();
     g.save();
     g.translate(-g.mozMeasureText(m)-10, 4+y);
     g.mozDrawText(m);
@@ -407,3 +415,4 @@ Timeline.run=function() {
 
 Timeline.call('init', true);
 $(function(){Timeline.call('run',true);});
+

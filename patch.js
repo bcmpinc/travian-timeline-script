@@ -49,11 +49,12 @@ String.prototype.pad = function(n,s,rev) {
         return this+s.repeat(n);
 };
 
-function pad2(x) {
-    if (x<10)
-        return "0"+x;
-    return x;
-}
+// Makes sure that the number 
+Number.prototype.pad2 = function() {
+    if (this<10)
+        return "0"+this;
+    return this;
+};
 
 function isempty(ob) {
     for(var i in ob) {if(ob.hasOwnProperty(i)){return false;}}
@@ -76,14 +77,11 @@ Math.round_sig= function(amount, sigfig){
     return amount;
 };
 
-function nothing(){}
+nothing = function(){};
 
-// Some add-ons to jquery
-jQuery.extend({
-  new: function(element) {
-    return jQuery(document.createElement(element));
-  }
-});
+$.new=function(type) {
+    return $(document.createElement(type));
+};
 
 // function for getting the postdata of a form
 post_data = function(form) {
