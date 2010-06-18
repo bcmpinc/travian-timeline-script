@@ -15,11 +15,10 @@
  *****************************************************************************/
 
 /****************************************
- * LINES (and circles)
- * [actually just MAP]
+ * MAP
  ****************************************/
 
-Feature.create("Map",new Error(22));
+Feature.create("Map",new Error(21));
 
 Map.s.enabled.description="Enable map enhacements";
 Map.init=function(){

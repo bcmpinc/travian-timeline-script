@@ -15,40 +15,37 @@
  *****************************************************************************/
 
 /****************************************
- * IMAGES (ours and Travians)
+ * IMAGES (ours and Travian's/Imperion's)
  ****************************************/
 
 Feature.create("Images", new Error(21));
 delete Images.s.enabled; // It does not care what the value is.
-Images.get = function(){
-  return $.new("img").attr({src: this.src});
+
+Images.create = function(src) {
+    var im = new Object();
+    im.__proto__  = Images;
+	im.src = src;
 };
-Images.create = function(name, src) {
-  var im = new Object();
-  im.__proto__  = Images;
-  if (src[0]=="/")
-    src=Settings.server+src;
-  im.src = src;
-  im.queue=[];
-  im.isLoaded=false;
-  this[name]=im;
+Images.get = function(){
+    return $.new("img").attr({src: this.src});
 };
 Images.stamp = function() {
-  if (!this._stamp) {
-    this._stamp=new Image();
-    this._stamp.src=this.src;
-  }
-  return this._stamp;
+    if (!this._stamp) {
+        this._stamp=new Image();
+        this._stamp.src=this.src;
+    }
+    return this._stamp;
 };
+
 Images.init=function() {
-  Images.create("metal",   "/img/interface/informations/metal.jpg");
-  Images.create("crystal", "/img/interface/informations/crystal.jpg");
-  Images.create("hydrogen","/img/interface/informations/deuterium.jpg"); // Yes, that's the same as deuterium and tritium.
-  Images.create("energy",  "/img/interface/icon/energy1.png");
-  
-  Images.create("terrans", "/img/terrans/interface/ships/sprite.png");
-  Images.create("titans",  "/img/titans/interface/ships/sprite.png");
-  Images.create("xen",     "/img/xen/interface/ships/sprite.png");
+    Images.metal    = Images.create("/img/interface/informations/metal.jpg");
+    Images.crystal  = Images.create("/img/interface/informations/crystal.jpg");
+    Images.hydrogen = Images.create("/img/interface/informations/deuterium.jpg"); // Yes, deuterium and tritium are hydrogen.
+    Images.energy   = Images.create("/img/interface/icon/energy1.png");
+
+    Images.terrans  = Images.create("/img/terrans/interface/ships/sprite.png");
+    Images.titans   = Images.create("/img/titans/interface/ships/sprite.png");
+    Images.xen      = Images.create("/img/xen/interface/ships/sprite.png");
 };
 
 Images.call('init', true);

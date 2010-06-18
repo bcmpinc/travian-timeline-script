@@ -30,7 +30,7 @@ Events.init=function(){
                 market:   'rgb(0,128,0)',
                 research: 'rgb(0,0,255)',
                 demolish: 'rgb(128,128,128)',
-                overflow: 'rgb(150,0,150)'
+                overflow: 'rgb(150,0,150)',
             }, Settings.type.none, undefined, "List of event types");
     Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
@@ -47,20 +47,22 @@ Events.init=function(){
 // available types.
 
 /* An event-data-packet torn apart:
-   Example: { 32541108: {'b2251337':["building",1225753710000,"01. Someville","Crystal mine (Level 9)",undefined,undefined]} }
-   32541108: #### ~ The plannet id
-   'b2251337': #### ~ Some identifier for the event that is both unqiue and consistent between page loads.
-   ["building", 0 ~ Type of event
-   1225753710000, 1 ~ Estimated time at which this event occure(s|d).
-   "Crystal mine (Level 9)", 2 ~ Event message.
-   3 ~ For events that might include armies (can be 'undefined')
-   [2, 3. 0 ~ the faction involved. (Terrans=1, Titans=2, Xen=3)
-   0,...,0] 3. 1-10 ~ Amount of units involved (one field per type)
-   4 ~ For events that might include resources (can be 'undefined')
-   [0, 4. 0 ~ Amount of metal involved
-   0, 4. 1 ~ Amount of crystal involved
-   0, 4. 2 ~ Amount of hydrogen involved
-   0]] 4. 3 ~ Amount of energy involved
+   Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Crystal mine (Level 9)",undefined,undefined]} }
+   129390: {                   #### ~ The plannet id
+    'b9930712':                #### ~ Some identifier for the event that is both unqiue and consistent between page loads.
+    ["building",               0    ~ Type of event
+     1225753710000,            1    ~ Estimated time at which this event occure(s|d).
+     "Crystal mine (Level 9)", 2    ~ Event message.
+                               3    ~ For events that might include armies (can be 'undefined')
+     [2,                       3. 0 ~ the faction involved. (Terrans=1, Titans=2, Xen=3)
+      0,...,0]                 3. 1-10 ~ Amount of units involved (one field per type)
+                               4    ~ For events that might include resources (can be 'undefined')
+     [0,                       4. 0 ~ Amount of metal involved
+      0,                       4. 1 ~ Amount of crystal involved
+      0,                       4. 2 ~ Amount of hydrogen involved
+      0]                       4. 3 ~ Amount of energy involved
+    ]
+   }
    Instead of a number, the fields in field 3 and 4 are also allowed to be a tuple (list/array).
    In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
 */
