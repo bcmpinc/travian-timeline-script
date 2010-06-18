@@ -25,8 +25,8 @@ var metadata = <><![CDATA[
 // @require        feature.js
 // @require        settings.js
 // @require        images.js
-// @require        lines.js
-// @require        sidebar.js
+// @require        map.js
+// @require        navbar.js
 // @require        resources.js
 // @require        market.js
 // @require        events.js
