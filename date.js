@@ -74,7 +74,7 @@ function tl_date(parent){
         return this.date.getTime();
     }
 
-    this.set_seconds = function(duration){
+    this.set_seconds = function(duration,allow_jump){
         // This will change the time such that it approximates the completion time better. 
         // Note that this approximation is not consistent between pageloads.
         // duration is of type [string, hours, minutes, seconds].
@@ -86,7 +86,7 @@ function tl_date(parent){
         date2.setSeconds(date2.getSeconds()- -duration[3]);
         
         // Check whether the new value isn't screwed up somehow.
-        if (Math.abs(date2.getTime()-this.date.getTime())<60000) {
+        if (allow_jump || Math.abs(date2.getTime()-this.date.getTime())<60000) {
             this.date=date2;
         }
   

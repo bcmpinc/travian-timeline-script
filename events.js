@@ -24,15 +24,15 @@ Events.s.enabled.description="Enable the event data collector";
 Events.init=function(){
     Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
     Events.setting("type", {
-                /* <tag> : [<color>             <visible>] */
-                building:  ['rgb(0,0,0)',       true],
-                attack :   ['rgb(255,0,0)',     true],
-                market :   ['rgb(0,128,0)',     true],
-                research:  ['rgb(0,0,255)',     true],
-                party :    ['rgb(255,128,128)', true],
-                demolish : ['rgb(128,128,128)', true],
-                overflow : ['rgb(150,0,150)',   true]
-            }, Settings.type.object, undefined, "List of event types", 'true');
+                /* <tag> : <color> */
+                building: 'rgb(0,0,0)',
+                attack:   'rgb(255,0,0)',
+                market:   'rgb(0,128,0)',
+                research: 'rgb(0,0,255)',
+                party:    'rgb(255,128,128)',
+                demolish: 'rgb(128,128,128)',
+                overflow: 'rgb(150,0,150)',
+            }, Settings.type.none, undefined, "List of event types");
     Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.", 'true');
 
     Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
@@ -41,14 +41,14 @@ Events.init=function(){
     Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
     Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
 
-    display_options = ['Timeline & Tooltip', 'Timeline', 'Tooltip', 'Neither'];
-    Events.setting('building',   0, Settings.type.enumeration, display_options, 'Keep track of what you build [from village center and overview]');
-    Events.setting('attack',     0, Settings.type.enumeration, display_options, 'Keep track of all incoming and outgoing troops [from the rally point]');
-    Events.setting('market',     0, Settings.type.enumeration, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
-    Events.setting('research',   0, Settings.type.enumeration, display_options, 'Keep track of what is being researched [from the Acadamy, Blacksmith and Armoury]');
-    Events.setting('party',      0, Settings.type.enumeration, display_options, 'Keep track of parties [from the town hall]');
-    Events.setting('demolish',   0, Settings.type.enumeration, display_options, 'Keep track of demolished buildings [from the main building]');
-    Events.setting('overflow',   1, Settings.type.enumeration, display_options, 'Keep track of resource overflows [from every page]');
+    display_options = ['Collect','Show in Time Line', 'Show in Tooltip'];
+    Events.setting('building',   [1,1,1], Settings.type.set, display_options, 'Keep track of what you build [from village center and overview]');
+    Events.setting('attack',     [1,1,1], Settings.type.set, display_options, 'Keep track of all incoming and outgoing troops [from the rally point]');
+    Events.setting('market',     [1,1,1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
+    Events.setting('research',   [1,1,1], Settings.type.set, display_options, 'Keep track of what is being researched [from the Acadamy, Blacksmith and Armoury]');
+    Events.setting('party',      [1,1,1], Settings.type.set, display_options, 'Keep track of parties [from the town hall]');
+    Events.setting('demolish',   [1,1,1], Settings.type.set, display_options, 'Keep track of demolished buildings [from the main building]');
+    Events.setting('overflow',   [1,1,0], Settings.type.set, display_options, 'Keep track of resource overflows [from every page]');
 
     Events.setting('send_twice',  false, Settings.type.boolean, undefined, "Internal persistent data only. This records whether the 'send twice' box was checked on the previous page, when sending merchants.");
 };
@@ -57,31 +57,31 @@ Events.init=function(){
 
 /* An event-data-packet torn apart:
    Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
-   129390: {              #### ~ The village id
-    'b9930712':           #### ~ Some identifier that is both unqiue and consistent between page loads.
-    ["building",          0    ~ Type of event
-     1225753710000,       1    ~ Estimated time at which this event occure(s|d).
-     "Granary (level 6)", 2    ~ Event message.
-                          3    ~ For events that might include armies (can be 'undefined')
-     [0,                  3. 0 ~ Amount of farm-men involved
-      0,                  3. 1 ~ Amount of defense-men involved
-      0,                  3. 2 ~ Amount of attack-men involved
-      0,                  3. 3 ~ Amount of scouts involved
-      0,                  3. 4 ~ Amount of defense-horses involved
-      0,                  3. 5 ~ Amount of attack-horses involved
-      0,                  3. 6 ~ Amount of rams involved
-      0,                  3. 7 ~ Amount of trebuchets involved
-      0,                  3. 8 ~ Amount of leaders involved
-      0,                  3. 9 ~ Amount of settlers involved
-      0],                 3.10 ~ Amount of heros involved
-                          4    ~ For events that might include resources (can be 'undefined')
-     [0,                  4. 0 ~ Amount of wood involved
-      0,                  4. 1 ~ Amount of clay involved
-      0,                  4. 2 ~ Amount of iron involved
-      0]                  4. 3 ~ Amount of grain involved
+   129390: {                   #### ~ The village id
+    'b9930712':                #### ~ Some identifier that is both unqiue and consistent between page loads.
+    ["building",               0    ~ Type of event
+     1225753710000,            1    ~ Estimated time at which this event occure(s|d).
+     "Granary (level 6)",      2    ~ Event message.
+                               3    ~ For events that might include armies (can be 'undefined')
+     [0,                       3. 0 ~ Amount of farm-men involved
+      0,                       3. 1 ~ Amount of defense-men involved
+      0,                       3. 2 ~ Amount of attack-men involved
+      0,                       3. 3 ~ Amount of scouts involved
+      0,                       3. 4 ~ Amount of defense-horses involved
+      0,                       3. 5 ~ Amount of attack-horses involved
+      0,                       3. 6 ~ Amount of rams involved
+      0,                       3. 7 ~ Amount of trebuchets involved
+      0,                       3. 8 ~ Amount of leaders involved
+      0,                       3. 9 ~ Amount of settlers involved
+      0],                      3.10 ~ Amount of heros involved
+                               4    ~ For events that might include resources (can be 'undefined')
+     [0,                       4. 0 ~ Amount of wood involved
+      0,                       4. 1 ~ Amount of clay involved
+      0,                       4. 2 ~ Amount of iron involved
+      0]                       4. 3 ~ Amount of grain involved
     ]
    }
-   Instead of a number, the fields in field 4 and 5 are also allowed to be a tuple (list).
+   Instead of a number, the fields in field 4 and 5 are also allowed to be a tuple (list/array).
    In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
 */
 
@@ -115,7 +115,8 @@ Events.update_data=function() {
     // Collect new stuff
     for (var c in Events.collector) {
         try {
-            Events.collector[c]();
+            if (Events[c][0])
+              Events.collector[c]();
         } catch (e) {
             Events.exception("Events.collector."+c,e);
         }

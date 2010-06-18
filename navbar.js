@@ -18,16 +18,16 @@
  * SIDEBAR
  ****************************************/
 
-Feature.create("Sidebar", new Error(21));
+Feature.create("Navbar", new Error(21));
 
-Sidebar.s.enabled.description="Cutomize the sidebar";
+Navbar.s.enabled.description="Cutomize the sidebar";
 
-Sidebar.init=function(){
-    Sidebar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <p>");
-    Sidebar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
-    Sidebar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
-    Sidebar.setting("extern_in_new_window", true, Settings.type.bool, undefined, "Causes the sidebar links that point to a non-in-game page to open in a new window/tab.");
-    Sidebar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
+Navbar.init=function(){
+    Navbar.setting("use_hr", true, Settings.type.bool, undefined, "Use <hr> to seperate sidebar sections instead of <p>");
+    Navbar.setting("remove_plus_button", true, Settings.type.bool, undefined, "Removes the Plus button");
+    Navbar.setting("remove_plus_color", true, Settings.type.bool, undefined, "De-colors the Plus link");
+    Navbar.setting("extern_in_new_window", true, Settings.type.bool, undefined, "Causes the sidebar links that point to a non-in-game page to open in a new window/tab.");
+    Navbar.setting("remove_home_link", true, Settings.type.bool, undefined, "Redirects travian image to current page instead of travian homepage.");
 
     // Numbers for original sidebar links
     //-1: -- break --
@@ -41,9 +41,9 @@ Sidebar.init=function(){
     // 7: Support
 
     // Original sidebar links
-    // Sidebar.links = [0,1,2,3,-1,4,5,-1,6,7];
+    // Navbar.links = [0,1,2,3,-1,4,5,-1,6,7];
     // TODO: make configureable?
-    Sidebar.setting("links",
+    Navbar.setting("links",
                     [
                      1,
                      ["FAQ", "http://help.travian.nl"],
@@ -66,8 +66,8 @@ Sidebar.init=function(){
                      ],Settings.type.object,undefined,"The links of the sidebar.");
 };
     
-Sidebar.run=function() {
-    if (Sidebar.remove_plus_button) {
+Navbar.run=function() {
+    if (Navbar.remove_plus_button) {
         if ($("#plus").css("visibility", "hidden").length==0) {
             this.info("Couldn't find the plus button.");
         }
@@ -80,7 +80,7 @@ Sidebar.run=function() {
     }
     
     var logo = navi.find("#logo");
-    if (Sidebar.remove_home_link)
+    if (Navbar.remove_home_link)
         logo.attr("href",location.href);
         
     // Make copy of links
@@ -94,24 +94,24 @@ Sidebar.run=function() {
     var newnavi = $.new("p");
     
     // Add new links
-    for (var i = 0; i < Sidebar.links.length; i++) {
-        var x = Sidebar.links[i];
+    for (var i = 0; i < Navbar.links.length; i++) {
+        var x = Navbar.links[i];
         if (x.constructor == Array) {
             var el=$.new("a").text(x[0]).attr("href",x[1]);
-            if (Sidebar.extern_in_new_window && x[1].match("^https?://"))
+            if (Navbar.extern_in_new_window && x[1].match("^https?://"))
                 el.attr("target", "_blank");
             newnavi.append(el);
         } else if (x.constructor == String) {
             newnavi.append($.new("b").text(x));
         } else if (x<0) {
-            if (Sidebar.use_hr) {
+            if (Navbar.use_hr) {
                 newnavi.append($.new("hr"));
             } else {
                 newnavi.append($.new("br"));
             }
         } else {
             var el = oldnavi.eq(x);
-            if (Sidebar.remove_plus_color)
+            if (Navbar.remove_plus_color)
                 el.text(el.text()); // Remove color from Plus link.
             newnavi.append(el);
         }
@@ -121,5 +121,5 @@ Sidebar.run=function() {
     logo.after(newnavi);
 };
 
-Sidebar.call('init', true);
-$(function(){Sidebar.call('run',true);});
+Navbar.call('init', true);
+$(function(){Navbar.call('run',true);});

@@ -154,22 +154,6 @@ Timeline.create_button=function() {
     $(document.body).append(button);
 };
 
-// TODO: this should really be in Images.
-Timeline.load_images=function() {
-    // We have to load all images, because with multiple scopes displayed the units could come from any race
-    Timeline.img_unit = new Array(31);
-    Timeline.img_unit[0] = Images.obj('', Images.hero);
-    for (i=1; i<=30; i++) {
-        // This is irritating. For this, we need an actual src, using the class method screws things up... :(
-        Timeline.img_unit[i] = Images.obj('', "img/un/u/"+(i)+".gif");
-    }
-
-    Timeline.img_res = new Array(4);
-    for (i=0; i<4; i++) {
-        Timeline.img_res[i] = Images.obj('', "img/un/r/"+(i+1)+".gif");
-    }
-};
-
 Timeline.draw_scale=function() {
     var g=Timeline.context;
     
