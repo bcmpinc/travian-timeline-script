@@ -24,7 +24,8 @@ delete Images.s.enabled; // It does not care what the value is.
 Images.create = function(src) {
     var im = new Object();
     im.__proto__  = Images;
-	im.src = src;
+    im.src = src;
+    return im;
 };
 Images.get = function(){
     return $.new("img").attr({src: this.src});
