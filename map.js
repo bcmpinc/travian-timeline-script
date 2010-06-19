@@ -100,6 +100,11 @@ Map.res_x=0;
 Map.res_y=0;
 Map.draw_resource=function(stamp,amount) {
   if (amount<=0) return;
+  var col="#999";
+  if (amount>=1000) {
+    amount=(amount/1000).toFixed(amount<10000?1:0)+"k";
+    col="lightgray";
+  }
   var g = Map.context;
   var w = g.mozMeasureText(amount);
   Map.res_x+=w+10;
@@ -108,9 +113,9 @@ Map.draw_resource=function(stamp,amount) {
     g.translate(0,8);
     g.save();
     g.translate(16,0);
-    g.fillStyle="lightgray";
     Map.res_x=w+26;
   }
+  g.fillStyle=col;
   try{ // unfortunately the following line sometimes likes to throw an error.
     g.drawImage(stamp,2,-8,10,10); 
   }catch(e){}
@@ -198,6 +203,10 @@ Map.update=function() {
       }
     }
     
+    var COMETS   = unsafeWindow.ARRAY_INDEX_COMETS;
+    var DEBRIS   = unsafeWindow.ARRAY_INDEX_DEBRIS;
+    var ASTEROID = unsafeWindow.ARRAY_INDEX_ASTEROID;
+    
     if (Map.system_metadata) {
       g.mozTextStyle = "6pt Monospace";
       for (id in unsafeWindow.mapData) {
@@ -209,22 +218,22 @@ Map.update=function() {
           g.translate(px,py);
           var system=unsafeWindow.mapData[id];
           g.fillStyle="red";
-          for (var i in system[14]) { // comets
-            var comet=system[14][i];
+          for (var i in system[COMETS]) { // comets
+            var comet=system[COMETS][i];
             if (!comet.id) continue;
-            Map.draw_object(comet.name,comet.r1,comet.r2,comet.r3);
+            Map.draw_object(comet.name.replace(/^[^\d]+/i, ''),comet.r1,comet.r2,comet.r3);
           }
           g.fillStyle="yellow";
-          for (var i in system[12]) { // debris
-            var debris=system[12][i];
+          for (var i in system[DEBRIS]) { // debris
+            var debris=system[DEBRIS][i];
             if (!debris.planet_id) continue;
             Map.draw_object(system.planets[debris.planet_id].planet_name,debris.r1,debris.r2,0);
           }
           g.fillStyle="cyan";
-          for (var i in system[13]) { // asteroids
-            var asteroid=system[13][i];
+          for (var i in system[ASTEROID]) { // asteroids
+            var asteroid=system[ASTEROID][i];
             if (!asteroid.id) continue;
-            Map.draw_object("["+asteroid.id+"]",asteroid.r1,asteroid.r2,asteroid.r3);
+            Map.draw_object("\u25B2",asteroid.r1,asteroid.r2,asteroid.r3);
           }
         } catch (e) {
           Map.exception("Map.update() [metadata]",e);
@@ -492,11 +501,19 @@ Map.rewire = function(e) {
   });
 };
 
+Map.extract_content = function(contents) {
+  contents=contents.responseText;
+  contents=contents.split('<div class="metallContent">')[1];
+  contents=contents.split('<div class="bottom interface_content_building_content_bottom"></div>')[0];
+  return contents;
+}
+
 Map.append_fleet_form = function(contents) {
-  contents=$(contents.responseText);
-  var form = contents.find(".frame>.metallContent");
+  contents=Map.extract_content(contents);
+  var form = $.new("div").attr("class","metallContent");
   Map.form.replaceWith(form);
   Map.form=form;
+  form.html(contents);
   Map.relink_action_button();
 };
 
@@ -539,10 +556,11 @@ Map.send_fleet = function(e) {
 };
 
 Map.fleet_sent = function(contents) {
-  contents=$(contents.responseText);
-  var form = contents.find(".frame>.metallContent");
+  contents=Map.extract_content(contents);
+  var form = $.new("div").attr("class","metallContent");
   Map.form.replaceWith(form);
   Map.form=form;
+  form.html(contents);
   Map.relink_action_button();
   if (Events.enabled && Events["fleet"][0]) {
     try {
