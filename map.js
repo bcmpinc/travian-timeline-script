@@ -209,20 +209,20 @@ Map.update=function() {
           g.translate(px,py);
           var system=unsafeWindow.mapData[id];
           g.fillStyle="red";
-          for (var i in system.comets) {
-            var comet=system.comets[i];
+          for (var i in system[14]) { // comets
+            var comet=system[14][i];
             if (!comet.id) continue;
             Map.draw_object(comet.name,comet.r1,comet.r2,comet.r3);
           }
           g.fillStyle="yellow";
-          for (var i in system.debris) {
-            var debris=system.debris[i];
+          for (var i in system[12]) { // debris
+            var debris=system[12][i];
             if (!debris.planet_id) continue;
             Map.draw_object(system.planets[debris.planet_id].planet_name,debris.r1,debris.r2,0);
           }
           g.fillStyle="cyan";
-          for (var i in system.asteroids) {
-            var asteroid=system.asteroids[i];
+          for (var i in system[13]) { // asteroids
+            var asteroid=system[13][i];
             if (!asteroid.id) continue;
             Map.draw_object("["+asteroid.id+"]",asteroid.r1,asteroid.r2,asteroid.r3);
           }
@@ -423,7 +423,7 @@ Map.run=function() {
     var y=$("body");
     var style="";
     if (Map.remove_nav_pad)        style+="#mapNaviSmall {display: none !important;} ";
-    if (Map.remove_border_buttons) style+="#mapNaviBig {display: none !important;} ";
+    if (Map.remove_border_buttons) style+=".naviBigItem {display: none !important;} ";
     if (Map.remove_sectors)        style+="#gridX, #gridY, #gridCorner {display: none !important;} ";
     if (Map.system_metadata)       style+="#mapGalaxy>img {opacity: 0.5;} #mapSystem {background: black; z-index: 2;}";
 
