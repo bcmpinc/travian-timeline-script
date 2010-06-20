@@ -203,9 +203,21 @@ Map.update=function() {
       }
     }
     
-    var COMETS   = unsafeWindow.ARRAY_INDEX_COMETS;
-    var DEBRIS   = unsafeWindow.ARRAY_INDEX_DEBRIS;
-    var ASTEROID = unsafeWindow.ARRAY_INDEX_ASTEROID;
+    var COMETS      = unsafeWindow.ARRAY_INDEX_COMETS;
+    var DEBRIS        = unsafeWindow.ARRAY_INDEX_DEBRIS;
+    var ASTEROID      = unsafeWindow.ARRAY_INDEX_ASTEROID;
+    var PLANETS       = unsafeWindow.ARRAY_INDEX_PLANETS;
+    
+    var INHABITANTS   = unsafeWindow.ARRAY_INDEX_INHABITANTS;
+    var PLANET_NAME   = unsafeWindow.ARRAY_INDEX_PLANET_NAME;
+    var PLAYER_NAME   = unsafeWindow.ARRAY_INDEX_PLAYER_NAME;
+    var ALLIANCE_NAME = unsafeWindow.ARRAY_INDEX_ALLIANCE_NAME;
+    var KIND_ID       = unsafeWindow.ARRAY_INDEX_KIND_ID;
+    
+    // var HUMAN = 1;
+    // var TITANS = 2;
+    // var XEN = 3;
+    KIND_COLOR = {1: "#C90", 2: "#06C", 3: "#0C3"};
     
     if (Map.system_metadata) {
       g.mozTextStyle = "6pt Monospace";
@@ -234,6 +246,20 @@ Map.update=function() {
             var asteroid=system[ASTEROID][i];
             if (!asteroid.id) continue;
             Map.draw_object("\u25B2",asteroid.r1,asteroid.r2,asteroid.r3);
+          }
+          g.restore();
+          g.save();
+          g.translate(px,py- -Map.quadrantHeight-8);
+          for (var i in system[PLANETS]) { // planets
+            var planet=system[PLANETS][i];
+            if (!planet[4]) continue;
+            g.translate(0,-8);
+            g.fillStyle=KIND_COLOR[planet[KIND_ID]];
+            g.mozDrawText((planet[INHABITANTS]+":").pad(5," ",true)+planet[PLANET_NAME]);
+            /*if (planet[ALLIANCE_NAME])
+              g.mozDrawText(planet[ALLIANCE_NAME]+": "+planet[PLAYER_NAME]);
+            else
+              g.mozDrawText("     "+planet[PLAYER_NAME]);*/
           }
         } catch (e) {
           Map.exception("Map.update() [metadata]",e);
