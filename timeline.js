@@ -290,13 +290,6 @@ Timeline.draw=Timeline.guard("draw", function() {
             return q-0;
     }
 
-    Timeline.draw_events(g);
-    g.restore();
-
-    window.setTimeout(Timeline.draw, Timeline.update_interval)
-});
-
-Timeline.draw_events=Timeline.guard("draw_events",function(g){
     // We want to (re)load all of the events here, rather than in the init, because otherwise new events won't
     // show up until the *next* pageload. This is also important for when running on pages that use AJAX
     // heavilly (such as gmail) because these pages will seldom reload, meaning the data displayed on them
@@ -304,84 +297,96 @@ Timeline.draw_events=Timeline.guard("draw_events",function(g){
     Events.s.events.read();
     Settings.s.village_names.read();
     Settings.s.race.read();
-
     var events = Events.events;
-    // Draw data
     for (v in events) {
-        for (e in events[v]) {
-            var p = events[v][e];
-            var t = Events.type[p[0]];
-            var y = Timeline.warp(p[1]);
-        
-            // Check if this type of event is visible
-            if (!(t[1])) continue;
-            if (isNaN(y)) continue;
-            if (Events[p[0]] >=2) continue;
-
-            // If we're differentiating merchant types, don't show the message being sent
-            if (Events.predict_merchants && p[0] == 'market' && p[2].indexOf(Events.merchant_send) >= 0) continue;
-        
-            // Draw the line
-            g.strokeStyle = t[0];
-            g.beginPath();
-            g.moveTo(-10, y);
-            g.lineTo(-50, y);
-            g.stroke();
-    
-            // Draw the village id. (if village number is known, otherwise there's only one village)
+        try {
+			var village = "";
             if (v>0) {
-                // TODO: convert to human readable village name.
-                var v_name = Settings.village_names[v];
-                if (!v_name) v_name="["+v+"]";
-                g.fillStyle = "rgb(0,0,128)";
-                g.save();
-                g.translate(20 - Timeline.width, y-5);
-                g.mozDrawText(v_name);
-                g.restore();
+                village = Settings.village_names[v];
+                if (!village) village="["+v+"]";
+			}
+            for (e in events[v]) {
+                Timeline.draw_event(village,events[v][e]);
             }
+        } catch (e) {
+            Timeline.exception("Timeline.draw",e);
+        }
+    }
+    g.restore();
+});
 
-            // Draw the event text
-            g.fillStyle = "rgb(0,128,0)";
-            // TODO: prepend an * when an attack has 100% efficiency.
-            //var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
-            //cap = (cap<=0)?"*":"";
-            g.save();
-            //g.translate(20 - Timeline.width - g.mozMeasureText(cap), y+4);
-            //g.mozDrawText(cap + p[2]);
-            g.translate(20 - Timeline.width, y+4);
-            g.mozDrawText(p[2]);
-            g.restore();
+Timeline.draw_event=Timeline.guard("draw_event",function(village, event){
+    // Draw data
+    var color = Events.type[event[0]];
+    var y = Timeline.warp(event[1]);
 
-            // Draw the resources info.
-            if (Timeline.report_info) {
-                g.save();
-                g.translate(-40, y+4+12); // Move this below the message.
-                if (p[4]) {
-                    g.fillStyle = "rgb(64,192,64)";
-                    for (var i=3; i>=0; i--) {
-                        Timeline.draw_info(Timeline.img_res[i],p[4][i]);
-                    }
-                }
-                if (p[3]) {
-                    g.fillStyle = "rgb(0,0,255)";
-                    for (var i=10; i>=0; i--) {
-                        // This is a serious hack, but the best we can do without tearing up the entire 'events' list...
-                        if (i == 10) Timeline.draw_info(Timeline.img_unit[0], p[3][i]);
-                        else Timeline.draw_info(Timeline.img_unit[Settings.race*10+1+i], p[3][i]);
-                    }
-                }
-                g.restore();
+    // Check if this type of event is visible
+    if (isNaN(y)) return;
+    if (Events[event[0]] >=2) return;
+
+    var g = Timeline.context;
+
+    // If we're differentiating merchant types, don't show the message being sent
+    if (Events.predict_merchants && event[0] == 'market' && event[2].indexOf(Events.merchant_send) >= 0) return;
+        
+    // Draw the line
+    g.strokeStyle = color;
+    g.beginPath();
+    g.moveTo(-10, y);
+    g.lineTo(-50, y);
+    g.stroke();
+
+    // Draw the village's name if available.
+    g.fillStyle = "rgb(0,0,128)";
+    g.save();
+    g.translate(20 - Timeline.width, y-5);
+    g.mozDrawText(village);
+    g.restore();
+
+    // Draw the event text
+    g.fillStyle = "rgb(0,128,0)";
+    // TODO: prepend an * when an attack has 100% efficiency.
+    //var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
+    //cap = (cap<=0)?"*":"";
+    g.save();
+    //g.translate(20 - Timeline.width - g.mozMeasureText(cap), y+4);
+    //g.mozDrawText(cap + p[2]);
+    g.translate(20 - Timeline.width, y+4);
+    g.mozDrawText(event[2]);
+    g.restore();
+
+    // Draw the resources info.
+    if (Timeline.report_info) {
+        g.save();
+        g.translate(-45, y+4+12); // Move this below the message.
+        if (event[4]) {
+            g.fillStyle = "rgb(64,192,64)";
+            for (var i=3; i>=0; i--) {
+                Timeline.draw_info(Timeline.resources,event[4][i],i,20,12);
             }
         }
+        if (event[3]) {
+            g.fillStyle = "rgb(0,0,255)";
+            for (var i=10; i>=0; i--) {
+                // This is a serious hack, but the best we can do without tearing up the entire 'events' list...
+                if (i == 10) Timeline.draw_info(Timeline.hero, event[3][i]);
+                else Timeline.draw_info(Timeline.units[Settings.race], event[3][i], i, 16, 16);
+            }
+        }
+        g.restore();
     }
 });
 
-Timeline.draw_info=function(img,nrs) {
+Timeline.draw_info=function(img,nrs,pos,width, height) {
     if (!nrs) return;
     var g = Timeline.context;
     try {
-        g.translate(-img.width - 8, 0);
-        g.drawImage(img, -0.5, Math.round(-img.height*0.7) -0.5);
+        g.translate(-16, 0);
+        if (pos!==undefined) {
+          g.drawImage(img, width*pos, 0, width, height,   -0.5, -10, width, height);
+        } else {
+          g.drawImage(img, -0.5, -10);
+        }
     } catch (e) {
         // This might fail if the image is not yet or can't be loaded.
         // Ignoring this exception prevents the script from terminating to early.
@@ -414,7 +419,9 @@ Timeline.run=function() {
 
     Timeline.create_canvas();
     Timeline.create_button();
-    Timeline.load_images();
+    Timeline.resources = Images.resources.stamp();
+    Timeline.units = [Images.romans.stamp(), Images.teutons.stamp(), Images.gauls.stamp(), Images.nature.stamp(), Images.natars.stamp(), Images.monsters.stamp()];
+    Timeline.hero = Images.hero.stamp();
     
     if (Timeline.keep_updated)
         window.setInterval(Timeline.draw, Timeline.update_interval);
