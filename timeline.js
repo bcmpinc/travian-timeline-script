@@ -293,6 +293,10 @@ Timeline.draw=Timeline.guard("draw", function() {
             return q-0;
     }
 
+    // We want to (re)load all of the events here, rather than in the init, because otherwise new events won't
+    // show up until the *next* pageload. This is also important for when running on pages that use AJAX
+    // heavilly (such as gmail) because these pages will seldom reload, meaning the data displayed on them
+    // will quickly outdate.
     Events.s.events.read();
     var events = Events.events;
     for (v in events) {
@@ -307,12 +311,6 @@ Timeline.draw=Timeline.guard("draw", function() {
     }
     g.restore();
 });
-
-Timeline.updater=function() {
-    Timeline.draw();
-    if (Timeline.keep_updated) 
-      window.setTimeout(Timeline.updater, Timeline.update_interval);
-}
 
 Timeline.draw_event=function(planet, event){
     // Draw data
@@ -332,6 +330,7 @@ Timeline.draw_event=function(planet, event){
     g.lineTo(-50, y);
     g.stroke();
 
+    // Draw the planet's name
     g.fillStyle = "rgb(0,64,255)";
     g.save();
     g.translate(20 - Timeline.width, y-5);
@@ -376,7 +375,7 @@ Timeline.draw_info=function(img,nrs,pos) {
     var g = Timeline.context;
     try {
         g.translate(-16, 0);
-        if (pos) {
+        if (pos!==undefined) {
           g.translate(-8,0);
           g.drawImage(img, 41*pos, 0, 40, 25,   -6, -15, 32, 20);
         } else {
@@ -408,9 +407,12 @@ Timeline.draw_info=function(img,nrs,pos) {
 Timeline.run=function() {
     Timeline.create_canvas();
     Timeline.create_button();
-    Timeline.resources = [Images.metal.stamp(),Images.crystal.stamp(),Images.hydrogen.stamp(),Images.energy.stamp()];
-    Timeline.units = [Images.terrans.stamp(),Images.titans.stamp(),Images.xen.stamp()];
-    Timeline.updater();
+    Timeline.resources = [Images.metal.stamp(), Images.crystal.stamp(), Images.hydrogen.stamp(),Images.energy.stamp()];
+    Timeline.units = [Images.terrans.stamp(), Images.titans.stamp(), Images.xen.stamp()];
+
+    if (Timeline.keep_updated)
+        window.setInterval(Timeline.draw, Timeline.update_interval);
+    Timeline.draw();
 };
 
 Timeline.call('init', true);
