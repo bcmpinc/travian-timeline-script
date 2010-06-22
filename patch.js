@@ -61,32 +61,34 @@ function isempty(ob) {
     return true;
 }
 
-// Turn x/y coords into the hash value that goes on the karte page
-function xy_id(x, y) {
-    return 1 + (parseInt(x)+400) + (801*Math.abs(parseInt(y) - 400));
-}
+if (travian) {
+    // Turn x/y coords into the hash value that goes on the karte page
+    function xy_id(x, y) {
+        return 1 + (parseInt(x)+400) + (801*Math.abs(parseInt(y) - 400));
+    }
 
-// The inverse function of xy_id, id_xy(xy_id(x, y)) == [x, y]
-function id_xy(id) {
-    x = id%801 ? (id%801 - 401) : 400;
-    y = 400 - (id - x - 401)/801;
-    return [x, y];
-}
+    // The inverse function of xy_id, id_xy(xy_id(x, y)) == [x, y]
+    function id_xy(id) {
+        x = id%801 ? (id%801 - 401) : 400;
+        y = 400 - (id - x - 401)/801;
+        return [x, y];
+    }
 
-// This is a shortcut to the document.evaluate function, because typing the damn thing in
-// all of the time is damn annoying
-function xpath(match, reference, type){
-    // These are the three we use the most often...
-    // The XPathResult variables all *do* have numerical equivalents, but those are hard to
-    // remember. Accept strings as well, for ease of comprehension
-    if (type == undefined || type == 'unordered') type = XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
-    else if (type == 'ordered')                   type = XPathResult.ORDERED_NODE_SNAPSHOT_TYPE;
-    else if (type == 'any')                       type = XPathResult.ANY_UNORDERED_NODE_TYPE;
+    // This is a shortcut to the document.evaluate function, because typing the damn thing in
+    // all of the time is damn annoying
+    function xpath(match, reference, type){
+        // These are the three we use the most often...
+        // The XPathResult variables all *do* have numerical equivalents, but those are hard to
+        // remember. Accept strings as well, for ease of comprehension
+        if (type == undefined || type == 'unordered') type = XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
+        else if (type == 'ordered')                   type = XPathResult.ORDERED_NODE_SNAPSHOT_TYPE;
+        else if (type == 'any')                       type = XPathResult.ANY_UNORDERED_NODE_TYPE;
 
-    // Again, the most often used is probably the general document
-    if (!reference) reference = document;
+        // Again, the most often used is probably the general document
+        if (!reference) reference = document;
 
-    return document.evaluate(match, reference, null, type, null);
+        return document.evaluate(match, reference, null, type, null);
+    }
 }
 
 // Functions missing in Math
