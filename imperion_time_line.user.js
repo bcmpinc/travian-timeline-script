@@ -52,3 +52,6 @@ var metadata = <><![CDATA[
   
 // This script improves a few things to ease playing Imperion.
 /*****************************************************************************/   
+
+var travian = false;
+var imperion = true;
