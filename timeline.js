@@ -302,7 +302,7 @@ Timeline.draw=Timeline.guard("draw", function() {
     var events = Events.events;
     for (v in events) {
         try {
-            var planet=Settings.planet_names[v];
+            var planet=Settings.outpost_names[v];
             for (e in events[v]) {
                 Timeline.draw_event(planet,events[v][e]);
             }

@@ -195,7 +195,7 @@ Events.collector.fleet=function(){
         var who_id = who.attr("href").match(/planet\/(\d+)/)[1];
         
         // If someone's attacking *us*, include who is doing the attacking in the message
-        if (!Settings.planet_names[who_id]) 
+        if (!Settings.outpost_names[who_id]) 
           msg = who_name+': '+msg;
         e[2] = msg;
 

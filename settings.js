@@ -312,7 +312,7 @@ Settings.init=function(){
     Settings.setting("race",           0,          Settings.type.enumeration, ["Terrans","Titans","Xen"]);
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
-    Settings.setting("planet_names",   {},         Settings.type.object,      undefined, "The names of yout planets");
+    Settings.setting("outpost_names",   {},         Settings.type.object,      undefined, "The names of yout planets");
     
     /* NOTE: shell-code
     if (location.href.match(/about:cache\?device=timeline&/)) {
@@ -329,8 +329,8 @@ Settings.init=function(){
 Settings.run=function() {
     // Determine current planet
     Settings.planet=$(".planet a.icon").attr("href").replace("/planet/buildings/","")-0;
-    Settings.planet_names[Settings.planet]=$("#planetList").text();
-    Settings.s.planet_names.write();
+    Settings.outpost_names[Settings.planet]=$("#planetList").text();
+    Settings.s.outpost_names.write();
     
     // Create link for opening the settings menu.
     var link = $.new("a").attr({href: "javascript:"}).text("Time Line Settings");
