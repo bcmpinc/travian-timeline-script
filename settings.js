@@ -31,6 +31,7 @@ if (imperion) {
         // Tries to extract the user name from the page.
         return $("#head a[href*='userProfile']").text();
     }();
+    Settings.outpost_text="planet";
 }
 if (travian) {
     Settings.server_id = function(){
@@ -59,6 +60,7 @@ if (travian) {
         uid = uid.attr('href').match(/uid=(\d+)/)[1];
         return uid;
     }();
+    Settings.outpost_text="village";
 }
 
 // Get the value of this setting.
@@ -308,14 +310,16 @@ Settings.config=function() {
 };
 
 Settings.init=function(){
-    Settings.setting("race",           0,          Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+    if (travian) {
+        Settings.setting("race",           0,          Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+    }
+    if (imperion) {
+        Settings.setting("race",           0,          Settings.type.enumeration, ["Terrans","Titans","Xen"]);
+    }
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
-    Settings.setting("outpost_names",  {},         Settings.type.object,      undefined, "The names of the villages.");
+    Settings.setting("outpost_names",  {},         Settings.type.object,      undefined, "The names of your "+Settings.outpost_text+"s");
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
-
-    var s = Settings.server_id;
-    var u = Settings.user;
-
+    
     /* NOTE: shell-code
     if (location.href.match(/about:cache\?device=timeline&/)) {
         var params=location.href.split("&");
@@ -329,44 +333,57 @@ Settings.init=function(){
     */
 };
 Settings.run=function() {
-    // Create link for opening the settings menu.
-    var div = document.createElement("div");
-    div.style.position = "absolute";
-    div.style.zIndex   = "2";
-    var right = Timeline.width;
-    if (Timeline.collapse) right = Timeline.collapse_width;
-    if (!Timeline.enabled) right = 0;
-    right+=5;
-    div.style.right           = right+"px";
-    div.style.top             = "-5px";
-    div.style.MozBorderRadius = "6px";
-    div.style.padding         = "3px";
-    div.style.border          = "1px solid #999";
-    div.style.background      = "#ccc";
-    div.innerHTML = "<a href=\"#\" style=\"color: blue; font-size: 12px;\">Travian Time Line Settings</a>";
-    document.body.appendChild(div);
-    var link = div.firstChild;
-    link.style.cursor="pointer";
-    link.addEventListener("click",Settings.show,false);
+    // Determine the current/active outpost
+    if (imperion) {
+        Settings.outpost_name = $("#planetList").text();
+        Settings.outpost_id   = $(".planet a.icon").attr("href").replace("/planet/buildings/","")-0;
+    }
+    if (travian) {
+        try {
+            var tr = $("#vlist td[class='dot hl']").next();
+            Settings.outpost_name  = tr.text();
+            Settings.outpost_id    = tr.find('a').attr('href').match(/newdid=(\d+)/)[1] - 0;
+            var coord = tr.next().text().match(/\((-?\d{1,3})|(-?\d{1,3})\)/);
+            Settings.outpost_coord = [coord[1]-0, coord[2]-0];
+        } catch (e) {
+            Settings.exception("get outpost", e);
+            Settings.info("Failed to get the vlist table - assuming there's only one village!");
+            // Used solely for timeline. In a single village all events are from the same village. Hence this information is useless.
+            // TODO: find a way to properly support the transition to multiple villages
+            Settings.outpost_name = ""; 
+            Settings.outpost_id = 0;
+        }
+    }
+    Settings.outpost_names[Settings.outpost_id]=Settings.outpost_name;
+    Settings.s.outpost_names.write();
+    this.info("The active "+Settings.outpost_text+" is "+Settings.outpost_id+": "+Settings.outpost_name);
 
-    // Extract the active village
-    try {
-        var tr = document.evaluate('//table[@id="vlist"]/tbody/tr/td[@class="dot hl"]', document, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-        Settings.village_name  = tr.nextSibling.textContent;
-        Settings.village_id    = tr.nextSibling.childNodes[0].href.match(/newdid=(\d+)/)[1] - 0;
-        var coord = tr.nextSibling.nextSibling.childNodes;
-        var x = coord[1].textContent.match(/\((-?\d{1,3})/)[1];
-        var y = coord[5].textContent.match(/(-?\d{1,3})\)/)[1];
-        Settings.village_coord = [x, y];
-        this.info("The active village is "+Settings.village_id+": "+Settings.village_name);
-        Settings.outpost_names[Settings.village_id]=Settings.village_name;
-        Settings.s.outpost_names.write();
-    } catch (e) {
-        Settings.info("Failed to get the vlist table - assuming there's only one village!");
-        // Used solely for timeline. In a single village all events are from the same village. Hence this information is useless.
-        // TODO: find a way to properly support the transition to multiple villages
-        Settings.village_name = ""; 
-        Settings.village_id = 0;
+    // Create link for opening the settings menu.
+    var link = $.new("a").attr({href: "javascript:"}).text("Time Line Settings");
+    link.click(Settings.show);
+    if (travian) {
+        var right = Timeline.width;
+        if (Timeline.collapse) right = Timeline.collapse_width;
+        if (!Timeline.enabled) right = 0;
+        right+=5;
+        link.css({
+            position: "absolute",
+            zIndex: "2",
+            right: right+"px",
+            top: "-5px",
+            MozBorderRadius: "6px",
+            padding: "3px",
+            border: "1px solid #999",
+            background: "#ccc",
+            color: "blue", 
+            fontSize: "12px"
+        });
+        $(document.body).append(links);
+    }
+    if (imperion) {
+        var links = $("#head>.floatRight");
+        links.prepend($.new("li").text("|").attr({class: "colorLightGrey"}));
+        links.prepend($.new("li").append(link));
     }
     
     /* NOTE: shell-code
