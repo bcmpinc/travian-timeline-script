@@ -104,6 +104,7 @@ Timeline.create_canvas=function() {
     Timeline.element.bind('DOMMouseScroll', Timeline.mouse_wheel);
 
     // The click event listener for the link with the 'travian task queue'-script.
+    /*
     function setAt(e) {
         var at = document.getElementById("at");
         if (at) {
@@ -114,6 +115,7 @@ Timeline.create_canvas=function() {
         }
     }
     Timeline.element.bind("click",setAt);
+    */
 
     Timeline.context=Timeline.canvas.get(0).getContext("2d");
     Timeline.context.mozTextStyle = "8pt Monospace";

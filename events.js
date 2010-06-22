@@ -25,7 +25,7 @@ Events.init=function(){
     Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
     Events.setting("type", {
                 /* <tag> : <color> */
-                building: 'rgb(0,0,0)',
+                building: 'rgb(0,255,128)',
                 attack:   'rgb(255,0,0)',
                 market:   'rgb(0,128,0)',
                 research: 'rgb(0,0,255)',
@@ -56,11 +56,13 @@ Events.init=function(){
 // available types.
 
 /* An event-data-packet torn apart:
-   Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
-   129390: {                   #### ~ The village id
-    'b9930712':                #### ~ Some identifier that is both unqiue and consistent between page loads.
+   Travian example:  { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
+   Imperion example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Crystal mine (Level 9)",undefined,undefined]} }
+   129390: {                   #### ~ The outpost id
+    'b9930712':                #### ~ Some identifier for the event that is both unqiue and consistent between page loads.
     ["building",               0    ~ Type of event
      1225753710000,            1    ~ Estimated time at which this event occure(s|d).
+Travian:
      "Granary (level 6)",      2    ~ Event message.
                                3    ~ For events that might include armies (can be 'undefined')
      [0,                       3. 0 ~ Amount of farm-men involved
@@ -79,9 +81,19 @@ Events.init=function(){
       0,                       4. 1 ~ Amount of clay involved
       0,                       4. 2 ~ Amount of iron involved
       0]                       4. 3 ~ Amount of grain involved
+Imperion:
+     "Crystal mine (Level 9)", 2    ~ Event message.
+                               3    ~ For events that might include armies (can be 'undefined')
+     [2,                       3. 0 ~ the faction involved. (Terrans=1, Titans=2, Xen=3)
+      0,...,0]                 3. 1-10 ~ Amount of units involved (one field per type)
+                               4    ~ For events that might include resources (can be 'undefined')
+     [0,                       4. 0 ~ Amount of metal involved
+      0,                       4. 1 ~ Amount of crystal involved
+      0,                       4. 2 ~ Amount of hydrogen involved
+      0]                       4. 3 ~ Amount of energy involved
     ]
    }
-   Instead of a number, the fields in field 4 and 5 are also allowed to be a tuple (list/array).
+   Instead of a number, the fields in field 3 and 4 are also allowed to be a tuple (list/array).
    In this case the first field is the original amount and the second field is the amount by which the amount has decreased.
 */
 
@@ -94,18 +106,18 @@ Events.test_event=function(village, id){
 // village = id of the village.
 // id = The consistent unique event identifier.
 // overwrite = optionally overwrite any matching events
-Events.get_event=function(village, id, overwrite) {
-    var e = Events.events[village];
+Events.get_event=function(outpost, id, overwrite) {
+    var e = Events.events[outpost];
     if (e == undefined) {
         e = {};
-        Events.events[village]=e;
-        Events.debug("Added village: "+village);
+        Events.events[outpost]=e;
+        Events.debug("Added outpost: "+outpost);
     }
-    e = Events.events[village][id];
+    e = Events.events[outpost][id];
     if (e == undefined || overwrite === true) {
         e = [];
-        Events.events[village][id]=e;
-        Events.debug("Created element: "+id);
+        Events.events[outpost][id]=e;
+        Events.debug("Created event: "+id);
     }
     return e;
 };
