@@ -126,13 +126,15 @@ Timeline.mouse_wheel=function(e) {
     Timeline.scroll_offset += e.detail * Timeline.duration*1200; // Timeline.scroll_offset is in milliseconds
     e.stopPropagation(); // Kill the event to the standard window...
     e.preventDefault(); // Prevent the mouse scrolling from propegating
-    Timeline.draw();
+    Timeline.delayed_draw();
 };
 
 Timeline.toggle=function() {
     Timeline.visible=!Timeline.visible;
     Timeline.element.css({visibility: Timeline.visible?'visible':'hidden'});
     Timeline.s.visible.write();
+    if (Timeline.visible)
+        Timeline.delayed_draw();
 };
 
 Timeline.create_button=function() {
@@ -230,6 +232,7 @@ Timeline.draw_scale=function() {
 };
 
 Timeline.draw=Timeline.guard("draw", function() {
+    if (!Timeline.visible) return;
     if (Timeline.delayed_draw_timeout) clearTimeout(Timeline.delayed_draw_timeout);
 
     // Check if the height has changed

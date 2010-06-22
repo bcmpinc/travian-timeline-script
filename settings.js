@@ -378,7 +378,7 @@ Settings.run=function() {
             color: "blue", 
             fontSize: "12px"
         });
-        $(document.body).append(links);
+        $(document.body).append(link);
     }
     if (imperion) {
         var links = $("#head>.floatRight");
