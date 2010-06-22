@@ -21,17 +21,19 @@
 Feature.create("Settings", new Error(21));
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5, set: 6};
 
+// Determine server
 // The server value is needed very early in the script. Luckily it does not rely on DOM.
 // It is required to load settings.
-Settings.server = function(){
+Settings.server = location.href.match(/^(.*?\w)\//)[1];
+Settings.server_id = function(){
     // If this is a travian page determine the server id.
     // Otherwise return 'extern', which means the current page is not an in-game page.
-    if (location.href.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
-        !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
-        !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/)) {
+    if (Settings.server.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
+        !Settings.server.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
+        !Settings.server.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/)) {
 
         // This should give the server id as used by travian analyzer.
-        var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
+        var url = Settings.server.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
         if (!url) return "unknown";
         var a=url[2];
         if (url[1]=='speed') a='x';
@@ -41,6 +43,7 @@ Settings.server = function(){
         return 'extern';
     }
 }();
+
 Settings.get_username=function(){
     // A helper function that trys to extract the UID from the page, and returns an empty string if it fails.
     var extract_uid=function(){
@@ -50,18 +53,18 @@ Settings.get_username=function(){
         uid = uid.textContent.match(/uid=(\d+)/)[1];
         // Save it at *both* the local and global scope, and return it
         GM_setValue('last_uid', uid);
-        GM_setValue(Settings.server+'.last_uid', uid);
+        GM_setValue(Settings.server_id+'.last_uid', uid);
         return uid;
     }
 
-    if (Settings.server != 'extern'){
+    if (Settings.server_id != 'extern'){
         // Try extracting the uid
         var uid = extract_uid();
         if (uid) return uid;
 
         // If we run into an error, use the stored (local) version. As this runs before the DOM loads, this has the potential of not being loaded yet.
         // However, we cannot just wait for the DOM because everything depends on this, so delaying this would delay the entire script.
-        uid = GM_getValue(Settings.server+'.last_uid', '');
+        uid = GM_getValue(Settings.server_id+'.last_uid', '');
         if (uid) return uid;
 
         // If we have no stored version, this is likely because it was deleted when we last visited the login page.
@@ -73,12 +76,12 @@ Settings.get_username=function(){
         throw "Could not find any previous UID";
     }
 
-    // *If* we're on the login page, clear the latest value in server.last_uid (don't clear the global one).
+    // *If* we're on the login page, clear the latest value in server_id.last_uid (don't clear the global one).
     // This is so that we don't get cross-talk between users, as the first time we load with a new user
     // we might depend on the saved uid. In these cases, we want to save the *true* uid after the DOM loads,
     // and reload. We also want to be careful to not screw up other unnatural pages (hence the global version).
     if (location.href.match(/travian.*\..*\/login\.php/)){
-        GM_setValue(Settings.server+'.last_uid', '');
+        GM_setValue(Settings.server_id+'.last_uid', '');
     }
 
     // Careful - here we're running on unnatural pages, and should therefore use the *global* last_uid not the server-local one
@@ -341,7 +344,7 @@ Settings.init=function(){
     Settings.setting("village_names",  {},         Settings.type.object,      undefined, "The names of the villages.");
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
 
-    var s = Settings.server;
+    var s = Settings.server_id;
     var u = Settings.username;
 
     /* NOTE: shell-code
