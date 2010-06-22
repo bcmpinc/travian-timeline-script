@@ -596,7 +596,7 @@ Map.fleet_sent = function(contents) {
   Map.form=form;
   form.html(contents);
   Map.relink_action_button();
-  if (Events.enabled && Events["fleet"][0]) {
+  if (Events.enabled && Events.attack[0]) {
     try {
       Events.s.events.read();
       Events.collector.fleet();
