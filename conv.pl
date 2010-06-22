@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# Usage: conv.pl travian|imperion
 
 use strict;
 use warnings;
@@ -8,7 +9,7 @@ use JavaScript::Minifier::XS qw(minify);
 # timeline specific script argument parsing
 my ($script) = @ARGV;
 my $games = "travian|imperion";
-$script =~ /$games/ or die "Usage: conv.pl $games\n";
+$script =~ /^($games)$/ or die "Usage: conv.pl $games\n";
 my $inputfile = "${script}_time_line.user.js";
 my $outputfile = "${script}_script.js";
 
@@ -36,9 +37,10 @@ while(<$user>) {
 }
 
 # recursive regexes
-my $braces;
+my ($braces, $parens);
 my $quotes=qr/"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/;
 $braces=qr/([^{}"']|(??{$quotes})|\{(??{$braces})\})*/;
+$parens=qr/([^()"']|(??{$quotes})|\((??{$parens})\))*/;
 
 # append minified and stripped requires.
 while($_ = shift(@requires)) {
@@ -56,8 +58,10 @@ while($_ = shift(@requires)) {
 	while ( my ($key, $keep) = each(%removes) ) {
         	if ($keep) {
 			$d =~ s/if\($key\)\{($braces)\}/$1/g;
+			$d =~ s/\($key?($parens):$parens\)/$1/g;
         	} else {
 			$d =~ s/if\($key\)\{$braces\}//g;
+			$d =~ s/\($key?$parens:($parens)\)/$1/g;
 			
 			# make sure stripping worked.
 			if ($d =~ /$key/) {

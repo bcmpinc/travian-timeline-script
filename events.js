@@ -25,7 +25,7 @@ Events.init=function(){
     Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
     Events.setting("type", {
                 /* <tag> : <color> */
-                building: 'rgb(0,255,128)',
+                building: (travian?'rgb(0,0,0)':'rgb(255,255,255)'),
                 attack:   'rgb(255,0,0)',
                 market:   'rgb(0,128,0)',
                 research: 'rgb(0,0,255)',
