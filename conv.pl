@@ -55,7 +55,7 @@ while($_ = shift(@requires)) {
 	# strip (un)used
 	while ( my ($key, $keep) = each(%removes) ) {
         	if ($keep) {
-			$d =~ s/if\($key\)(\{$braces\})/$1/g;
+			$d =~ s/if\($key\)\{($braces)\}/$1/g;
         	} else {
 			$d =~ s/if\($key\)\{$braces\}//g;
 			
