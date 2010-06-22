@@ -28,12 +28,12 @@ Settings.server = location.href.match(/^(.*?\w)\//)[1];
 Settings.server_id = function(){
     // If this is a travian page determine the server id.
     // Otherwise return 'extern', which means the current page is not an in-game page.
-    if (Settings.server.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
-        !Settings.server.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
-        !Settings.server.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/)) {
+    if (location.href.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
+        !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
+        !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/)) {
 
         // This should give the server id as used by travian analyzer.
-        var url = Settings.server.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
+        var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
         if (!url) return "unknown";
         var a=url[2];
         if (url[1]=='speed') a='x';
@@ -44,64 +44,25 @@ Settings.server_id = function(){
     }
 }();
 
-Settings.get_username=function(){
-    // A helper function that trys to extract the UID from the page, and returns an empty string if it fails.
-    var extract_uid=function(){
-        var uid = document.evaluate("id('side_navi')//a[contains(@href, 'spieler.php')]/@href", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-        if (uid == undefined) return '';
-        // If we successfully extracted the uid
-        uid = uid.textContent.match(/uid=(\d+)/)[1];
-        // Save it at *both* the local and global scope, and return it
-        GM_setValue('last_uid', uid);
-        GM_setValue(Settings.server_id+'.last_uid', uid);
-        return uid;
-    }
+Settings.user=function(){
+    // Tries to extract the UID from the page, and returns an empty string if it fails.
+    var uid = $("#side_navi a[href*='spieler.php']");
+    if (uid.length==0) return '';
+    // If we successfully extracted the uid
+    uid = uid.attr('href').match(/uid=(\d+)/)[1];
+    return uid;
+}();
 
-    if (Settings.server_id != 'extern'){
-        // Try extracting the uid
-        var uid = extract_uid();
-        if (uid) return uid;
-
-        // If we run into an error, use the stored (local) version. As this runs before the DOM loads, this has the potential of not being loaded yet.
-        // However, we cannot just wait for the DOM because everything depends on this, so delaying this would delay the entire script.
-        uid = GM_getValue(Settings.server_id+'.last_uid', '');
-        if (uid) return uid;
-
-        // If we have no stored version, this is likely because it was deleted when we last visited the login page.
-        // Set a timer to extract it *after* the DOM loads (when it *should* be ready), and reload the page
-        $(document).ready(function(){ if (extract_uid()) location.reload(); });
-
-        // We failed to get the UID on this pass.
-        GM_log("Have no record of any UID.");
-        throw "Could not find any previous UID";
-    }
-
-    // *If* we're on the login page, clear the latest value in server_id.last_uid (don't clear the global one).
-    // This is so that we don't get cross-talk between users, as the first time we load with a new user
-    // we might depend on the saved uid. In these cases, we want to save the *true* uid after the DOM loads,
-    // and reload. We also want to be careful to not screw up other unnatural pages (hence the global version).
-    if (location.href.match(/travian.*\..*\/login\.php/)){
-        GM_setValue(Settings.server_id+'.last_uid', '');
-    }
-
-    // Careful - here we're running on unnatural pages, and should therefore use the *global* last_uid not the server-local one
-    var uid = GM_getValue('last_uid', '')
-    if (uid) return uid;
-
-    // It should never come to this, but just in case...
-    GM_log("Have no record of any UID.");
-    throw "Could not find any previous UID";
-};
 // Get the value of this setting.
 // Note that (for example)
-// "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
+// "var u = Settings.user;" and "var u = Settings.s.user.get();" have the same effect.
 Settings.get=function() {
     return this.parent[this.name];
 }
 
 // Set the value of this setting.
 // Note that (for example)
-// "Settings.username = u;" and "Settings.s.username.set(u);" have the same effect.
+// "Settings.user = u;" and "Settings.s.user.set(u);" have the same effect.
 Settings.set=function(value) {
     this.parent[this.name]=value;
 }
@@ -345,7 +306,7 @@ Settings.init=function(){
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
 
     var s = Settings.server_id;
-    var u = Settings.username;
+    var u = Settings.user;
 
     /* NOTE: shell-code
     if (location.href.match(/about:cache\?device=timeline&/)) {
@@ -518,9 +479,6 @@ Settings.fill=function(){
 Settings.close=function(){
     Settings.window.remove();
 };
-
-// Tested: this is *not* the cause of the pageload errors. Errors still occur without it running.
-Settings.username = Settings.get_username(); 
 
 // Correctly init debug now that it's possible
 Settings.setting("global_debug_level", 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
