@@ -35,8 +35,8 @@ Resources.show=function() {
         head.style.top="90px";
         head = head.childNodes[1].childNodes[1];
     
-        var mkt = Resources.market [Settings.village_id];
-        var prod = Resources.production[Settings.village_id];
+        var mkt = Resources.market [Settings.outpost_id];
+        var prod = Resources.production[Settings.outpost_id];
         mkt = (mkt ==undefined)?[0,0,0,0]:mkt;
         prod = (prod==undefined)?['?','?','?','?']:prod;
     
@@ -69,7 +69,7 @@ Resources.update=function() {
             mkt[t] += c;
         }
         this.info("This is on the market: "+mkt);
-        Resources.market[Settings.village_id]=mkt;
+        Resources.market[Settings.outpost_id]=mkt;
         Resources.s.market.write();
     } else {
         this.debug("No marketplace info found");
@@ -79,33 +79,33 @@ Resources.update=function() {
     Resources.res_names = [];
 
     // Store the warehouse and production values - always available in the header bar!
-    Resources.storage[Settings.village_id] = [];
-    Resources.production[Settings.village_id] = [];
+    Resources.storage[Settings.outpost_id] = [];
+    Resources.production[Settings.outpost_id] = [];
     for (var i=0; i < 4; i++){
         // These are indexed in reverse order from what we're using, and offset by one...
         var e = document.getElementById('l'+(4-i));
 
         // Capture current warehouse values
-        Resources.storage[Settings.village_id][i] = parseInt(e.textContent.split('/')[0]);
+        Resources.storage[Settings.outpost_id][i] = parseInt(e.textContent.split('/')[0]);
         // Capture current production rates
-        Resources.production[Settings.village_id][i] = parseInt(e.title);
+        Resources.production[Settings.outpost_id][i] = parseInt(e.title);
 
         // The translations of the resources in the server's native language
         Resources.res_names[i] = e.previousSibling.previousSibling.childNodes[0].title;
 
         // Capture storage sizes
-        if (i >= 2) Resources.storage[Settings.village_id][i+2] = parseInt(e.textContent.split('/')[1]);
+        if (i >= 2) Resources.storage[Settings.outpost_id][i+2] = parseInt(e.textContent.split('/')[1]);
     }
-    this.info("Found the following resources storage: "+Resources.storage[Settings.village_id].join(" - "));
-    this.info("Found the following resources production: "+Resources.production[Settings.village_id].join(" - "));
+    this.info("Found the following resources storage: "+Resources.storage[Settings.outpost_id].join(" - "));
+    this.info("Found the following resources production: "+Resources.production[Settings.outpost_id].join(" - "));
     
     // Timestamp. We don't need to worry about time offset because it's only used to compare with itself.
-    Resources.storage[Settings.village_id][6] = new Date().getTime();
+    Resources.storage[Settings.outpost_id][6] = new Date().getTime();
 
     // Get troops - either from main page, or from rally point(TBD)
     if (location.href.indexOf('dorf1.php') >= 0){
         // We're going to overwrite whatever was there in the first place
-        Resources.troops[Settings.village_id] = {};
+        Resources.troops[Settings.outpost_id] = {};
 
         // Grab the troop table. Two goddamn ways to do this now, stupid Travian update...
         var x = document.evaluate('//div[@id="troop_village"]/table/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -119,7 +119,7 @@ Resources.update=function() {
                     else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
                     var amount = row.childNodes[3].textContent;
 
-                    Resources.troops[Settings.village_id][type] = parseInt(amount);
+                    Resources.troops[Settings.outpost_id][type] = parseInt(amount);
                 }
             }
         }
@@ -136,10 +136,10 @@ Resources.update=function() {
                     else type = row.childNodes[1].childNodes[0].childNodes[0].className.match('u(\\d\\d?)$')[1];
                     var amount = row.childNodes[3].textContent;
 
-                    Resources.troops[Settings.village_id][type] = parseInt(amount);
+                    Resources.troops[Settings.outpost_id][type] = parseInt(amount);
                 }
             }
-            this.info("Found the following troops: "+uneval(Resources.troops[Settings.village_id]));
+            this.info("Found the following troops: "+uneval(Resources.troops[Settings.outpost_id]));
         }
     }
     // Save the values
@@ -150,7 +150,7 @@ Resources.update=function() {
 
 // This calculates what the resource values will be for a given village at a given time
 Resources.at_time = function(time, did){
-    if (did == undefined) did = Settings.village_id;
+    if (did == undefined) did = Settings.outpost_id;
 
     // Input...
     var store = Resources.storage[did];

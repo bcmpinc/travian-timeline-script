@@ -140,7 +140,7 @@ Tooltip.parse_event = function(e, time){
     return rtn;
 }
 
-Tooltip.village_tip = function(anchor, did){
+Tooltip.outpost_tip = function(anchor, did){
     // This holds all of the village-specific tooltip information
     var fill = function(){
         // 'events' contains time/text pairs; the time in the first index for sorting, the text for display
@@ -211,7 +211,7 @@ Tooltip.village_tip = function(anchor, did){
 
                     // Then, send an xmlhttprequest to set the village back to the current one
                     var request = new XMLHttpRequest();
-                    request.open('GET', 'dorf1.php?newdid='+Settings.village_id, true);
+                    request.open('GET', 'dorf1.php?newdid='+Settings.outpost_id, true);
                     request.send(null);
 
                     // Redraw the tooltip
@@ -435,7 +435,7 @@ Tooltip.run = function(){
             did = did.split('&')[0];
         }
 
-        Tooltip.village_tip(vil, did);
+        Tooltip.outpost_tip(vil, did);
     }
 
     Tooltip.overview();

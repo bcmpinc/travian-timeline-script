@@ -25,10 +25,10 @@ Active.get_id=function(){
             url: Settings.absolute_server + '/dorf3.php',
             onload: function(e){
                 var x = e.responseText.match('newdid=(\\d+)">([^<]*)<');
-                Settings.village_name = x[2];
-                Settings.s.village_name.write();
-                Settings.village_id = x[1]-0;
-                Settings.s.village_id.write();
+                Settings.outpost_name = x[2];
+                Settings.s.outpost_name.write();
+                Settings.outpost_id = x[1]-0;
+                Settings.s.outpost_id.write();
             }});
 };
 

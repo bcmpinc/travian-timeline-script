@@ -166,7 +166,7 @@ Events.collector.building=function(){
     for (var nn = 0; nn < build.snapshotLength; nn++){
         var x = build.snapshotItem(nn);
         var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
-        var e = Events.get_event(Settings.village_id, id);
+        var e = Events.get_event(Settings.outpost_id, id);
 
         e[0]="building";
     
@@ -180,8 +180,8 @@ Events.collector.building=function(){
         Events.debug("Time set to "+e[1]);
 
         x.childNodes[0].addEventListener('click', function(e){
-                Events.info('Removing the building event Events.events['+Settings.village_id+']['+id+']');
-                delete Events.events[Settings.village_id][id];
+                Events.info('Removing the building event Events.events['+Settings.outpost_id+']['+id+']');
+                delete Events.events[Settings.outpost_id][id];
                 Events.s.events.write();
             }, false);
     }
@@ -232,7 +232,7 @@ Events.collector.attack=function(){
         // It's the best I could do.
         if (last_event_time==t) event_count++;
         else last_event_time=t;
-        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+        var e = Events.get_event(Settings.outpost_id, "a"+t+"_"+event_count);
         e[0] = "attack";
         e[1] = d.set_seconds(duration);
         e[2] = msg;
@@ -251,8 +251,8 @@ Events.collector.attack=function(){
         // Add the cancel catcher
         var a = xpath('./tr/td/img[@class="del"]', info, 'any').singleNodeValue;
         if (a != undefined) a.addEventListener('click', function(e){
-                Events.info('Removing the attack event Events.events['+Settings.village_id+'][a'+t+'_'+event_count+']');
-                delete Events.events[Settings.village_id]['a'+t+'_'+event_count];
+                Events.info('Removing the attack event Events.events['+Settings.outpost_id+'][a'+t+'_'+event_count+']');
+                delete Events.events[Settings.outpost_id]['a'+t+'_'+event_count];
                 Events.s.events.write();
             }, false);
     }
@@ -298,7 +298,7 @@ Events.collector.market=function(){
     */
     // Local Event - basic, everything
     var type_A = function(){
-        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+        var e = Events.get_event(Settings.outpost_id, "a"+t+"_"+event_count);
         e[0] = "market";
         e[1] = ts;
         e[2] = msg; // Extract the action type
@@ -311,8 +311,8 @@ Events.collector.market=function(){
     // use the hash parameter to correctly calculate the distance and thus the time
     var type_B = function(hash){
         var coord = id_xy(hash);
-        var x = coord[0] - parseInt(Settings.village_coord[0]);
-        var y = coord[1] - parseInt(Settings.village_coord[1]);
+        var x = coord[0] - parseInt(Settings.outpost_coord[0]);
+        var y = coord[1] - parseInt(Settings.outpost_coord[1]);
         var dist = Math.sqrt(x*x+y*y);
         Events.info('Merchant is travelling '+dist+' squares');
         var time = (dist / ([16, 12, 24][Settings.race])) * 3600000; // In miliseconds
@@ -320,7 +320,7 @@ Events.collector.market=function(){
         var rtn_t = t + time;
         var rtn_ts = ts + time;
 
-        var e = Events.get_event(Settings.village_id, 'a'+rtn_t+'_'+event_count);
+        var e = Events.get_event(Settings.outpost_id, 'a'+rtn_t+'_'+event_count);
         e[0] = 'market';
         e[1] = rtn_ts;
         e[2] = Events.merchant_return + msg.split(Events.merchant_send)[1];
@@ -331,7 +331,7 @@ Events.collector.market=function(){
         var e = Events.get_event(did, 'a'+t+'_'+event_count);
         e[0] = 'market';
         e[1] = ts;
-        e[2] = Events.merchant_receive + ' ' + Settings.outpost_names[Settings.village_id];
+        e[2] = Events.merchant_receive + ' ' + Settings.outpost_names[Settings.outpost_id];
         e[4] = res;
     }
 
@@ -359,7 +359,7 @@ Events.collector.market=function(){
         Events.info(msg + ' | send='+send+' internal='+internal);
 
         // Ensure an event of this type doesn't already exists at this time
-        if (Events.test_event(Settings.village_id, 'a'+t+'_'+event_count)) return;
+        if (Events.test_event(Settings.outpost_id, 'a'+t+'_'+event_count)) return;
 
         if (send || !internal) type_A();
         if (send)              type_B(hash);
@@ -491,7 +491,7 @@ Events.collector.research = function(){
     // And now throw all of this information into an event
     // Don't throw in the level information if we're researching a new unit at the acadamy... because there isn't any!
     // Hash the event by the building name, because we can only have one research event per building per village
-    var e = Events.get_event(Settings.village_id, t+building);
+    var e = Events.get_event(Settings.outpost_id, t+building);
     e[0] = 'research';
     e[1] = d.set_seconds(duration);
     e[2] = building + ': '+type+(level==undefined ? '' : ' '+level);
@@ -521,7 +521,7 @@ Events.collector.party = function(){
     // We can only have one party per village max; overwrite any pre-existing party records
     // (how the hell could we ever get pre-existing parties??? You can't cancel the damn things...)
     // BUG: So the event entry of parties that finished already will be removed when a new party is detected. 
-    var e = Events.get_event(Settings.village_id, 'party', true);
+    var e = Events.get_event(Settings.outpost_id, 'party', true);
     e[0] = 'party';
     e[1] = t;
     e[2] = msg;
@@ -556,15 +556,15 @@ Events.collector.demolish = function(){
     var msg = x.parentNode.parentNode.previousSibling.previousSibling.previousSibling.previousSibling.previousSibling.textContent + ' ' + msg;
 
     // We can just index this by the time - only one thing can be demoed at any given time
-    var e = Events.get_event(Settings.village_id, t);
+    var e = Events.get_event(Settings.outpost_id, t);
     e[0] = 'demolish';
     e[1] = d.set_seconds(event_duration);
     e[2] = msg;
 
     // Add a listener to the cancel button, to remove the event if canceled
     x.childNodes[0].addEventListener('click', function(e){
-            Events.info('Removing the demolition event Events.events['+Settings.village_id+']['+t+']');
-            delete Events.events[Settings.village_id][t];
+            Events.info('Removing the demolition event Events.events['+Settings.outpost_id+']['+t+']');
+            delete Events.events[Settings.outpost_id][t];
             Events.s.events.write();
         }, false);
 };
@@ -573,8 +573,8 @@ Events.collector.overflow = function(){
     // These events are *not* indexed by the time of their occurence, unlike all the other ones...
     if (Resources.enabled == false) return; // This depends on resources being collected
 
-    var stor = Resources.storage[Settings.village_id];
-    var prod = Resources.production[Settings.village_id];
+    var stor = Resources.storage[Settings.outpost_id];
+    var prod = Resources.production[Settings.outpost_id];
 
     // Calculate the overflow/empty time
     for (var i=0; i < 4; i++){
@@ -592,7 +592,7 @@ Events.collector.overflow = function(){
         var time = Math.round(new Date().getTime() + t*3600000);
 
         // Create the event
-        var e = Events.get_event(Settings.village_id, 'overflow'+i, true);
+        var e = Events.get_event(Settings.outpost_id, 'overflow'+i, true);
         e[0] = 'overflow';
         e[1] = time;
         e[2] = Resources.res_names[i];

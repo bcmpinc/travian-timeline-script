@@ -69,7 +69,7 @@ Map.append_villages=function(){
             row.appendChild(Map.new_table_cell("x","("+location[0]));
             row.appendChild(Map.new_table_cell(""," | "));
             row.appendChild(Map.new_table_cell("y",location[1]+")"));
-            Map.village_list.appendChild(row);
+            Map.outpost_list.appendChild(row);
         }
     }
 };
@@ -201,7 +201,7 @@ Map.tag_change=function(e) {
     if (cat=="none") {
         delete Map.locations[l];
     } else {
-        Map.locations[l]=[Map.posx,Map.posy,cat,Map.village_name];
+        Map.locations[l]=[Map.posx,Map.posy,cat,Map.outpost_name];
     }
     Map.s.locations.write();
 };
@@ -224,7 +224,7 @@ Map.tag_tool=function() {
     }
     Map.posx=loc[1]-0;
     Map.posy=loc[2]-0;
-    Map.village_name=x.firstChild.textContent;
+    Map.outpost_name=x.firstChild.textContent;
     select.addEventListener('change',Map.tag_change,false);
     x.appendChild(select);
     x.parentNode.style.zIndex=5; // Otherwise it might end up under the "(Capital)" text element.
@@ -233,8 +233,8 @@ Map.run=function() {
     if (Map.list_extra_villages) {
         var vlist=document.getElementById("vlist");
         if (vlist) {
-            Map.village_list = vlist.childNodes[1];
-            if (Map.village_list) {
+            Map.outpost_list = vlist.childNodes[1];
+            if (Map.outpost_list) {
                 Map.append_villages();
             } else {
                 this.warning("Could not find village list.");
