@@ -27,7 +27,9 @@ Map.init=function(){
     Map.setting("remove_sectors", true, Settings.type.bool,undefined, "Remove the sector numbers at the top and right border of the map. Note that this numbering is not updated when dragging the map. Use the new-grid instead.");
     Map.setting("enable_dragging", true, Settings.type.bool,undefined, "Allow the map to be dragged. Note that this calls functions through GreaseMonkey's unsafeWindow.");
     Map.setting("enable_new_grid", true, Settings.type.bool,undefined, "Adds a grid to the map, to replace the original sector numbers. This grid is more accurate than the original sector numbering and works well with dragging enabled.");
-    Map.setting("system_metadata", true, Settings.type.bool,undefined, "Add some extra data around a planet, like resources available on asteroids or debris.");
+    Map.setting("system_resources", true, Settings.type.bool,undefined, "Write above a solar system what resources are available on asteroids, comets or debris.");
+    Map.setting("system_players", true, Settings.type.bool,undefined, "Write below a solar system the inhabitants of it's planets.");
+    Map.setting("system_players_tag", 0, Settings.type.enumeration,["planet","player","alliance"], "The tag used for the inhabitants.");
     Map.setting("rewire_send_troops", true, Settings.type.bool,undefined, "When clicking on a send troops button, the form is inserted into the page.");
     /*Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");*/
     /*Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], * /
@@ -218,8 +220,8 @@ Map.update=function() {
     // var TITANS = 2;
     // var XEN = 3;
     KIND_COLOR = {1: "#C90", 2: "#06C", 3: "#0C3"};
-    
-    if (Map.system_metadata) {
+
+    if (Map.system_resources || Map.system_players) {
       g.mozTextStyle = "6pt Monospace";
       for (id in unsafeWindow.mapData) {
         var pos = unsafeWindow.config.generator.getCoordsBySystemId(id);
@@ -227,39 +229,45 @@ Map.update=function() {
         var py = (pos.y-Map.posy+7)*Map.quadrantHeight+10;
         g.save();
         try {
-          g.translate(px,py);
-          var system=unsafeWindow.mapData[id];
-          g.fillStyle="red";
-          for (var i in system[COMETS]) { // comets
-            var comet=system[COMETS][i];
-            if (!comet.id) continue;
-            Map.draw_object(comet.name.replace(/^[^\d]+/i, ''),comet.r1,comet.r2,comet.r3);
+          if (Map.system_resources) {
+            g.translate(px,py);
+            var system=unsafeWindow.mapData[id];
+            g.fillStyle="red";
+            for (var i in system[COMETS]) { // comets
+              var comet=system[COMETS][i];
+              if (!comet.id) continue;
+              Map.draw_object(comet.name.replace(/^[^\d]+/i, ''),comet.r1,comet.r2,comet.r3);
+            }
+            g.fillStyle="yellow";
+            for (var i in system[DEBRIS]) { // debris
+              var debris=system[DEBRIS][i];
+              if (!debris.planet_id) continue;
+               Map.draw_object(system.planets[debris.planet_id].planet_name,debris.r1,debris.r2,0);
+            }
+            g.fillStyle="cyan";
+            for (var i in system[ASTEROID]) { // asteroids
+              var asteroid=system[ASTEROID][i];
+              if (!asteroid.id) continue;
+              Map.draw_object("\u25B2",asteroid.r1,asteroid.r2,asteroid.r3);
+            }
           }
-          g.fillStyle="yellow";
-          for (var i in system[DEBRIS]) { // debris
-            var debris=system[DEBRIS][i];
-            if (!debris.planet_id) continue;
-            Map.draw_object(system.planets[debris.planet_id].planet_name,debris.r1,debris.r2,0);
-          }
-          g.fillStyle="cyan";
-          for (var i in system[ASTEROID]) { // asteroids
-            var asteroid=system[ASTEROID][i];
-            if (!asteroid.id) continue;
-            Map.draw_object("\u25B2",asteroid.r1,asteroid.r2,asteroid.r3);
-          }
-          g.restore();
-          g.save();
-          g.translate(px,py- -Map.quadrantHeight-8);
-          for (var i in system[PLANETS]) { // planets
-            var planet=system[PLANETS][i];
-            if (!planet[4]) continue;
-            g.translate(0,-8);
-            g.fillStyle=KIND_COLOR[planet[KIND_ID]];
-            g.mozDrawText((planet[INHABITANTS]+":").pad(5," ",true)+planet[PLANET_NAME]);
-            /*if (planet[ALLIANCE_NAME])
-              g.mozDrawText(planet[ALLIANCE_NAME]+": "+planet[PLAYER_NAME]);
-            else
-              g.mozDrawText("     "+planet[PLAYER_NAME]);*/
+          if (Map.system_players) {
+            g.restore();
+            g.save();
+            g.translate(px,py- -Map.quadrantHeight-8);
+            for (var i in system[PLANETS]) { // planets
+              var planet=system[PLANETS][i];
+              if (!planet[4]) continue;
+              g.translate(0,-8);
+              g.fillStyle=KIND_COLOR[planet[KIND_ID]];
+              var tag;
+              switch (Map.system_players_tag) {
+                case 0: tag=planet[PLANET_NAME]; break;
+                case 1: tag=planet[PLAYER_NAME]; break;
+                case 2: tag=planet[ALLIANCE_NAME]; break;
+              }
+              g.mozDrawText((planet[INHABITANTS]+":").pad(5," ",true) + tag);
+            }
           }
         } catch (e) {
           Map.exception("Map.update() [metadata]",e);

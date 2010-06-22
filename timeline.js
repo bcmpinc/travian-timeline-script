@@ -34,6 +34,7 @@ Timeline.init=function(){
     Timeline.setting("collapse_width", 65, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
     Timeline.setting("collapse_delay", 200, Settings.type.integer, undefined, "The time it takes to unfold/collapse the timeline (in milliseconds)");
     Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
+    Timeline.setting("move_page_left", true, Settings.type.bool, undefined, "Move the page to the left side of the screen.");
 
     Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
 
@@ -404,12 +405,17 @@ Timeline.draw_info=function(img,nrs,pos) {
     }
 };
 
+Timeline.moveleft=function() {
+    GM_addStyle("div#head, div#page {left: 0 !important; margin-left: 0 !important;}\n");
+}
+
 Timeline.run=function() {
     Timeline.create_canvas();
     Timeline.create_button();
     Timeline.resources = [Images.metal.stamp(), Images.crystal.stamp(), Images.hydrogen.stamp(),Images.energy.stamp()];
     Timeline.units = [Images.terrans.stamp(), Images.titans.stamp(), Images.xen.stamp()];
-
+    if (Timeline.move_page_left)
+        Timeline.moveleft();
     if (Timeline.keep_updated)
         window.setInterval(Timeline.draw, Timeline.update_interval);
     Timeline.draw();
