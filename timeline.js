@@ -295,14 +295,14 @@ Timeline.draw=Timeline.guard("draw", function() {
     // heavilly (such as gmail) because these pages will seldom reload, meaning the data displayed on them
     // will quickly outdate.
     Events.s.events.read();
-    Settings.s.village_names.read();
+    Settings.s.outpost_names.read();
     Settings.s.race.read();
     var events = Events.events;
     for (v in events) {
         try {
 			var village = "";
             if (v>0) {
-                village = Settings.village_names[v];
+                village = Settings.outpost_names[v];
                 if (!village) village="["+v+"]";
 			}
             for (e in events[v]) {

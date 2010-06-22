@@ -225,7 +225,7 @@ Events.collector.attack=function(){
         var dest = xpath('./thead//td[@class="role"]/a', x, 'any').singleNodeValue.textContent;
         // If someone's attacking *us*, include who is doing the attacking in the message
         var attacking = false;
-        for (var j in Settings.village_names) if (msg.indexOf(Settings.village_names[j]) >= 0){ attacking = true; break;}
+        for (var j in Settings.outpost_names) if (msg.indexOf(Settings.outpost_names[j]) >= 0){ attacking = true; break;}
         if (attacking) msg = dest+': '+msg;
 
         // Using the time as unique id. If there are multiple with the same time increase event_count.
@@ -331,7 +331,7 @@ Events.collector.market=function(){
         var e = Events.get_event(did, 'a'+t+'_'+event_count);
         e[0] = 'market';
         e[1] = ts;
-        e[2] = Events.merchant_receive + ' ' + Settings.village_names[Settings.village_id];
+        e[2] = Events.merchant_receive + ' ' + Settings.outpost_names[Settings.village_id];
         e[4] = res;
     }
 

@@ -310,7 +310,7 @@ Settings.config=function() {
 Settings.init=function(){
     Settings.setting("race",           0,          Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
-    Settings.setting("village_names",  {},         Settings.type.object,      undefined, "The names of the villages.");
+    Settings.setting("outpost_names",  {},         Settings.type.object,      undefined, "The names of the villages.");
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
 
     var s = Settings.server_id;
@@ -359,8 +359,8 @@ Settings.run=function() {
         var y = coord[5].textContent.match(/(-?\d{1,3})\)/)[1];
         Settings.village_coord = [x, y];
         this.info("The active village is "+Settings.village_id+": "+Settings.village_name);
-        Settings.village_names[Settings.village_id]=Settings.village_name;
-        Settings.s.village_names.write();
+        Settings.outpost_names[Settings.village_id]=Settings.village_name;
+        Settings.s.outpost_names.write();
     } catch (e) {
         Settings.info("Failed to get the vlist table - assuming there's only one village!");
         // Used solely for timeline. In a single village all events are from the same village. Hence this information is useless.

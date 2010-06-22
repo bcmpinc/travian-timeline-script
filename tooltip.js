@@ -97,7 +97,7 @@ Tooltip.sumarize = function(rota){
     // Cycle through all of the villages
     var vils = []; // Push the html into here for alphabetizing...
     for (var did in Resources.storage){
-        var name = Settings.village_names[did];
+        var name = Settings.outpost_names[did];
         var a = Tooltip.make_header(rota, d, did);
         if (a == -1) continue;
 
