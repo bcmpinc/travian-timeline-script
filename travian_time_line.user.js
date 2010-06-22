@@ -66,3 +66,6 @@ var metadata = <><![CDATA[
 // attack and a merchant link button. (Currently you have to add these additional
 // villages in the scripts source code.)
 /*****************************************************************************/   
+
+var travian = true;
+var imperion = false;
