@@ -36,19 +36,32 @@ Settings.get=function() {
 // Note that (for example)
 // "Settings.username = u;" and "Settings.s.username.set(u);" have the same effect.
 Settings.set=function(value) {
-   this.parent[this.name]=value;
+    this.parent[this.name]=value;
 }
 
 // Retrieves the value from the GM persistent storage database aka about:config
 // Settings are not automatically updated.
 // Call this if the value might have changed and you want it's latest value.
-Settings.read=function() {
+// @param param, the first scope that will be used.
+Settings.read=function(scope) {
     try {
         if (this.type==Settings.type.none) {
             return; // intentionally no warning.
         }
-        var param = Settings.server_id+"."+this.fullname;
-        var x = GM_getValue(param, this.def_val);
+        var x;
+        param = scope || 0;
+        for (param; param<this.scopes.length; param++) {
+            x = GM_getValue(this.scopes[param]+'.'+this.fullname);
+            if (x!==undefined && x!=="") {
+                this.scope = param;
+                break;
+            }
+        }
+        if (!(param<this.scopes.length)) {
+            x=this.def_val;
+            this.scope = this.scopes.length;
+        }
+        
         switch (this.type) {
             case Settings.type.string:
             break;
@@ -67,7 +80,11 @@ Settings.read=function() {
             x=x==true;
             break;
         }
-        this.set(x);
+        if (scope!==undefined) {
+            return x;
+        } else {
+            this.set(x);
+        }
     } catch (e) {
         if (this&&this.exception)
             this.exception("Settings.read("+this.name+")", e);
@@ -77,9 +94,15 @@ Settings.read=function() {
 };
 
 // Stores the value in the GM persistent storage database aka about:config
-Settings.write=function() {
+// Scope is used to store this setting at a higher scope.
+Settings.write=function(scope) {
     try {
-        var param=Settings.server_id+"."+this.fullname;
+        scope=scope||0;
+        if (scope>=this.scopes.length) {
+            this.warning("This setting ("+this.fullname+") can't be stored in the default scope!");
+            return;
+        }
+        var param=this.scopes[scope]+'.'+this.fullname;
         switch (this.type) {
             case Settings.type.none:
             this.warning("This setting ("+this.fullname+") has no type and can't be stored!");
@@ -97,6 +120,7 @@ Settings.write=function() {
             GM_setValue(param, uneval(this.get()));
             break;
         }
+        this.scope=scope;
     } catch (e) {
         if (this&&this.exception)
             this.exception("Settings.write("+this.name+")", e);
@@ -105,12 +129,18 @@ Settings.write=function() {
     }
 };
 
-// Removed the value from the GM persistent storage database aka about:config
-Settings.remove=function() {
+// Removes the value from the GM persistent storage database aka about:config
+// Scope is used to remove this setting from a higher scope.
+// Use either read() or write() after a call to this function.
+Settings.remove=function(scope) {
     try {
-        var param=Settings.server_id+"."+this.fullname;
+        scope=scope||0;
+        if (scope>=this.scopes.length) {
+            this.warning("The default setting of ("+this.fullname+") can't be changed!");
+            return;
+        }
+        var param=this.scopes[scope]+'.'+this.fullname;
         GM_deleteValue(param);
-        this.set(this.def_val);
     } catch (e) {
         if (this&&this.exception)
             this.exception("Settings.remove("+this.name+")", e);
@@ -123,9 +153,31 @@ Settings.remove=function() {
 Settings.config=function() {
     try {
         var s = $.new("span"); // the setting config thing
+        var sc = $.new("span"); // the scope
+        s.append(sc);
         s.append(this.name.replace(/_/g," ").pad(22)+": ");
         var setting=this;
         
+        sc.css("marginRight", "8px");
+        if (this.scope<this.scopes.length) {
+            sc.html(this.scope);
+            var sv=GM_getValue(this.scopes[setting.scope+1]+'.'+this.fullname);
+            if (sv===undefined) sv = this.def_val;
+            sc.title=sv;
+        
+            if (this.scope<this.scopes.length-1) {
+                sc.bind("click",function (e) {
+                        setting.remove(setting.scope);
+                        setting.write(setting.scope+1);
+                        Settings.fill();
+                    },false);
+                sc.css({cursor: "pointer", color: "red"});
+            }
+        } else {
+             sc.html('d');
+        }
+
+
         // Create the input element.
         switch (this.type) {
         case Settings.type.none: {
@@ -226,7 +278,8 @@ Settings.init=function(){
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
     Settings.setting("planet_names",   {},         Settings.type.object,      undefined, "The names of yout planets");
     
-    /*if (location.href.match(/about:cache\?device=timeline&/)) {
+    /* NOTE: shell-code
+    if (location.href.match(/about:cache\?device=timeline&/)) {
         var params=location.href.split("&");
         Settings.special={};
         for (var i=1; i<params.length; i++) {
@@ -234,7 +287,8 @@ Settings.init=function(){
             Settings.special[z[0]]=z[1];
             GM_log("Param:"+params[i]);
         }
-    }*/
+    }
+    */
 };
 Settings.run=function() {
     // Determine current planet
@@ -249,10 +303,13 @@ Settings.run=function() {
     links.prepend($.new("li").text("|").attr({class: "colorLightGrey"}));
     links.prepend($.new("li").append(link));
     
+    /* NOTE: shell-code
     if (Settings.special && Settings.special.page=="settings") {
         Settings.show();
     }
+    */
 };
+
 Settings.show=function() {
     var w = $.new("div");
     w.css({position:   "fixed",
@@ -282,7 +339,8 @@ Settings.show=function() {
             // Skip features without settings
             if (f.s == undefined || isempty(f.s)) continue;
 
-            tablebody.append('<tr align="right"><td style="padding: 5px 2px; text-align: right; border: none;"><a href="javascript:" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
+            tablebody.append('<tr align="right"><td style="padding: 5px 2px; text-align: right; border: none; background: none;">'+
+                '<a href="javascript:" style="-moz-border-radius-topleft:8px; -moz-border-radius-bottomleft:8px;'+
                 'padding:1px 11px 2px; border: 2px solid #000; '+
                 (n==Settings.current_tab?'background: #fff; border-right: none;':'background: #ddd; border-right: 3px solid black;')+
                 ' color:black; outline: none; cursor:pointer;">'+
@@ -297,11 +355,12 @@ Settings.show=function() {
                     left:     "-445px",
                     top:      "-200px",
                     border:   "none",
-                    borderCollapse: "collapse"});
+                    borderCollapse: "collapse",
+                    background: "none"});
         p.append(tabbar);
         
         var notice = $.new('pre'); // Add the copyright
-        notice.text("Copyright (C) 2008, 2009 Bauke Conijn, Adriaan Tichler\n"+
+        notice.text("Copyright (C) 2008, 2009, 2010 Bauke Conijn, Adriaan Tichler\n"+
             "GNU General Public License as published by the Free Software Foundation;\n"+
             "either version 3 of the License, or (at your option) any later version.\n"+
             "This program comes with ABSOLUTELY NO WARRANTY!");
@@ -367,6 +426,7 @@ Settings.close=function(){
 Settings.setting("global_debug_level", 0, Settings.type.enumeration, Feature.debug_categories, "Which categories of messages should be sent to the console. (Listed in descending order of severity).");
 Settings.init_debug();
 
-// Settings init will always run
+// Settings is a required feature. 
+// Hence Settings.init will always run
 Settings.call('init', true);
 $(function(){Settings.call('run',true);});
