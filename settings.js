@@ -22,19 +22,55 @@ Feature.create("Settings", new Error(21));
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5, set: 6};
 
 // Determine server
+// The server value is needed very early in the script. Luckily it does not rely on DOM.
+// It is required to load settings.
 Settings.server = location.href.match(/^(.*?\w)\//)[1];
-Settings.server_id = Settings.server.replace(/http:\/\/(\w+)\.imperion\.(\w+)/,"$2_$1");
+if (imperion) {
+    Settings.server_id = Settings.server.replace(/http:\/\/(\w+)\.imperion\.(\w+)/,"$2_$1");
+    Settings.user=function(){
+        // Tries to extract the user name from the page.
+        return $("#head a[href*='userProfile']").text();
+    }();
+}
+if (travian) {
+    Settings.server_id = function(){
+        // If this is a travian page determine the server id.
+        // Otherwise return 'extern', which means the current page is not an in-game page.
+        if (location.href.match(/.*\.travian.*\.[a-z]*\/.*\.php.*/) &&
+            !location.href.match(/(?:(forum)|(board)|(shop)|(help))\.travian/) &&
+            !location.href.match(/travian.*\..*\/((manual)|(login)|(logout))\.php.*/)) {
+
+            // This should give the server id as used by travian analyzer.
+            var url = location.href.match("//([a-zA-Z]+)([0-9]*)\\.travian(?:\\.com?)?\\.(\\w+)/");
+            if (!url) return "unknown";
+            var a=url[2];
+            if (url[1]=='speed') a='x';
+            if (url[1]=='speed2') a='y';
+            return url[3]+a;
+        } else {
+            return 'extern';
+        }
+    }();
+    Settings.user=function(){
+        // Tries to extract the UID from the page, and returns an empty string if it fails.
+        var uid = $("#side_navi a[href*='spieler.php']");
+        if (uid.length==0) return '';
+        // If we successfully extracted the uid
+        uid = uid.attr('href').match(/uid=(\d+)/)[1];
+        return uid;
+    }();
+}
 
 // Get the value of this setting.
 // Note that (for example)
-// "var u = Settings.username;" and "var u = Settings.s.username.get();" have the same effect.
+// "var u = Settings.user;" and "var u = Settings.s.user.get();" have the same effect.
 Settings.get=function() {
     return this.parent[this.name];
 }
 
 // Set the value of this setting.
 // Note that (for example)
-// "Settings.username = u;" and "Settings.s.username.set(u);" have the same effect.
+// "Settings.user = u;" and "Settings.s.user.set(u);" have the same effect.
 Settings.set=function(value) {
     this.parent[this.name]=value;
 }
