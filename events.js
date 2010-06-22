@@ -25,10 +25,11 @@ Events.init=function(){
     Events.setting("history", 1440, Settings.type.integer, undefined, "The time that events will be retained after happening, before being removed (in minutes)");
     Events.setting("type", {
                 /* <tag> : <color> */
-                building: 'rgb(255,255,255)',
-                fleet:    'rgb(255,0,0)',
+                building: 'rgb(0,255,128)',
+                attack:   'rgb(255,0,0)',
                 market:   'rgb(0,128,0)',
                 research: 'rgb(0,0,255)',
+                party:    'rgb(255,128,128)',
                 demolish: 'rgb(128,128,128)',
                 overflow: 'rgb(150,0,150)',
             }, Settings.type.none, undefined, "List of event types");
@@ -36,7 +37,7 @@ Events.init=function(){
 
     display_options = ['Collect','Show in Time Line']; //, 'Villagelist'];
     Events.setting('building',  [1,1], Settings.type.set, display_options, "Keep track of what you build [from the planet overview]");
-    Events.setting('fleet',     [1,1], Settings.type.set, display_options, "Keep track of all incoming and outgoing fleets [from the fleet base]");
+    Events.setting('attack',     [1,1], Settings.type.set, display_options, "Keep track of all incoming and outgoing fleets [from the fleet base]");
     //Events.setting('market',    [1,1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
     //Events.setting('research',  [1,1], Settings.type.set, display_options, "Keep track of what is being researched [from the research center]");
     //Events.setting('demolish',  [1,1], Settings.type.set, display_options, "Keep track of demolished buildings [from the construction yard]");
@@ -47,11 +48,32 @@ Events.init=function(){
 // available types.
 
 /* An event-data-packet torn apart:
-   Example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Crystal mine (Level 9)",undefined,undefined]} }
-   129390: {                   #### ~ The plannet id
+   Travian example:  { 129390: {'b9930712':["building",1225753710000,"01. Someville","Granary (level 6)",undefined,undefined]} }
+   Imperion example: { 129390: {'b9930712':["building",1225753710000,"01. Someville","Crystal mine (Level 9)",undefined,undefined]} }
+   129390: {                   #### ~ The outpost id
     'b9930712':                #### ~ Some identifier for the event that is both unqiue and consistent between page loads.
     ["building",               0    ~ Type of event
      1225753710000,            1    ~ Estimated time at which this event occure(s|d).
+Travian:
+     "Granary (level 6)",      2    ~ Event message.
+                               3    ~ For events that might include armies (can be 'undefined')
+     [0,                       3. 0 ~ Amount of farm-men involved
+      0,                       3. 1 ~ Amount of defense-men involved
+      0,                       3. 2 ~ Amount of attack-men involved
+      0,                       3. 3 ~ Amount of scouts involved
+      0,                       3. 4 ~ Amount of defense-horses involved
+      0,                       3. 5 ~ Amount of attack-horses involved
+      0,                       3. 6 ~ Amount of rams involved
+      0,                       3. 7 ~ Amount of trebuchets involved
+      0,                       3. 8 ~ Amount of leaders involved
+      0,                       3. 9 ~ Amount of settlers involved
+      0],                      3.10 ~ Amount of heros involved
+                               4    ~ For events that might include resources (can be 'undefined')
+     [0,                       4. 0 ~ Amount of wood involved
+      0,                       4. 1 ~ Amount of clay involved
+      0,                       4. 2 ~ Amount of iron involved
+      0]                       4. 3 ~ Amount of grain involved
+Imperion:
      "Crystal mine (Level 9)", 2    ~ Event message.
                                3    ~ For events that might include armies (can be 'undefined')
      [2,                       3. 0 ~ the faction involved. (Terrans=1, Titans=2, Xen=3)
@@ -76,19 +98,18 @@ Events.test_event=function(village, id){
 // village = id of the village.
 // id = The consistent unique event identifier.
 // overwrite = optionally overwrite any matching events
-Events.get_event=function(id, overwrite) {
-    var village = Events.planet;
-    var e = Events.events[village];
+Events.get_event=function(outpost, id, overwrite) {
+    var e = Events.events[outpost];
     if (e == undefined) {
         e = {};
-        Events.events[village]=e;
-        this.debug("Added village: "+village);
+        Events.events[outpost]=e;
+        Events.debug("Added outpost: "+outpost);
     }
-    e = Events.events[village][id];
+    e = Events.events[outpost][id];
     if (e == undefined || overwrite === true) {
         e = [];
-        Events.events[village][id]=e;
-        this.debug("Created event: "+id);
+        Events.events[outpost][id]=e;
+        Events.debug("Created event: "+id);
     }
     return e;
 };
@@ -121,7 +142,6 @@ Events.update_data=function() {
 };
 
 Events.run=function() {
-    Events.planet=$(".planet a.icon").attr("href").replace("/planet/buildings/","")-0;
     Events.update_data();
 };
 
@@ -161,7 +181,7 @@ Events.collector.building=function(){
 };
 
 // Travelling armies (fleet base)
-Events.collector.fleet=function(){
+Events.collector.attack=function(){
     var tables = $(".fleetTable");
 
     Events.debug("Collecting "+tables.length+" fleets.");
@@ -263,7 +283,7 @@ Events.collector.market=function(){
     */
     // Local Event - basic, everything
     var type_A = function(){
-        var e = Events.get_event(Settings.village_id, "a"+t+"_"+event_count);
+        var e = Events.get_event(Settings.outpost_id, "a"+t+"_"+event_count);
         e[0] = "market";
         e[1] = ts;
         e[2] = msg; // Extract the action type
@@ -276,8 +296,8 @@ Events.collector.market=function(){
     // use the hash parameter to correctly calculate the distance and thus the time
     var type_B = function(hash){
         var coord = id_xy(hash);
-        var x = coord[0] - parseInt(Settings.village_coord[0]);
-        var y = coord[1] - parseInt(Settings.village_coord[1]);
+        var x = coord[0] - parseInt(Settings.outpost_coord[0]);
+        var y = coord[1] - parseInt(Settings.outpost_coord[1]);
         var dist = Math.sqrt(x*x+y*y);
         Events.info('Merchant is travelling '+dist+' squares');
         var time = (dist / ([16, 12, 24][Settings.race])) * 3600000; // In miliseconds
@@ -285,7 +305,7 @@ Events.collector.market=function(){
         var rtn_t = t + time;
         var rtn_ts = ts + time;
 
-        var e = Events.get_event(Settings.village_id, 'a'+rtn_t+'_'+event_count);
+        var e = Events.get_event(Settings.outpost_id, 'a'+rtn_t+'_'+event_count);
         e[0] = 'market';
         e[1] = rtn_ts;
         e[2] = Events.merchant_return + msg.split(Events.merchant_send)[1];
@@ -296,7 +316,7 @@ Events.collector.market=function(){
         var e = Events.get_event(did, 'a'+t+'_'+event_count);
         e[0] = 'market';
         e[1] = ts;
-        e[2] = Events.merchant_receive + ' ' + Settings.village_names[Settings.village_id];
+        e[2] = Events.merchant_receive + ' ' + Settings.outpost_names[Settings.outpost_id];
         e[4] = res;
     }
 
@@ -324,7 +344,7 @@ Events.collector.market=function(){
         Events.info(msg + ' | send='+send+' internal='+internal);
 
         // Ensure an event of this type doesn't already exists at this time
-        if (Events.test_event(Settings.village_id, 'a'+t+'_'+event_count)) return;
+        if (Events.test_event(Settings.outpost_id, 'a'+t+'_'+event_count)) return;
 
         if (send || !internal) type_A();
         if (send)              type_B(hash);
@@ -456,10 +476,40 @@ Events.collector.research = function(){
     // And now throw all of this information into an event
     // Don't throw in the level information if we're researching a new unit at the acadamy... because there isn't any!
     // Hash the event by the building name, because we can only have one research event per building per village
-    var e = Events.get_event(Settings.village_id, t+building);
+    var e = Events.get_event(Settings.outpost_id, t+building);
     e[0] = 'research';
     e[1] = d.set_seconds(duration);
     e[2] = building + ': '+type+(level==undefined ? '' : ' '+level);
+};
+
+Events.collector.party = function(){
+    // Make sure we're on a building page
+    if (location.href.indexOf('build.php') < 0) return;
+    // The theory here is "look for a table who's second td has an explicit width of 25% and is not a header".
+    // This should be exclusive for Town Halls, hence parties.
+    var x = document.evaluate('//table[@class="tbg"]/tbody/tr[not(@class="cbg1")]/td[(position()=2) and (@width="25%")]',
+                              document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (x.snapshotLength != 1) return;
+    x = x.snapshotItem(0).parentNode;
+
+    Events.info('Found a party event!');
+
+    var d = new tl_date(Events);
+    d.set_time(x.childNodes[5].textContent.match('(\\d\\d?):(\\d\\d) ([a-z]*)'));
+    var duration = x.childNodes[3].textContent.match('(\\d\\d?):\\d\\d:\\d\\d');
+    d.adjust_day(duration);
+    var t = d.set_seconds(duration);
+
+    var msg = x.childNodes[1].textContent;
+    Events.info('Party type = '+msg);
+
+    // We can only have one party per village max; overwrite any pre-existing party records
+    // (how the hell could we ever get pre-existing parties??? You can't cancel the damn things...)
+    // BUG: So the event entry of parties that finished already will be removed when a new party is detected. 
+    var e = Events.get_event(Settings.outpost_id, 'party', true);
+    e[0] = 'party';
+    e[1] = t;
+    e[2] = msg;
 };
 
 Events.collector.demolish = function(){
@@ -491,15 +541,15 @@ Events.collector.demolish = function(){
     var msg = x.parentNode.parentNode.previousSibling.previousSibling.previousSibling.previousSibling.previousSibling.textContent + ' ' + msg;
 
     // We can just index this by the time - only one thing can be demoed at any given time
-    var e = Events.get_event(Settings.village_id, t);
+    var e = Events.get_event(Settings.outpost_id, t);
     e[0] = 'demolish';
     e[1] = d.set_seconds(event_duration);
     e[2] = msg;
 
     // Add a listener to the cancel button, to remove the event if canceled
     x.childNodes[0].addEventListener('click', function(e){
-            Events.info('Removing the demolition event Events.events['+Settings.village_id+']['+t+']');
-            delete Events.events[Settings.village_id][t];
+            Events.info('Removing the demolition event Events.events['+Settings.outpost_id+']['+t+']');
+            delete Events.events[Settings.outpost_id][t];
             Events.s.events.write();
         }, false);
 };
@@ -508,8 +558,8 @@ Events.collector.overflow = function(){
     // These events are *not* indexed by the time of their occurence, unlike all the other ones...
     if (Resources.enabled == false) return; // This depends on resources being collected
 
-    var stor = Resources.storage[Settings.village_id];
-    var prod = Resources.production[Settings.village_id];
+    var stor = Resources.storage[Settings.outpost_id];
+    var prod = Resources.production[Settings.outpost_id];
 
     // Calculate the overflow/empty time
     for (var i=0; i < 4; i++){
@@ -527,7 +577,7 @@ Events.collector.overflow = function(){
         var time = Math.round(new Date().getTime() + t*3600000);
 
         // Create the event
-        var e = Events.get_event(Settings.village_id, 'overflow'+i, true);
+        var e = Events.get_event(Settings.outpost_id, 'overflow'+i, true);
         e[0] = 'overflow';
         e[1] = time;
         e[2] = Resources.res_names[i];

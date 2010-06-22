@@ -322,7 +322,7 @@ Timeline.draw_event=function(planet, event){
     var y = Timeline.warp(event[1]);
 
     // Check if this type of event is visible
-    if (isNaN(y)) return;
+    if (isNaN(y)) return; GM_log(event[0]);
     if (!Events[event[0]][1]) return;
 
     var g = Timeline.context;
