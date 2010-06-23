@@ -10,6 +10,8 @@ __copyright__ = "(C) 2006 Rui Carmo, 2010 Bauke Conijn. Code under BSD License."
 import dbus
 import struct
 from SocketServer import *
+import urllib
+import tempfile
 
 GROWL_GNTP_PORT = 23053
 
@@ -39,7 +41,7 @@ class RequestHandler(BaseRequestHandler):
                 "notifications": {}}
         for i in xrange(1,len(data)):
             if len(data[i]) == 0: continue
-            v = data[i].split(":")
+            v = data[i].split(":", 1)
             key = v[0].strip().lower()
             value = v[1].strip()
             if key=="application-name":
@@ -64,12 +66,23 @@ class RequestHandler(BaseRequestHandler):
                 
         # Do appropriate action
         if prop["action"] == "REGISTER":
+            print prop
+            if prop["icon"].startswith("http://"):
+                if not prop["application"] in appbucket or appbucket[prop["application"]]["icon"] != prop["icon"]:
+                    prop["iconfile"]=tempfile.mktemp(prefix='gntp_')
+                    urllib.urlretrieve(prop["icon"], prop["iconfile"])
+                    print "Downloaded image %s" % prop["icon"]
+                else:
+                    prop["iconfile"] = appbucket[prop["application"]]["iconfile"]
+            else:
+                prop["iconfile"] = prop["icon"].replace("\\","/")
+                    
             appbucket[prop["application"]]=prop
             print "Registered %s" % prop["application"]
             pass
         elif prop["action"] == "NOTIFY":
             appprof=appbucket[prop["application"]]
-            interface.Notify(prop["application"],0,appprof["icon"],prop["title"],prop["text"],[],{},-1)
+            interface.Notify(prop["application"],0,appprof["iconfile"],prop["title"],prop["text"],[],{},-1)
             pass
         else:
             print "Unknown action: %s" % prop["action"]
