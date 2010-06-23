@@ -13,7 +13,7 @@ var metadata = <><![CDATA[
 // @exclude        http://*.imperion.*/login/*
 // @exclude        http://*.imperion.*/supportExternal/*
  
-// @copyright      2008, 2009 Bauke Conijn, Adriaan Tichler (http://github.com/bcmpinc/travian-timeline-script)
+// @copyright      2008, 2009, 2010 Bauke Conijn, Adriaan Tichler (http://github.com/bcmpinc/travian-timeline-script)
 // @author         bcmpinc
 // @author         arandia
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
