@@ -109,7 +109,7 @@ Market.run=function(){
     if (Market.buy.length>0) {
         Market.update(Market.buy);
         if (Market.append_pages) {
-            Market.next=$(".buyMarket>.buttonNext");
+            Market.next=$(".buyMarket .buttonNext");
             var href=Market.next.attr("href");
             var page=href.match(/\/page\/(\d+)/);
             Market.current=page?page[1]:0;
