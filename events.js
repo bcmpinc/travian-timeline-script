@@ -33,22 +33,25 @@ Events.init=function(){
                 demolish: 'rgb(128,128,128)',
                 overflow: 'rgb(150,0,150)',
             }, Settings.type.none, undefined, "List of event types");
-    Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.", 'true');
+    Events.setting("events", {}, Settings.type.object, undefined, "The list of collected events.");
 
-    Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving village too");
+    Events.setting("predict_merchants",             false, Settings.type.bool,   undefined, "Use the sending of a merchant to predict when it will return back, and for internal trade add an event to the recieving "+Settings.outpost_name+" too");
 
-    Events.setting("merchant_send",        'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-    Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
-    Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+    if (travian) {
+        Events.setting("merchant_send",        'Transport to', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on outgoing merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+        Events.setting("merchant_receive",   'Transport from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on incoming merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+        Events.setting("merchant_return",       'Return from', Settings.type.string, undefined, "This is the translation of the string that comes just before the village name on returning merchants. It must be identical (with no trailing whitespace) or it won't work.", '! Events.predict_merchants');
+    }
 
     display_options = ['Collect','Show in Time Line', 'Show in Tooltip'];
-    Events.setting('building',   [1,1,1], Settings.type.set, display_options, 'Keep track of what you build [from village center and overview]');
-    Events.setting('attack',     [1,1,1], Settings.type.set, display_options, 'Keep track of all incoming and outgoing troops [from the rally point]');
-    Events.setting('market',     [1,1,1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market]");
-    Events.setting('research',   [1,1,1], Settings.type.set, display_options, 'Keep track of what is being researched [from the Acadamy, Blacksmith and Armoury]');
-    Events.setting('party',      [1,1,1], Settings.type.set, display_options, 'Keep track of parties [from the town hall]');
-    Events.setting('demolish',   [1,1,1], Settings.type.set, display_options, 'Keep track of demolished buildings [from the main building]');
-    Events.setting('overflow',   [1,1,0], Settings.type.set, display_options, 'Keep track of resource overflows [from every page]');
+
+    Events.setting('building',  [1,1,1], Settings.type.set, display_options, "Keep track of what you build [from "+(imperion?"the planet overview]":"village center and overview]"));
+    Events.setting('attack',    [1,1,1], Settings.type.set, display_options, "Keep track of all incoming and outgoing "+(imperion?"fleets [from the fleet base]":"troops [from the rally point]"));
+    Events.setting('market',    [1,1,1], Settings.type.set, display_options, "Keep track of incoming and outgoing merchants, and what they're carrying [from the market/trade center]");
+    Events.setting('research',  [1,1,1], Settings.type.set, display_options, "Keep track of what is being researched [from the "+(imperion?"research center]":"Acadamy, Blacksmith and Armoury]"));
+    Events.setting('party',     [1,1,1], Settings.type.set, display_options, "Keep track of parties [from the town hall]");
+    Events.setting('demolish',  [1,1,1], Settings.type.set, display_options, "Keep track of demolished buildings [from the "+(imperion?"construction yard]":"main building]"));
+    Events.setting('overflow',  [1,1,0], Settings.type.set, display_options, "Keep track of resource overflows [from every page]");
 
     Events.setting('send_twice',  false, Settings.type.boolean, undefined, "Internal persistent data only. This records whether the 'send twice' box was checked on the previous page, when sending merchants.");
 };
@@ -173,8 +176,7 @@ Events.collector.building=function(){
         }
     }
 
-    // Collecting
-    Events.debug("Collecting "+build.snapshotLength+" build tasks.");
+    Events.debug("Collecting "+table.length+" build tasks.");
     for (var nn = 0; nn < build.snapshotLength; nn++){
         var x = build.snapshotItem(nn);
         var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
