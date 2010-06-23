@@ -97,7 +97,7 @@ Tooltip.sumarize = function(rota){
     // Cycle through all of the villages
     var vils = []; // Push the html into here for alphabetizing...
     for (var did in Resources.storage){
-        var name = Settings.village_names[did];
+        var name = Settings.outpost_names[did];
         var a = Tooltip.make_header(rota, d, did);
         if (a == -1) continue;
 
@@ -140,7 +140,7 @@ Tooltip.parse_event = function(e, time){
     return rtn;
 }
 
-Tooltip.village_tip = function(anchor, did){
+Tooltip.outpost_tip = function(anchor, did){
     // This holds all of the village-specific tooltip information
     var fill = function(){
         // 'events' contains time/text pairs; the time in the first index for sorting, the text for display
@@ -211,7 +211,7 @@ Tooltip.village_tip = function(anchor, did){
 
                     // Then, send an xmlhttprequest to set the village back to the current one
                     var request = new XMLHttpRequest();
-                    request.open('GET', 'dorf1.php?newdid='+Settings.village_id, true);
+                    request.open('GET', 'dorf1.php?newdid='+Settings.outpost_id, true);
                     request.send(null);
 
                     // Redraw the tooltip
@@ -435,7 +435,7 @@ Tooltip.run = function(){
             did = did.split('&')[0];
         }
 
-        Tooltip.village_tip(vil, did);
+        Tooltip.outpost_tip(vil, did);
     }
 
     Tooltip.overview();
