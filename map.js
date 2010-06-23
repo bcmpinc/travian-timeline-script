@@ -31,6 +31,10 @@ Map.init=function(){
     Map.setting("system_players", true, Settings.type.bool,undefined, "Write below a solar system the inhabitants of it's planets.");
     Map.setting("system_players_tag", 0, Settings.type.enumeration,["planet","player","alliance"], "The tag used for the inhabitants.");
     Map.setting("rewire_send_troops", true, Settings.type.bool,undefined, "When clicking on a send troops button, the form is inserted into the page.");
+    Map.setting("grid_color", "green", Settings.type.string, undefined, "The color of the grid lines.");
+    Map.setting("coordinates_color", "cyan", Settings.type.string, undefined, "The color of the coordinates.");
+    Map.setting("coordinates_font", "8pt Monospace", Settings.type.string, undefined, "The font used for the coordinates on the map.");
+    Map.setting("resources_font", "6pt Monospace", Settings.type.string, undefined, "The font used for the resource amounts on the map.");
     /*Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");*/
     /*Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], * /
             none: ["",false], // ie. remove from 'locations'.
@@ -90,59 +94,62 @@ Map.touch=function(location) {
     }
 };
 Map.text=function(s,x,y,clear) {
-  var g = Map.context;
-  g.save();
-  var w=g.mozMeasureText(s);
-  g.translate(x-w/2-1,y+4);
-  if (clear) g.clearRect(-2,-10,w+4,12);
-  g.mozDrawText(s);
-  g.restore();
+    var g = Map.context;
+    g.save();
+    var w=g.mozMeasureText(s);
+    g.translate(x-w/2-1,y+4);
+    if (clear) g.clearRect(-2,-10,w+4,12);
+    g.mozDrawText(s);
+    g.restore();
 };
 Map.res_x=0;
 Map.res_y=0;
 Map.draw_resource=function(stamp,amount) {
-  if (amount<=0) return;
-  var col="#999";
-  if (amount>=1000) {
-    amount=(amount/1000).toFixed(amount<10000?1:0)+"k";
-    col="lightgray";
-  }
-  var g = Map.context;
-  var w = g.mozMeasureText(amount);
-  Map.res_x+=w+10;
-  if (Map.res_x>Map.quadrantWidth) {
-    g.restore();
-    g.translate(0,8);
-    g.save();
-    g.translate(16,0);
-    Map.res_x=w+26;
-  }
-  g.fillStyle=col;
-  try{ // unfortunately the following line sometimes likes to throw an error.
-    g.drawImage(stamp,2,-8,10,10); 
-  }catch(e){}
-  g.translate(10,0);
-  g.mozDrawText(amount);
-  g.translate(w,0);
+    if (amount<=0) return;
+    var col="#999";
+    if (amount>=1000) {
+        amount=(amount/1000).toFixed(amount<10000?1:0)+"k";
+        if (amount<20000)
+            col="#CCC";
+        else
+            col="#FFF";
+    }
+    var g = Map.context;
+    var w = g.mozMeasureText(amount);
+    Map.res_x+=w+10;
+    if (Map.res_x>Map.quadrantWidth) {
+        g.restore();
+        g.translate(0,8);
+        g.save();
+        g.translate(16,0);
+        Map.res_x=w+26;
+    }
+    g.fillStyle=col;
+    try{ // unfortunately the following line sometimes likes to throw an error.
+        g.drawImage(stamp,2,-8,10,10); 
+    }catch(e){}
+    g.translate(10,0);
+    g.mozDrawText(amount);
+    g.translate(w,0);
 };
 Map.draw_object=function(name,r1,r2,r3) {
-  var g = Map.context;
-  g.save();
-  g.mozDrawText(name);
-  var w=g.mozMeasureText(name);
-  Map.res_x=w;
-  g.translate(w,0);
-  if (r1==0 && r2==0 && r3==0) {
-    g.fillStyle="gray";
-    g.mozDrawText("[empty]");
-  } else {
-    g.fillStyle="lightgray";
-    Map.draw_resource(Images.metal.stamp(),r1);
-    Map.draw_resource(Images.crystal.stamp(),r2);
-    Map.draw_resource(Images.hydrogen.stamp(),r3);
-  }
-  g.restore();
-  g.translate(0,8);
+    var g = Map.context;
+    g.save();
+    g.mozDrawText(name);
+    var w=g.mozMeasureText(name);
+    Map.res_x=w;
+    g.translate(w,0);
+    if (r1==0 && r2==0 && r3==0) {
+        g.fillStyle="gray";
+        g.mozDrawText("[empty]");
+    } else {
+        g.fillStyle="lightgray";
+        Map.draw_resource(Images.metal.stamp(),r1);
+        Map.draw_resource(Images.crystal.stamp(),r2);
+        Map.draw_resource(Images.hydrogen.stamp(),r3);
+    }
+    g.restore();
+    g.translate(0,8);
 };
 Map.update=function() {
     if (!Map.canvas) return; // Check if canvas is enabled.
@@ -162,8 +169,8 @@ Map.update=function() {
     }
 
     Map.canvas.css({
-      left: (100*(Map.posx-Map.center.x)*Map.quadrantWidth /Map.map.width() )-100+"%",
-      top:  (100*(Map.posy-Map.center.y)*Map.quadrantHeight/Map.map.height())-100+"%"
+        left: (100*(Map.posx-Map.center.x)*Map.quadrantWidth /Map.map.width() )-100+"%",
+        top:  (100*(Map.posy-Map.center.y)*Map.quadrantHeight/Map.map.height())-100+"%"
     });
 
     // Get the drawing context
@@ -174,38 +181,38 @@ Map.update=function() {
     g.save();
     
     if(Map.enable_new_grid) {
-      g.fillStyle="cyan";
-      g.strokeStyle="green";
-      g.mozTextStyle = "8pt Monospace";
-      for (var ix=1; ix<21; ix++) {
-          g.beginPath();
-          var px = ix*Map.quadrantWidth ;
-          g.moveTo(px,0);
-          g.lineTo(px,Map.canvas.height());
-          g.stroke();
-      }
-      for (var iy=1; iy<15; iy++) {
-          g.beginPath();
-          var py = iy*Map.quadrantHeight;
-          g.moveTo(0,py);
-          g.lineTo(Map.canvas.width(),py);
-          g.stroke();
-          py=(iy+0.5)*Map.quadrantHeight;
-          var ps=iy-7+Map.posy+"";
-          var px=-Map.posx%5;
-          for (var i=0; i<25; i+=5)
-            Map.text(ps,(px+i)*Map.quadrantWidth,py,true);
-      }
-      for (var ix=1; ix<21; ix++) {
-          var px = (ix+0.5)*Map.quadrantWidth;
-          var ps=ix-10+Map.posx+"";
-          var py=-Map.posy%5-2;
-          for (var i=0; i<20; i+=5)
-            Map.text(ps,px,(py+i)*Map.quadrantHeight,true);
-      }
+        g.fillStyle    = Map.coordinates_color;
+        g.strokeStyle  = Map.grid_color;
+        g.mozTextStyle = Map.coordinates_font;
+        for (var ix=1; ix<21; ix++) {
+            g.beginPath();
+            var px = ix*Map.quadrantWidth ;
+            g.moveTo(px,0);
+            g.lineTo(px,Map.canvas.height());
+            g.stroke();
+        }
+        for (var iy=1; iy<15; iy++) {
+            g.beginPath();
+            var py = iy*Map.quadrantHeight;
+            g.moveTo(0,py);
+            g.lineTo(Map.canvas.width(),py);
+            g.stroke();
+            py=(iy+0.5)*Map.quadrantHeight;
+            var ps=iy-7+Map.posy+"";
+            var px=-Map.posx%5;
+            for (var i=0; i<25; i+=5)
+                Map.text(ps,(px+i)*Map.quadrantWidth,py,true);
+        }
+        for (var ix=1; ix<21; ix++) {
+            var px = (ix+0.5)*Map.quadrantWidth;
+            var ps=ix-10+Map.posx+"";
+            var py=-Map.posy%5-2;
+            for (var i=0; i<20; i+=5)
+                Map.text(ps,px,(py+i)*Map.quadrantHeight,true);
+        }
     }
     
-    var COMETS      = unsafeWindow.ARRAY_INDEX_COMETS;
+    var COMETS        = unsafeWindow.ARRAY_INDEX_COMETS;
     var DEBRIS        = unsafeWindow.ARRAY_INDEX_DEBRIS;
     var ASTEROID      = unsafeWindow.ARRAY_INDEX_ASTEROID;
     var PLANETS       = unsafeWindow.ARRAY_INDEX_PLANETS;
@@ -222,58 +229,58 @@ Map.update=function() {
     KIND_COLOR = {1: "#C90", 2: "#06C", 3: "#0C3"};
 
     if (Map.system_resources || Map.system_players) {
-      g.mozTextStyle = "6pt Monospace";
-      for (id in unsafeWindow.mapData) {
-        var pos = unsafeWindow.config.generator.getCoordsBySystemId(id);
-        var px = (pos.x-Map.posx+10)*Map.quadrantWidth+1;
-        var py = (pos.y-Map.posy+7)*Map.quadrantHeight+10;
-        g.save();
-        try {
-          if (Map.system_resources) {
-            g.translate(px,py);
-            var system=unsafeWindow.mapData[id];
-            g.fillStyle="red";
-            for (var i in system[COMETS]) { // comets
-              var comet=system[COMETS][i];
-              if (!comet.id) continue;
-              Map.draw_object(comet.name.replace(/^[^\d]+/i, ''),comet.r1,comet.r2,comet.r3);
-            }
-            g.fillStyle="yellow";
-            for (var i in system[DEBRIS]) { // debris
-              var debris=system[DEBRIS][i];
-              if (!debris.planet_id) continue;
-               Map.draw_object(system.planets[debris.planet_id].planet_name,debris.r1,debris.r2,0);
-            }
-            g.fillStyle="cyan";
-            for (var i in system[ASTEROID]) { // asteroids
-              var asteroid=system[ASTEROID][i];
-              if (!asteroid.id) continue;
-              Map.draw_object("\u25B2",asteroid.r1,asteroid.r2,asteroid.r3);
-            }
-          }
-          if (Map.system_players) {
-            g.restore();
+        g.mozTextStyle = Map.resources_font;
+        for (id in unsafeWindow.mapData) {
+            var pos = unsafeWindow.config.generator.getCoordsBySystemId(id);
+            var px = (pos.x-Map.posx+10)*Map.quadrantWidth+1;
+            var py = (pos.y-Map.posy+7)*Map.quadrantHeight+10;
             g.save();
-            g.translate(px,py- -Map.quadrantHeight-8);
-            for (var i in system[PLANETS]) { // planets
-              var planet=system[PLANETS][i];
-              if (!planet[4]) continue;
-              g.translate(0,-8);
-              g.fillStyle=KIND_COLOR[planet[KIND_ID]];
-              var tag;
-              switch (Map.system_players_tag) {
-                case 0: tag=":"+planet[PLANET_NAME]; break;
-                case 1: tag=":"+planet[PLAYER_NAME]; break;
-                case 2: tag=(planet[ALLIANCE_NAME]?":"+planet[ALLIANCE_NAME]:"~"+planet[PLAYER_NAME]); break;
-              }
-              g.mozDrawText((planet[INHABITANTS]).pad(4," ",true) + tag);
+            try {
+                if (Map.system_resources) {
+                    g.translate(px,py);
+                    var system=unsafeWindow.mapData[id];
+                    g.fillStyle="red";
+                    for (var i in system[COMETS]) { // comets
+                        var comet=system[COMETS][i];
+                        if (!comet.id) continue;
+                        Map.draw_object(comet.name.replace(/^[^\d]+/i, ''),comet.r1,comet.r2,comet.r3);
+                    }
+                    g.fillStyle="yellow";
+                    for (var i in system[DEBRIS]) { // debris
+                        var debris=system[DEBRIS][i];
+                        if (!debris.planet_id) continue;
+                        Map.draw_object(system.planets[debris.planet_id].planet_name,debris.r1,debris.r2,0);
+                    }
+                    g.fillStyle="cyan";
+                    for (var i in system[ASTEROID]) { // asteroids
+                        var asteroid=system[ASTEROID][i];
+                        if (!asteroid.id) continue;
+                        Map.draw_object("\u25B2",asteroid.r1,asteroid.r2,asteroid.r3);
+                    }
+                }
+                if (Map.system_players) {
+                    g.restore();
+                    g.save();
+                    g.translate(px,py- -Map.quadrantHeight-8);
+                    for (var i in system[PLANETS]) { // planets
+                        var planet=system[PLANETS][i];
+                        if (!planet[4]) continue;
+                        g.translate(0,-8);
+                        g.fillStyle=KIND_COLOR[planet[KIND_ID]];
+                        var tag;
+                        switch (Map.system_players_tag) {
+                            case 0: tag=":"+planet[PLANET_NAME]; break;
+                            case 1: tag=":"+planet[PLAYER_NAME]; break;
+                            case 2: tag=(planet[ALLIANCE_NAME]?":"+planet[ALLIANCE_NAME]:"~"+planet[PLAYER_NAME]); break;
+                        }
+                        g.mozDrawText((planet[INHABITANTS]).pad(4," ",true) + tag);
+                    }
+                }
+            } catch (e) {
+                Map.exception("Map.update() [metadata]",e);
             }
-          }
-        } catch (e) {
-          Map.exception("Map.update() [metadata]",e);
+            g.restore();
         }
-        g.restore();
-      }
     }
 
     // Make sure the locations variable is up to date
@@ -328,97 +335,97 @@ Map.tag_tool=function() {
 Map.next_move=0;
 Map.mouse_distance=0;
 Map.mousedown=function(e) {
-  if ($("#mapSystem").css("visibility")=="visible") return; // Don't allow dragging when zoomed in to a solarsystem
-  Map.start_x=e.screenX;
-  Map.start_y=e.screenY;
-  Map.mouse_distance=0;
-  $("body").get(0).addEventListener("mousemove",Map.mousemove,false); // jquery's unbind did not work.
+    if ($("#mapSystem").css("visibility")=="visible") return; // Don't allow dragging when zoomed in to a solarsystem
+    Map.start_x=e.screenX;
+    Map.start_y=e.screenY;
+    Map.mouse_distance=0;
+    $("body").get(0).addEventListener("mousemove",Map.mousemove,false); // jquery's unbind did not work.
 };
 Map.is_dirty=false; // This is set when the previous update_systems did an update (and still might need to do another update).
 Map.update_systems=function(pos) {
-  var ix=Math.round(pos.left/Map.quadrantWidth );
-  var iy=Math.round(pos.top /Map.quadrantHeight);
-  try{
-    Map.is_dirty=true;
-    // imperion's scripts can't handle updates when requesting data. 
-    // This following variable is set and cleared by the patch.
-    if (!unsafeWindow.requesting_map_data) { 
-      var targetx=Map.center.x-ix;
-      var targety=Map.center.y-iy;
-      var temp=Map.unsafeMap.fx.start;
-      Map.unsafeMap.fx.start=nothing;
-      /**/ if (Map.unsafeMap.center.x > targetx) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_LEFT ); }
-      else if (Map.unsafeMap.center.x < targetx) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_RIGHT); }
-      else if (Map.unsafeMap.center.y > targety) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_UP   ); }
-      else if (Map.unsafeMap.center.y < targety) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_DOWN ); }
-      else Map.is_dirty=false;
-      Map.unsafeMap.fx.start=temp;
-      Map.unsafeMap.positionLeft = (Map.center.x-Map.unsafeMap.center.x)*Map.quadrantWidth;
-      Map.unsafeMap.positionTop  = (Map.center.y-Map.unsafeMap.center.y)*Map.quadrantHeight;
+    var ix=Math.round(pos.left/Map.quadrantWidth );
+    var iy=Math.round(pos.top /Map.quadrantHeight);
+    try{
+        Map.is_dirty=true;
+        // imperion's scripts can't handle updates when requesting data. 
+        // This following variable is set and cleared by the patch.
+        if (!unsafeWindow.requesting_map_data) { 
+            var targetx=Map.center.x-ix;
+            var targety=Map.center.y-iy;
+            var temp=Map.unsafeMap.fx.start;
+            Map.unsafeMap.fx.start=nothing;
+            /**/ if (Map.unsafeMap.center.x > targetx) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_LEFT ); }
+            else if (Map.unsafeMap.center.x < targetx) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_RIGHT); }
+            else if (Map.unsafeMap.center.y > targety) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_UP   ); }
+            else if (Map.unsafeMap.center.y < targety) { Map.unsafeMap._move.call(Map.unsafeMap, unsafeWindow.DIRECTION_DOWN ); }
+            else Map.is_dirty=false;
+            Map.unsafeMap.fx.start=temp;
+            Map.unsafeMap.positionLeft = (Map.center.x-Map.unsafeMap.center.x)*Map.quadrantWidth;
+            Map.unsafeMap.positionTop  = (Map.center.y-Map.unsafeMap.center.y)*Map.quadrantHeight;
+        }
+    }catch(e){
+        Map.exception("Map.update_systems",e);
     }
-  }catch(e){
-    Map.exception("Map.update_systems",e);
-  }
 }
 Map.mousemove=function(e) {
-  var t=new Date().getTime();
-  if (t<Map.next_move) return;
-  Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
+    var t=new Date().getTime();
+    if (t<Map.next_move) return;
+    Map.next_move=t+50; // mousemove events that happen whithin 50 ms of a previous one are dropped, to increase performance.
 
-  var dx = -(e.screenX-Map.start_x);
-  var dy = -(e.screenY-Map.start_y);
-  if (Map.mouse_distance<15) {
-    Map.mouse_distance=Math.sqrt(dx*dx+dy*dy);
-    return; // Ignore small movements.
-  }
-  Map.start_x=e.screenX;
-  Map.start_y=e.screenY;
+    var dx = -(e.screenX-Map.start_x);
+    var dy = -(e.screenY-Map.start_y);
+    if (Map.mouse_distance<15) {
+        Map.mouse_distance=Math.sqrt(dx*dx+dy*dy);
+        return; // Ignore small movements.
+    }
+    Map.start_x=e.screenX;
+    Map.start_y=e.screenY;
 
-  var map = $(Map.unsafeMap.output);
-  var pos = map.position();
-  pos.left-=dx;
-  pos.top -=dy;
-  map.css({left: (pos.left)+"px",
-           top:  (pos.top )+"px"});
-  
-  Map.update_systems(pos);
-  
-  for (var i=0; i<Map.starLayerCount; i++) {
-    var layer = Map.unsafeMap.starLayers[i];
-    var factor= Math.pow(Map.starBasis, layer.layerNr-(-1)); // '--' is used to ensure it's a number
-    layer.positionLeft-=dx*factor; // same idea here
-    layer.positionTop -=dy*factor; // same idea here
-    $(layer.output).css({left: layer.positionLeft+"px",
-                         top:  layer.positionTop +"px"});
-    layer._setStarPositions(-dy*factor,-dx*factor);
-  }
+    var map = $(Map.unsafeMap.output);
+    var pos = map.position();
+    pos.left-=dx;
+    pos.top -=dy;
+    map.css({left: (pos.left)+"px",
+             top:  (pos.top )+"px"});
+    
+    Map.update_systems(pos);
+    
+    for (var i=0; i<Map.starLayerCount; i++) {
+        var layer = Map.unsafeMap.starLayers[i];
+        var factor= Math.pow(Map.starBasis, layer.layerNr-(-1)); // '--' is used to ensure it's a number
+        layer.positionLeft-=dx*factor; // same idea here
+        layer.positionTop -=dy*factor; // same idea here
+        $(layer.output).css({left: layer.positionLeft+"px",
+                            top:  layer.positionTop +"px"});
+        layer._setStarPositions(-dy*factor,-dx*factor);
+    }
 };
 Map.clean_dirty = function() {
-  if (Map.start_x != undefined) return; // clean_dirty is only needed when no drag is being performed.
-  if (!Map.is_dirty) return; // and when the map is dirty.
-  
-  var map = $(Map.unsafeMap.output);
-  var pos = map.position();
-  Map.update_systems(pos);
-  
-  setTimeout(Map.clean_dirty, 50);
+    if (Map.start_x != undefined) return; // clean_dirty is only needed when no drag is being performed.
+    if (!Map.is_dirty) return; // and when the map is dirty.
+    
+    var map = $(Map.unsafeMap.output);
+    var pos = map.position();
+    Map.update_systems(pos);
+    
+    setTimeout(Map.clean_dirty, 50);
 };
 Map.end_drag = function(e) {
-  if (Map.start_x == undefined) return;
-  $("body").get(0).removeEventListener("mousemove",Map.mousemove,false); // jquery's unbind did not work.
-  Map.last_move=0; 
-  Map.mousemove(e);
-  Map.start_x=undefined;
-  Map.start_y=undefined;
-  Map.clean_dirty();
+    if (Map.start_x == undefined) return;
+    $("body").get(0).removeEventListener("mousemove",Map.mousemove,false); // jquery's unbind did not work.
+    Map.last_move=0; 
+    Map.mousemove(e);
+    Map.start_x=undefined;
+    Map.start_y=undefined;
+    Map.clean_dirty();
 };
 
 // Patch some sloppy coded functions in imperion's map.js. Detect when a request for new data is pending and deny new request until it's finished.
 Map.patch_map=function() {
-  if (!Map.enable_dragging) return; // Not really necessary, but prevents coding mistakes from injecting the patch unwanted.
-  var s = $.new("script"); // We need to use a script element, because a bug in GM causes the prototype variable to be unaccessible.
-  s.attr({type: "application/javascript"});
-  s.html("\
+    if (!Map.enable_dragging) return; // Not really necessary, but prevents coding mistakes from injecting the patch unwanted.
+    var s = $.new("script"); // We need to use a script element, because a bug in GM causes the prototype variable to be unaccessible.
+    s.attr({type: "application/javascript"});
+    s.html("\
   (function() {\
     var IMap = Map.prototype;\
     var oldPreloadData = IMap.preloadData;\
@@ -455,158 +462,158 @@ Map.patch_map=function() {
     config.registry.currentObject.moveDown =function(){if (!window.requesting_map_data) oldMoveDown.call(this);}; \
     if (console) console.info(\"Applied imperion map patch\");\
   })();");
-  $("body").append(s);
+    $("body").append(s);
 }
 
 // === run ===
 Map.run=function() {
   
-  Map.map = $("#mapContent");
-  if (Map.map.size()>0) { // If this page has a map ...
-    var y=$("body");
-    var style="";
-    if (Map.remove_nav_pad)        style+="#mapNaviSmall {display: none !important;} ";
-    if (Map.remove_border_buttons) style+=".naviBigItem {display: none !important;} ";
-    if (Map.remove_sectors)        style+="#gridX, #gridY, #gridCorner {display: none !important;} ";
-    if (Map.system_metadata)       style+="#mapGalaxy>img {opacity: 0.5;} #mapSystem {background: black; z-index: 2;}";
+    Map.map = $("#mapContent");
+    if (Map.map.size()>0) { // If this page has a map ...
+        var y=$("body");
+        var style="";
+        if (Map.remove_nav_pad)        style+="#mapNaviSmall {display: none !important;} ";
+        if (Map.remove_border_buttons) style+=".naviBigItem {display: none !important;} ";
+        if (Map.remove_sectors)        style+="#gridX, #gridY, #gridCorner {display: none !important;} ";
+        if (Map.system_metadata)       style+="#mapGalaxy>img {opacity: 0.5;} #mapSystem {background: black; z-index: 2;}";
 
-    Map.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
-    Map.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
-    Map.starBasis = 1.0 / (unsafeWindow.config.performance.starBasis-0); // this is intentionally 1.0 devided by the original value
-    Map.starLayerCount = unsafeWindow.config.performance.starLayerCount-0; 
-    Map.unsafeMap = unsafeWindow.config.registry.currentObject; // This is supposed to be the central instance of imperion's Map class.
-    Map.galaxy=$("#mapGalaxy");
-    
-    if (Map.enable_dragging) {
-      style+="#mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal;} ";
-      // These come from imperion's 'config.js'
-      Map.center={x: Map.unsafeMap.center.x-0,
-                  y: Map.unsafeMap.center.y-0};
-      Map.patch_map();
-                  
-      y.mouseleave(Map.end_drag);
-      y.mouseup(Map.end_drag);
-      Map.map.mousedown(Map.mousedown);
+        Map.quadrantWidth  = unsafeWindow.config.display.quadrantWidth -0;
+        Map.quadrantHeight = unsafeWindow.config.display.quadrantHeight-0;
+        Map.starBasis = 1.0 / (unsafeWindow.config.performance.starBasis-0); // this is intentionally 1.0 devided by the original value
+        Map.starLayerCount = unsafeWindow.config.performance.starLayerCount-0; 
+        Map.unsafeMap = unsafeWindow.config.registry.currentObject; // This is supposed to be the central instance of imperion's Map class.
+        Map.galaxy=$("#mapGalaxy");
+        
+        if (Map.enable_dragging) {
+            style+="#mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal;} ";
+            // These come from imperion's 'config.js'
+            Map.center={x: Map.unsafeMap.center.x-0,
+                        y: Map.unsafeMap.center.y-0};
+            Map.patch_map();
+                        
+            y.mouseleave(Map.end_drag);
+            y.mouseup(Map.end_drag);
+            Map.map.mousedown(Map.mousedown);
+        }
+        if(Map.enable_new_grid || Map.system_metadata) {
+            Map.canvas=$.new("canvas");
+            Map.canvas.attr({
+                width:  Map.map.width()*3,
+                height: Map.map.height()*3
+            }).css({
+                position: "absolute",
+                width: "300%",
+                height: "300%"
+            });
+            Map.galaxy.prepend(Map.canvas);
+            Map.context=Map.canvas.get(0).getContext("2d");
+            Map.update();
+        }
+
+        GM_addStyle(style);
     }
-    if(Map.enable_new_grid || Map.system_metadata) {
-      Map.canvas=$.new("canvas");
-      Map.canvas.attr({
-        width:  Map.map.width()*3,
-        height: Map.map.height()*3
-      }).css({
-        position: "absolute",
-        width: "300%",
-        height: "300%"
-      });
-      Map.galaxy.prepend(Map.canvas);
-      Map.context=Map.canvas.get(0).getContext("2d");
-      Map.update();
+    if (Map.rewire_send_troops) {
+        var buttons=$("#recycle,#colonize,#sendFleet");
+        buttons.click(Map.rewire);
     }
 
-    GM_addStyle(style);
-  }
-  if (Map.rewire_send_troops) {
-    var buttons=$("#recycle,#colonize,#sendFleet");
-    buttons.click(Map.rewire);
-  }
-
-  //Map.tag_tool();
+    //Map.tag_tool();
 };
 
 Map.rewire = function(e) {
-  e.preventDefault();
-  var url = this.href;
+    e.preventDefault();
+    var url = this.href;
 
-  var form=$.new("div").attr({class: "metallContent fontCenter"}).text("Loading: "+url);
-  if (Map.form) {
-    Map.form.replaceWith(form);
-  } else {
-    $("#mapToolbar").after(
-      $.new("div").attr({class: "textureCenter interface_content_building_center"}).append(
-        $.new("div").attr({class: "frame"}).append(
-          form)));
-  }
-  Map.form=form;
-  
-  GM_xmlhttpRequest({
-    method: "GET",
-    url: url,
-    onload: Map.append_fleet_form
-  });
+    var form=$.new("div").attr({class: "metallContent fontCenter"}).text("Loading: "+url);
+    if (Map.form) {
+        Map.form.replaceWith(form);
+    } else {
+        $("#mapToolbar").after(
+            $.new("div").attr({class: "textureCenter interface_content_building_center"}).append(
+                $.new("div").attr({class: "frame"}).append(
+                    form)));
+    }
+    Map.form=form;
+    
+    GM_xmlhttpRequest({
+        method: "GET",
+        url: url,
+        onload: Map.append_fleet_form
+    });
 };
 
 Map.extract_content = function(contents) {
-  contents=contents.responseText;
-  contents=contents.split('<div class="metallContent">')[1];
-  contents=contents.split('<div class="bottom interface_content_building_content_bottom"></div>')[0];
-  return contents;
+    contents=contents.responseText;
+    contents=contents.split('<div class="metallContent">')[1];
+    contents=contents.split('<div class="bottom interface_content_building_content_bottom"></div>')[0];
+    return contents;
 }
 
 Map.append_fleet_form = function(contents) {
-  contents=Map.extract_content(contents);
-  var form = $.new("div").attr("class","metallContent");
-  Map.form.replaceWith(form);
-  Map.form=form;
-  form.html(contents);
-  Map.relink_action_button();
+    contents=Map.extract_content(contents);
+    var form = $.new("div").attr("class","metallContent");
+    Map.form.replaceWith(form);
+    Map.form=form;
+    form.html(contents);
+    Map.relink_action_button();
 };
 
 Map.relink_action_button = function() {
-  var link=$.new("a").attr({class: "buttonStd floatRight interface_forms_buttons_standart", href: "javascript:;"})
-  var oldlink=Map.form.find("#sendFormSubmit");
-  link.html(oldlink.html());
-  oldlink.replaceWith(link);
-  link.click(Map.send_fleet);
-  
-  // also relink the tab links:
-  $(".metallContent .tabs a").click(Map.fleet_tab);
+    var link=$.new("a").attr({class: "buttonStd floatRight interface_forms_buttons_standart", href: "javascript:;"})
+    var oldlink=Map.form.find("#sendFormSubmit");
+    link.html(oldlink.html());
+    oldlink.replaceWith(link);
+    link.click(Map.send_fleet);
+    
+    // also relink the tab links:
+    $(".metallContent .tabs a").click(Map.fleet_tab);
 };
 
 Map.fleet_tab = function (e) {
-  e.preventDefault();
-  GM_xmlhttpRequest({
-    method: "GET",
-    url: this.href,
-    onload: Map.fleet_sent // This callback just happens to do all that we need.
-  });  
+    e.preventDefault();
+    GM_xmlhttpRequest({
+        method: "GET",
+        url: this.href,
+        onload: Map.fleet_sent // This callback just happens to do all that we need.
+    });  
 };
 
 Map.send_fleet = function(e) {
-  var f = Map.form.find("#sendForm").get(0);
-  var data = post_data(f);
-  Map.debug("posting data="+data);
+    var f = Map.form.find("#sendForm").get(0);
+    var data = post_data(f);
+    Map.debug("posting data="+data);
 
-  var form=$.new("div").attr({class: "metallContent fontCenter"}).text("Sending fleet");
-  Map.form.replaceWith(form);
-  Map.form=form;  
+    var form=$.new("div").attr({class: "metallContent fontCenter"}).text("Sending fleet");
+    Map.form.replaceWith(form);
+    Map.form=form;  
 
-  GM_xmlhttpRequest({
-    method: "POST",
-    url: f.action,
-    data: data,
-    headers: {"Content-type": "application/x-www-form-urlencoded"},
-    onload: Map.fleet_sent
-  });
+    GM_xmlhttpRequest({
+        method: "POST",
+        url: f.action,
+        data: data,
+        headers: {"Content-type": "application/x-www-form-urlencoded"},
+        onload: Map.fleet_sent
+    });
 };
 
 Map.fleet_sent = function(contents) {
-  contents=Map.extract_content(contents);
-  var form = $.new("div").attr("class","metallContent");
-  Map.form.replaceWith(form);
-  Map.form=form;
-  form.html(contents);
-  Map.relink_action_button();
-  if (Events.enabled && Events.attack[0]) {
-    try {
-      Events.s.events.read();
-      Events.collector.attack();
-      Events.s.events.write();
-      if (Timeline.enabled)
-        Timeline.draw();
-    } catch (e) {
-      Events.exception("Map.fleet_sent (collector)",e);
-    }
-  }   
+    contents=Map.extract_content(contents);
+    var form = $.new("div").attr("class","metallContent");
+    Map.form.replaceWith(form);
+    Map.form=form;
+    form.html(contents);
+    Map.relink_action_button();
+    if (Events.enabled && Events.attack[0]) {
+        try {
+            Events.s.events.read();
+            Events.collector.attack();
+            Events.s.events.write();
+            if (Timeline.enabled)
+                Timeline.draw();
+        } catch (e) {
+            Events.exception("Map.fleet_sent (collector)",e);
+        }
+    }   
 };
 
 Map.call('init', true);
