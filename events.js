@@ -11,7 +11,7 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Public License for more details
  *
  * To obtain a copy of the GNU General Public License, please see
- * <http://www.gnu.org/licenses/>
+ * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
 /****************************************
@@ -145,8 +145,9 @@ Events.update_data=function() {
         for (var e in Events.events[v]) {
             if (Events.events[v][e][1]<Events.old) {
                 delete Events.events[v][e];
+            } else {
+                // room for updates: (for migration to new versions of this script)
             }
-            // room for updates: (for migration to new versions of this script)
         }
     }
     Events.s.events.write();
@@ -191,7 +192,7 @@ Events.collector.building=function(){
     });
 };
 
-// Travelling armies (fleet base)
+// Travelling armies (rally point/fleet base)
 Events.collector.attack=function(){
     var tables = $(".fleetTable");
 
