@@ -11,7 +11,7 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Public License for more details
  *
  * To obtain a copy of the GNU General Public License, please see
- * <http://www.gnu.org/licenses/>
+ * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
 /****************************************
@@ -27,13 +27,16 @@ Timeline.init=function(){
     Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
     Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
 
-    Timeline.setting("color", "rgba(255, 255, 204, 0.7)", Settings.type.string, undefined, "Background color of the timeline");
+    Timeline.setting("color", (imperion?"rgba(0, 0, 32, 0.7)":"rgba(255, 255, 204, 0.7)"), Settings.type.string, undefined, "Background color of the timeline");
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
     Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
     Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
     Timeline.setting("collapse_width", 65, Settings.type.integer, undefined, "Width of the timeline when collapsed (in pixels)");
     Timeline.setting("collapse_delay", 200, Settings.type.integer, undefined, "The time it takes to unfold/collapse the timeline (in milliseconds)");
     Timeline.setting("update_interval", 30000, Settings.type.integer, undefined, "Interval between timeline updates. (in milliseconds)");
+    if (imperion) {
+        Timeline.setting("move_page_left", true, Settings.type.bool, undefined, "Move the page to the left side of the screen.");
+    }
 
     Timeline.setting("scale_warp", 0, Settings.type.integer, undefined, "Amount of timeline scale deformation. 0 = Linear, 4 = Normal, 8 = Max.");
 
@@ -140,14 +143,14 @@ Timeline.create_button=function() {
     button = $.new("div");
     button.css({
       position: "fixed",
-      backgroundColor: "rgba(0,0,128,0.5)",
+      backgroundColor: (imperion?"rgba(64,64,64,0.5)":"rgba(0,0,128,0.5)"),
       right: "0px",
       top: "-2px",
       width: "65px",
       height: "17px",
       zIndex: 40000,
       textAlign: "center",
-      color: "#fff",
+      color: (imperion?"#ccc":"#fff"),
       fontWeight: "bold",
       fontSize: "12px",
       MozBorderRadiusBottomleft: "6px",
@@ -163,13 +166,15 @@ Timeline.draw_scale=function() {
     
     // Draw bar
     g.translate(Timeline.width - 9.5, 0);
-
-    g.strokeStyle = "rgb(0,0,0)";
+    g.strokeStyle = (imperion?"rgb(128,192,255)":"rgb(0,0,0)");
     g.beginPath();
     g.moveTo(0, 0);
     g.lineTo(0, Timeline.height);
     g.stroke();
-
+    
+    // Text color
+    g.fillStyle = (imperion?"rgb(204,204,255)":"black");
+    
     // draw scale lines
     var lastmark = 0;
     for (var i=Timeline.marker_seperation/2; i<Timeline.height; i+=Timeline.marker_seperation) {
@@ -256,12 +261,12 @@ Timeline.draw=Timeline.guard("draw", function() {
 
     // Highlight the 'elapsed time since last refresh'
     var y2 = Timeline.warp(Events.pageload);
-    g.fillStyle = "rgba(0,128,255,0.1)";
+    g.fillStyle = (imperion?"rgba(204,255,128,0.2)":"rgba(0,128,255,0.1)");
     g.fillRect(0, y,Timeline.width, y2-y);
 
     // Gray-out forgotten history
     var y3 = Timeline.warp(Events.old);
-    g.fillStyle = "rgba(0,0,0,0.5)";
+    g.fillStyle = "rgba(64,64,64,0.5)";
     if (y3>0)
         g.fillRect(0, 0,Timeline.width, y3);
 
@@ -301,17 +306,17 @@ Timeline.draw=Timeline.guard("draw", function() {
     // will quickly outdate.
     Events.s.events.read();
     Settings.s.outpost_names.read();
-    Settings.s.race.read();
+    if (travian) {Settings.s.race.read();} // TODO: add in imperion?
     var events = Events.events;
     for (v in events) {
         try {
-			var village = "";
+			var outpost = "";
             if (v>0) {
-                village = Settings.outpost_names[v];
-                if (!village) village="["+v+"]";
+                outpost = Settings.outpost_names[v];
+                if (!outpost) outpost="["+v+"]";
 			}
             for (e in events[v]) {
-                Timeline.draw_event(village,events[v][e]);
+                Timeline.draw_event(outpost,events[v][e]);
             }
         } catch (e) {
             Timeline.exception("Timeline.draw",e);
@@ -320,14 +325,14 @@ Timeline.draw=Timeline.guard("draw", function() {
     g.restore();
 });
 
-Timeline.draw_event=Timeline.guard("draw_event",function(village, event){
+Timeline.draw_event=Timeline.guard("draw_event",function(outpost, event){
     // Draw data
     var color = Events.type[event[0]];
     var y = Timeline.warp(event[1]);
 
     // Check if this type of event is visible
     if (isNaN(y)) return;
-    if (Events[event[0]] >=2) return;
+    if (!Events[event[0]][1]) return;
 
     var g = Timeline.context;
 
@@ -341,15 +346,15 @@ Timeline.draw_event=Timeline.guard("draw_event",function(village, event){
     g.lineTo(-50, y);
     g.stroke();
 
-    // Draw the village's name if available.
-    g.fillStyle = "rgb(0,0,128)";
+    // Draw the planet/village's name if available.
+    g.fillStyle = (imperion?"rgb(0,64,255)":"rgb(0,0,128)");
     g.save();
     g.translate(20 - Timeline.width, y-5);
-    g.mozDrawText(village);
+    g.mozDrawText(outpost);
     g.restore();
 
     // Draw the event text
-    g.fillStyle = "rgb(0,128,0)";
+    g.fillStyle = (imperion?"rgb(64,255,64)":"rgb(0,128,0)");
     // TODO: prepend an * when an attack has 100% efficiency.
     //var cap = 60*left(p[1])+40*left(p[2])+110*left(p[5]) - ((p[13]-0)+(p[14]-0)+(p[15]-0)+(p[16]-0));
     //cap = (cap<=0)?"*":"";
@@ -365,33 +370,35 @@ Timeline.draw_event=Timeline.guard("draw_event",function(village, event){
         g.save();
         g.translate(-45, y+4+12); // Move this below the message.
         if (event[4]) {
-            g.fillStyle = "rgb(64,192,64)";
+            g.fillStyle = (imperion?"rgb(192,64,0)":"rgb(64,192,64)");
             for (var i=3; i>=0; i--) {
-                Timeline.draw_info(Timeline.resources,event[4][i],i,20,12);
+                Timeline.draw_info(Timeline.resources,event[4][i],i,16,(travian?9:15));
             }
         }
         if (event[3]) {
-            g.fillStyle = "rgb(0,0,255)";
-            for (var i=10; i>=0; i--) {
-                // This is a serious hack, but the best we can do without tearing up the entire 'events' list...
-                if (i == 10) Timeline.draw_info(Timeline.hero, event[3][i]);
-                else Timeline.draw_info(Timeline.units[Settings.race], event[3][i], i, 16, 16);
+            g.fillStyle = (travian?"rgb(0,0,255)":"rgb(192,64,255)");
+            var img = Timeline.units[event[3][0]-1];
+            for (var i=12; i>=0; i--) {
+                if (travian) {
+                    if (i == 10) Timeline.draw_info(Timeline.hero, event[3][i+1], 0, 16, 16);
+                }
+                Timeline.draw_info(img, event[3][i+1], i, (travian?16:26), 16);
             }
         }
         g.restore();
     }
 });
 
-Timeline.draw_info=function(img,nrs,pos,width, height) {
+Timeline.draw_info=function(img, nrs, pos, width, height) {
     if (!nrs) return;
     var g = Timeline.context;
     try {
-        g.translate(-16, 0);
-        if (pos!==undefined) {
-          g.drawImage(img, width*pos, 0, width, height,   -0.5, -10, width, height);
-        } else {
-          g.drawImage(img, -0.5, -10);
+        if (img.constructor == Array) {
+            img = img[pos]; 
+            pos = 0;
         }
+        g.translate(-width, 0);
+        g.drawImage(img, img.creator.width*pos, 0, img.creator.width, img.creator.height,   -3.5, -height/2-4, width, height);
     } catch (e) {
         // This might fail if the image is not yet or can't be loaded.
         // Ignoring this exception prevents the script from terminating to early.
@@ -416,18 +423,19 @@ Timeline.draw_info=function(img,nrs,pos,width, height) {
 };
 
 Timeline.run=function() {
-    tp1 = document.getElementById("tp1");
-    if (!tp1) {
-        Timeline.debug("No tp1 found.")
-        return;
-    }
-
     Timeline.create_canvas();
     Timeline.create_button();
-    Timeline.resources = Images.resources.stamp();
-    Timeline.units = [Images.romans.stamp(), Images.teutons.stamp(), Images.gauls.stamp(), Images.nature.stamp(), Images.natars.stamp(), Images.monsters.stamp()];
-    Timeline.hero = Images.hero.stamp();
-    
+    if (travian) {
+        Timeline.resources = Images.resources.stamp();
+        Timeline.units = [Images.romans.stamp(), Images.teutons.stamp(), Images.gauls.stamp(), Images.nature.stamp(), Images.natars.stamp(), Images.monsters.stamp()];
+        Timeline.hero = Images.hero.stamp();
+    }
+    if (imperion) {
+        Timeline.resources = [Images.metal.stamp(), Images.crystal.stamp(), Images.hydrogen.stamp(),Images.energy.stamp()];
+        Timeline.units = [Images.terrans.stamp(), Images.titans.stamp(), Images.xen.stamp()];
+        if (Timeline.move_page_left)
+            GM_addStyle("div#head, div#page {left: 0 !important; margin-left: 0 !important;}\n");
+    }
     if (Timeline.keep_updated)
         window.setInterval(Timeline.draw, Timeline.update_interval);
     Timeline.draw();

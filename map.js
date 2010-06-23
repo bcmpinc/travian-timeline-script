@@ -184,7 +184,7 @@ Map.update=function() {
 
     // Update the travian analyzer links:
     if (Map.analyzer_links) {
-        var linkstart = "<a href=\"http://travian.ws/analyser.pl?s="+Settings.server+"&q="+Map.posx+","+Map.posy;
+        var linkstart = "<a href=\"http://travian.ws/analyser.pl?s="+Settings.server_id+"&q="+Map.posx+","+Map.posy;
         Map.analyzer_links.innerHTML = "<b>Analyze neighbourhood:</b><br/>Radius: " +
             linkstart+",5\" > 5</a>, "+
             linkstart+",10\">10</a>, "+

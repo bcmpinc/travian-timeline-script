@@ -21,10 +21,16 @@
 Feature.create("Images", new Error(21));
 delete Images.s.enabled; // It does not care what the value is.
 
-Images.create = function(src) {
+/**
+ * Creates a new image. 
+ * @param width: the width of a single subimage.
+ */
+Images.create = function(src, width, height) {
     var im = new Object();
     im.__proto__  = Images;
     im.src = src;
+    im.width = width;
+    im.height = height;
     return im;
 };
 Images.get = function(){
@@ -34,6 +40,7 @@ Images.stamp = function() {
     if (!this._stamp) {
         this._stamp=new Image();
         this._stamp.src=this.src;
+        this._stamp.creator=this;
     }
     return this._stamp;
 };
@@ -46,25 +53,25 @@ Images.init=function() {
         Images.nohammer = Images.create("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kFGQEIJZ4LRFoAAAFXSURBVCjPjZKxa8JAGMVfSiE6hHYVoUOQ/gsHoQ4FQRBFcAo4dAq4tIOLlEzd6m6hm5PgWHDo4FDEyWKLi5OoFCe3lIiogb4OadRogz74hu+497t33x34j/r9PguFAkulEo/VCQBAktwCsFwuYZomNE3DYDDAaDRCoLZ8Loh0S5Igh0JIJpNQFAXftg1VVYMBns9lbGRZFjOZDAnwJpHgZ7e7fwe/ZbO83QghWC6X+dHreWfxtV6n4wECICR56qUdj8dwHAfz+RyGYeA6m8WFbeNO1wFdx9d0ijPHwXnQvLapzWaTQgg+VSpsdzrMx+PrJI+5HN8ajcBEe1lbrRZXq9Ua8FAsMh2Nrvt6tXocaHeg1mzGl1qNl4rCWjpNArzP5w+AAgb6Q3I4mVBEIqz+wXb3gUe8iKfFYsErVeVzKkUtFvP5/B/ygGRZRns4xHs4jFvT9Pl+AbHZF5zaQ2LdAAAAAElFTkSuQmCC");
         Images.hero     = Images.create("data:image/gif;base64,R0lGODlhDwAQAMIDAPCzB//RAP/ogf///////////////////yH5BAEKAAQALAAAAAAPABAAAAM5OLoj/M9BKASY0eJV7d1d8HFdKZYOEKBrJS5qIAuyOCoxbd+wDvwYF8ATtNF4igpQiTxyXhGeRpEAADs=");
         Images.cross    = Images.create("data:image/gif;base64,R0lGODlhEAAQAPcAAAAAAJoIBZQ2LZ8xKZw+NqMDAa0NCaEVDqkfGbwFArsKB7oPCrIVC7IUDbgSDrcYEqslGq8iHb8kFrgkHKYvJKc1LLU+Lb4/MLBFM5hKQZVWT55gWaRMQqpZSaNjWrpgUqxyZqlyaqV9d8IHBcwEA80GBM8KBcMVDc8bD8YbEdQOD9MSCdURD9YREdUSEdYYEtQeFNkWE9oYEtgeFdkfFtwcFMElGtAjFd0gFt4jF90mFd4rHcIyIOAjF+ElGOEnGeIoGeIpGuIrG+AtG+MvG+QpGuQrGuUsGuYvGuYuG+MwHOcwGuc0HugxHOgyHek1Huo2H+w5H+Q1Iuk7I+w4IO46Ie89IfA/IshHKc9LK8JJOsVNO8tONsxIMdJCKeBHJelFJO1BI+9FJO5JMfBAIvFBI/FCI/NEJPFFJvRHJfdNJ/hNKPpSKfpTK8JcTclcRsxcSM1pVsN9dtB+cK6Jg7aQiM+ZktSViNWjmcOrp8S2s8W9u8i4tNanodqxqNqxqtqxrOC+udPFw9nS0NjT0t/c2+TKxebQyujSzuPd2+Pe3enV0O3e2+vj4ezl4+ro5+7o5+zr6+/t7fHk4fDs6/bt6vTt7PXu7fPy8fXy8fX19Pf29/n08vr29fr6+gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAP8ALAAAAAAQABAAAAjcAP8JHEjw3585dw4J9AMnDh5OBPucmNImyyVLXcagEfNmksBAC1asYYMFEiULUq6UMcNlEaIHJs6o+VJHIB8KOqpYueJlAokoacCA2DRwEAEUUKhUWYKETJgOkgo+2sBAyZOkVTAoKigwk4AAQ5o4YfKBq0A5BQwEMXIkCRE3lQraSTACR48bKYAUEaKF0UBACkjIqAHDg4YGOXz8uCDQkI0SLGK84CAJk4gDM3BIaNRpyw4WLVxUSDRQTwYIIf454kFDhYoIggpqKiTQE50BDhDkMVsw0h5CvAcGBAA7");
-        Images.romans   = Images.create("/gpack/travian_0006/img/u/v1_romans2.gif");
-        Images.teutons  = Images.create("/gpack/travian_0006/img/u/v2_teutons2.gif");
-        Images.gauls    = Images.create("/gpack/travian_0006/img/u/v3_gauls2.gif");
-        Images.nature   = Images.create("/gpack/travian_0006/img/u/v4_nature2.gif");
-        Images.natars   = Images.create("/gpack/travian_0006/img/u/v5_natars2.gif");
-        Images.monsters = Images.create("/gpack/travian_0006/img/u/v6_monsters2.gif");
-        Images.resources= Images.create("/gpack/travian_0006/img/a/res2.gif");
+        Images.romans   = Images.create("/gpack/travian_0006/img/u/v1_romans2.gif", 16, 16);
+        Images.teutons  = Images.create("/gpack/travian_0006/img/u/v2_teutons2.gif", 16, 16);
+        Images.gauls    = Images.create("/gpack/travian_0006/img/u/v3_gauls2.gif", 16, 16);
+        Images.nature   = Images.create("/gpack/travian_0006/img/u/v4_nature2.gif", 16, 16);
+        Images.natars   = Images.create("/gpack/travian_0006/img/u/v5_natars2.gif", 16, 16);
+        Images.monsters = Images.create("/gpack/travian_0006/img/u/v6_monsters2.gif", 16, 16);
+        Images.resources= Images.create("/gpack/travian_0006/img/a/res2.gif", 20, 12);
         //Images.wheat    = Images.resource[3];
         //Images.eaten    = Images.resource[4];
 	}
 	if (imperion) {
-        Images.metal    = Images.create("/img/interface/informations/metal.jpg");
-        Images.crystal  = Images.create("/img/interface/informations/crystal.jpg");
-        Images.hydrogen = Images.create("/img/interface/informations/deuterium.jpg"); // Yes, deuterium and tritium are hydrogen.
-        Images.energy   = Images.create("/img/interface/icon/energy1.png");
+        Images.metal    = Images.create("/img/interface/informations/metal.jpg", 33, 31);
+        Images.crystal  = Images.create("/img/interface/informations/crystal.jpg", 33, 31);
+        Images.hydrogen = Images.create("/img/interface/informations/deuterium.jpg", 33, 31); // Yes, deuterium and tritium are hydrogen.
+        Images.energy   = Images.create("/img/interface/icon/energy1.png", 14, 21);
         
-        Images.terrans  = Images.create("/img/terrans/interface/ships/sprite.png");
-        Images.titans   = Images.create("/img/titans/interface/ships/sprite.png");
-        Images.xen      = Images.create("/img/xen/interface/ships/sprite.png");
+        Images.terrans  = Images.create("/img/terrans/interface/ships/sprite.png", 41, 25);
+        Images.titans   = Images.create("/img/titans/interface/ships/sprite.png", 41, 25);
+        Images.xen      = Images.create("/img/xen/interface/ships/sprite.png", 41, 25);
 	}
 };
 

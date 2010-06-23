@@ -11,7 +11,7 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Public License for more details
  *
  * To obtain a copy of the GNU General Public License, please see
- * <http://www.gnu.org/licenses/>
+ * <http://www.gnu.org.licenses/>
  *****************************************************************************/
 
 /****************************************
@@ -145,8 +145,9 @@ Events.update_data=function() {
         for (var e in Events.events[v]) {
             if (Events.events[v][e][1]<Events.old) {
                 delete Events.events[v][e];
+            } else {
+                // room for updates: (for migration to new versions of this script)
             }
-            // room for updates: (for migration to new versions of this script)
         }
     }
     Events.s.events.write();
@@ -201,7 +202,7 @@ Events.collector.building=function(){
     }
 };
 
-// Travelling armies (rally point)
+// Travelling armies (rally point/fleet base)
 Events.collector.attack=function(){
     if (location.href.indexOf('build.php') < 0) return;
     // These are both constant, and the only ways of reaching the rally point...
@@ -250,13 +251,17 @@ Events.collector.attack=function(){
         e[0] = "attack";
         e[1] = d.set_seconds(duration);
         e[2] = msg;
-        e[3] = [];
+
+        e[3] = [units.childNodes[0].childNodes[1].childNodes[0].className.match(/u(\d?)1$/)[1]-0];
         // Copy over the units in the attack
-        for (var j = 0; j<11; j++) {
+        for (var j = 0; j<12; j++) {
             var y = units.childNodes[1].childNodes[j+1];
             if (y!=undefined)
-                e[3][j] = y.textContent - 0;
+                e[3][j+1] = y.textContent - 0;
+            else 
+                e[3][j+1] = 0;
         }
+        
         // Copy over the resources in the attack, if any
         if (resources != undefined){
             e[4] = [];
