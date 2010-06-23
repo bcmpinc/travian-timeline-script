@@ -11,7 +11,7 @@ my ($script) = @ARGV;
 my $games = "travian|imperion";
 $script =~ /^($games)$/ or die "Usage: conv.pl $games\n";
 my $inputfile = "${script}_time_line.user.js";
-my $outputfile = "${script}_script.js";
+my $outputfile = "${script}_script.user.js";
 
 # parse *.user.js
 open(my $user, "<", $inputfile) or die "Can't open input file '$inputfile'";
@@ -58,10 +58,10 @@ while($_ = shift(@requires)) {
 	while ( my ($key, $keep) = each(%removes) ) {
         	if ($keep) {
 			$d =~ s/if\($key\)\{($braces)\}/$1/g;
-			$d =~ s/\($key?($parens):$parens\)/$1/g;
+			$d =~ s/\($key\?($parens):$parens\)/$1/g;
         	} else {
 			$d =~ s/if\($key\)\{$braces\}//g;
-			$d =~ s/\($key?$parens:($parens)\)/$1/g;
+			$d =~ s/\($key\?$parens:($parens)\)/$1/g;
 			
 			# make sure stripping worked.
 			if ($d =~ /$key/) {
