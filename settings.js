@@ -197,11 +197,11 @@ Settings.config=function() {
         var setting=this;
         
         sc.css("marginRight", "8px");
+        sc.append(Images.scope[this.scope].get());
         if (this.scope<this.scopes.length) {
-            sc.html(this.scope);
             var sv=GM_getValue(this.scopes[setting.scope+1]+'.'+this.fullname);
             if (sv===undefined) sv = this.def_val;
-            sc.title=sv;
+            sc.attr("title", sv);
         
             if (this.scope<this.scopes.length-1) {
                 sc.bind("click",function (e) {
@@ -211,8 +211,6 @@ Settings.config=function() {
                     },false);
                 sc.css({cursor: "pointer", color: "red"});
             }
-        } else {
-             sc.html('d');
         }
 
 
@@ -266,14 +264,14 @@ Settings.config=function() {
         
         case Settings.type.bool: {
             var u=$.new("u").html(""+this.get());
-            s.append(u);
-            s.css({cursor: "pointer", 
+            u.css({cursor: "pointer", 
                    color: (this.get()?'green':'red')});
-            s.click(function (e) {
+            u.click(function (e) {
                     setting.set(!setting.get());
                     setting.write();
                     s.replaceWith(setting.config());
                 });
+            s.append(u);
             break;
         }
         
@@ -401,11 +399,12 @@ Settings.show=function() {
            top:        "0px",
            right:      "0px",
            bottom:     "0px",
+           fontSize:   "12px",
            background: "rgba(192,192,192,0.8)"});
     w.html('<a style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;">'+
            '<span style="position: absolute; right: 30px; top: 20px;">[x] Close</span></a>'+
            '<div style="position: absolute; left: 50%; top: 50%;">'+
-           '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
+           '<table style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
            ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
            ' -moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;" id="settings_container">'+
            '</pre></div>');
