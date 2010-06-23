@@ -106,14 +106,17 @@ Map.res_x=0;
 Map.res_y=0;
 Map.draw_resource=function(stamp,amount) {
     if (amount<=0) return;
-    var col="#999";
+    // Calculate text color brightness
+    var cl = Math.log(amount- -2500)*30-150; // Color level aka brightness
+    cl=cl.toFixed(0);
+    if (cl>255) cl=255;
+    
+    // Reduce text length
     if (amount>=1000) {
         amount=(amount/1000).toFixed(amount<10000?1:0)+"k";
-        if (amount<20000)
-            col="#CCC";
-        else
-            col="#FFF";
     }
+    
+    // Go to a new line if it does not fit on the current
     var g = Map.context;
     var w = g.mozMeasureText(amount);
     Map.res_x+=w+10;
@@ -122,13 +125,17 @@ Map.draw_resource=function(stamp,amount) {
         g.translate(0,8);
         g.save();
         g.translate(16,0);
-        Map.res_x=w+26;
+        Map.res_x = w+26;
     }
-    g.fillStyle=col;
+
+    // Draw an image of the resource type.
     try{ // unfortunately the following line sometimes likes to throw an error.
         g.drawImage(stamp,2,-8,10,10); 
     }catch(e){}
+    
+    // Write down the amount of resources.
     g.translate(10,0);
+    g.fillStyle = "rgb("+cl+","+cl+","+cl+")";
     g.mozDrawText(amount);
     g.translate(w,0);
 };
