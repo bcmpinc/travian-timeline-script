@@ -69,6 +69,7 @@ while($_ = shift(@requires)) {
 			}
         	}
 	}
+	$d =~ s/^\s+\*/ */gm;
 
 	# print stripped code
 	print $out $d;
