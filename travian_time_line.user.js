@@ -48,7 +48,7 @@ var metadata = <><![CDATA[
  * FOR A PARTICULAR PURPOSE. See the GNU Public License for more details
  *
  * To obtain a copy of the GNU General Public License, please see
- * <http://www.gnu.org.licenses/>
+ * <http://www.gnu.org/licenses/>
  *****************************************************************************/
   
 // This script improves the information provided by Travian. For example: by adding
