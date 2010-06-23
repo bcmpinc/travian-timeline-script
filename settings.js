@@ -197,7 +197,7 @@ Settings.config=function() {
         var setting=this;
         
         sc.css("marginRight", "8px");
-        sc.append(Images.scope[this.scope].get());
+        sc.append(Images.scope[this.scope].get().css("vertical-align","bottom"));
         if (this.scope<this.scopes.length) {
             var sv=GM_getValue(this.scopes[setting.scope+1]+'.'+this.fullname);
             if (sv===undefined) sv = this.def_val;
@@ -404,7 +404,7 @@ Settings.show=function() {
     w.html('<a style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;">'+
            '<span style="position: absolute; right: 30px; top: 20px;">[x] Close</span></a>'+
            '<div style="position: absolute; left: 50%; top: 50%;">'+
-           '<table style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
+           '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
            ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
            ' -moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;" id="settings_container">'+
            '</pre></div>');
