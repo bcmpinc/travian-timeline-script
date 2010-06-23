@@ -20,6 +20,7 @@
 
 Feature.create("Settings", new Error(21));
 Settings.type = {none: 0, string: 1, integer: 2, enumeration: 3, object: 4, bool: 5, set: 6};
+Settings.scope_names = ["user","server","global","built-in"];
 
 // Determine server
 // The server value is needed very early in the script. Luckily it does not rely on DOM.
@@ -190,29 +191,46 @@ Settings.remove=function(scope) {
 // Returns a jQuery object that can be used to modify this setting.
 Settings.config=function() {
     try {
-        var s = $.new("span"); // the setting config thing
-        var sc = $.new("span"); // the scope
+        var s = $.new("div"); // the setting config thing
+        var sc = Images.scope[this.scope].get().css("vertical-align","bottom"); // the scope button
+        
         s.append(sc);
-        s.append(this.name.replace(/_/g," ").pad(22)+": ");
+        var variable_name = this.name.replace(/_/g," ");
+        s.append(variable_name.pad(22)+": ");
+        s.css({whiteSpace: "pre", font: "14px Monospace", borderTop: "1px solid #999", paddingTop: "2px"});
         var setting=this;
         
         sc.css("marginRight", "8px");
-        sc.append(Images.scope[this.scope].get().css("vertical-align","bottom"));
+
+        var scope_title = "The current value is stored at the '"+Settings.scope_names[this.scope]+"' scope. ";
         if (this.scope<this.scopes.length) {
             var sv=GM_getValue(this.scopes[setting.scope+1]+'.'+this.fullname);
             if (sv===undefined) sv = this.def_val;
-            sc.attr("title", sv);
-        
+            if (this.type == Settings.type.enumeration) sv = this.typedata[sv];
             if (this.scope<this.scopes.length-1) {
+                scope_title += "Click here to promote this value to the '"+Settings.scope_names[this.scope+1]+"' scope, ";
+                scope_title += "which will replace the value: "+sv;
                 sc.bind("click",function (e) {
                         setting.remove(setting.scope);
                         setting.write(setting.scope+1);
-                        Settings.fill();
-                    },false);
-                sc.css({cursor: "pointer", color: "red"});
+                        s.replaceWith(setting.config());
+                    });
+                sc.css({cursor: "pointer"});
+            } else {
+                scope_title += "The default value is: "+sv;
             }
+            var del = Images.del.get().css("vertical-align","bottom"); // The reset button
+            del.css({cursor: "pointer", position: "absolute", right: "8px"});
+            del.attr("title", "Delete the current value of '"+variable_name+"' and replace it with: "+sv);
+            del.bind("click",function (e) {
+                setting.remove(setting.scope);
+                setting.read();
+                s.replaceWith(setting.config());
+            });
+            sc.del = del; // Store this value for the updating function.
+            s.append(del);
         }
-
+        sc.attr("title", scope_title);
 
         // Create the input element.
         switch (this.type) {
@@ -235,6 +253,7 @@ Settings.config=function() {
                     input.attr({value: val});
                     setting.set(val);
                     setting.write();
+                    s.replaceWith(setting.config());
                 });
             break;
         }
@@ -252,6 +271,7 @@ Settings.config=function() {
                     var val=e.target.value-0;
                     setting.set(val);
                     setting.write();
+                    s.replaceWith(setting.config());
                 });
             break;
         }
@@ -308,15 +328,17 @@ Settings.config=function() {
 };
 
 Settings.init=function(){
+    Settings.setting("show_description", true, Settings.type.bool, undefined, "Show a description (like this) below each setting. This description will always be available as a popup/tooltip.");
     if (travian) {
-        Settings.setting("race",           0,          Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
+        Settings.setting("race",       0,          Settings.type.enumeration, ["Romans","Teutons","Gauls"]);
     }
     if (imperion) {
-        Settings.setting("race",           0,          Settings.type.enumeration, ["Terrans","Titans","Xen"]);
+        Settings.setting("race",       0,          Settings.type.enumeration, ["Terrans","Titans","Xen"]);
     }
     Settings.setting("time_format",    0,          Settings.type.enumeration, ['Euro (dd.mm.yy 24h)', 'US (mm/dd/yy 12h)', 'UK (dd/mm/yy 12h', 'ISO (yy/mm/dd 24h)']);
     Settings.setting("outpost_names",  {},         Settings.type.object,      undefined, "The names of your "+Settings.outpost_text+"s");
     Settings.setting("current_tab",    "Settings", Settings.type.string,      undefined, "The tab that's currently selected in the settings menu. ");
+    
     
     /* NOTE: shell-code
     if (location.href.match(/about:cache\?device=timeline&/)) {
@@ -404,14 +426,14 @@ Settings.show=function() {
     w.html('<a style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; cursor: pointer;">'+
            '<span style="position: absolute; right: 30px; top: 20px;">[x] Close</span></a>'+
            '<div style="position: absolute; left: 50%; top: 50%;">'+
-           '<pre style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
+           '<div style="position: absolute; left: -300px; top: -250px; width: 600px; height: 400px;'+
            ' border: 3px solid #000; background: #fff; overflow: auto; padding: 8px;'+
-           ' -moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;" id="settings_container">'+
-           '</pre></div>');
+           ' -moz-border-radius-topleft:12px;" id="settings_container">'+
+           '</div></div>');
     w.find("a").click(Settings.close);
     Settings.window = w;
     try {
-        var p = w.find("div");
+        var p = w.find("div").eq(0);
 
         // First we need to create the tabs...
         var tablebody = $.new('tbody');
@@ -496,6 +518,8 @@ Settings.fill=function(){
         for (var i in f.s){ // And refill it
             f.s[i].read();
             disp.append(f.s[i].config());
+            if (Settings.show_description && f.s[i].description)
+                disp.append($.new("div").css({font: "8pt Arial", padding: "0px 0px 6px 25px", color: "#666"}).html(f.s[i].description));
         }
     }
 }
