@@ -599,7 +599,7 @@ Map.fleet_sent = function(contents) {
   if (Events.enabled && Events.attack[0]) {
     try {
       Events.s.events.read();
-      Events.collector.fleet();
+      Events.collector.attack();
       Events.s.events.write();
       if (Timeline.enabled)
         Timeline.draw();
