@@ -237,7 +237,6 @@ Timeline.draw_scale=function() {
 Timeline.draw=Timeline.guard("draw", function() {
     if (!Timeline.visible) return;
     if (Timeline.delayed_draw_timeout) clearTimeout(Timeline.delayed_draw_timeout);
-
     // Check if the height has changed
     if (Timeline.height != window.innerHeight) {
         // Determine the height
@@ -332,6 +331,7 @@ Timeline.draw_event=Timeline.guard("draw_event",function(outpost, event){
 
     // Check if this type of event is visible
     if (isNaN(y)) return;
+    if (y<-20 || y>Timeline.height+20) return;
     if (!Events[event[0]][1]) return;
 
     var g = Timeline.context;
