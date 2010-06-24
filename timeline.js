@@ -27,7 +27,7 @@ Timeline.init=function(){
     Timeline.setting("keep_updated", true, Settings.type.bool, undefined, "Update the timeline every 'Timeline.update_interval' msec.");
     Timeline.setting("report_info", true, Settings.type.bool, undefined, "Show the size of the army, the losses and the amount of resources stolen");
 
-    Timeline.setting("color", (imperion?"rgba(0, 0, 32, 0.7)":"rgba(255, 255, 204, 0.7)"), Settings.type.string, undefined, "Background color of the timeline");
+    Timeline.setting("color", (imperion?"rgba(0, 0, 32, 0.7)":"rgba(255, 255, 204, 0.7)"), Settings.type.string, Settings.previews.color, "Background color of the timeline");
     Timeline.setting("width", 400, Settings.type.integer, undefined, "Width of the timeline (in pixels)");
     Timeline.setting("duration", 300, Settings.type.integer, undefined, "The total time displayed by the timeline (in minutes)");
     Timeline.setting("marker_seperation", 10, Settings.type.integer, undefined, "Mean distance between markers (in pixels)");
