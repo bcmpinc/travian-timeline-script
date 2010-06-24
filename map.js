@@ -31,10 +31,10 @@ Map.init=function(){
     Map.setting("system_players", true, Settings.type.bool,undefined, "Write below a solar system the inhabitants of it's planets.");
     Map.setting("system_players_tag", 0, Settings.type.enumeration,["planet","player","alliance"], "The tag used for the inhabitants.");
     Map.setting("rewire_send_troops", true, Settings.type.bool,undefined, "When clicking on a send troops button, the form is inserted into the page.");
-    Map.setting("grid_color", "green", Settings.type.string, undefined, "The color of the grid lines.");
-    Map.setting("coordinates_color", "cyan", Settings.type.string, undefined, "The color of the coordinates.");
-    Map.setting("coordinates_font", "8pt Monospace", Settings.type.string, undefined, "The font used for the coordinates on the map.");
-    Map.setting("resources_font", "6pt Monospace", Settings.type.string, undefined, "The font used for the resource amounts on the map.");
+    Map.setting("grid_color", "green", Settings.type.string, Settings.previews.color, "The color of the grid lines.");
+    Map.setting("coordinates_color", "cyan", Settings.type.string, Settings.previews.color, "The color of the coordinates.");
+    Map.setting("coordinates_font", "8pt Monospace", Settings.type.string, Settings.previews.font, "The font used for the coordinates on the map.");
+    Map.setting("resources_font", "6pt Monospace", Settings.type.string, Settings.previews.font, "The font used for the resource amounts on the map.");
     /*Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");*/
     /*Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], * /
             none: ["",false], // ie. remove from 'locations'.

@@ -244,6 +244,9 @@ Settings.config=function() {
             var input = $.new("input");
             input.val(this.get());
             s.append(input);
+            if (this.typedata) {
+                s.append(this.typedata());
+            }
             input.change(function (e) {
                     var val=e.target.value;
                     if (setting.type==Settings.type.integer) {
@@ -325,6 +328,26 @@ Settings.config=function() {
     } catch (e) {
         Settings.debug(e);
     }
+};
+
+/** These functions are used to create an element that provides some feedback for input boxes. */
+Settings.previews = {
+    color: function(){
+        return $.new('div').css({
+            width: "16px", 
+            height: "16px", 
+            display: "inline-block",
+            padding: "0px;",
+            outline: "1px solid black",
+            margin: "-4px 5px",
+            backgroundColor: this.get()
+        });
+    },
+    font: function(){
+        return $.new('span').css({
+            font: this.get()
+        }).text("(example)");
+    },
 };
 
 Settings.init=function(){
