@@ -519,7 +519,7 @@ Settings.fill=function(){
             f.s[i].read();
             disp.append(f.s[i].config());
             if (Settings.show_description && f.s[i].description)
-                disp.append($.new("div").css({font: "8pt Arial", padding: "0px 0px 6px 25px", color: "#666"}).html(f.s[i].description));
+                disp.append($.new("div").css({font: "8pt Arial", padding: "0px 0px 6px 25px", color: "#666"}).text(f.s[i].description));
         }
     }
 }
