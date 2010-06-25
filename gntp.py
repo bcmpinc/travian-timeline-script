@@ -66,7 +66,7 @@ class RequestHandler(BaseRequestHandler):
                 
         # Do appropriate action
         if prop["action"] == "REGISTER":
-            print prop
+            #print prop
             if prop["icon"].startswith("http://"):
                 if not prop["application"] in appbucket or appbucket[prop["application"]]["icon"] != prop["icon"]:
                     prop["iconfile"]=tempfile.mktemp(prefix='gntp_')
@@ -83,6 +83,7 @@ class RequestHandler(BaseRequestHandler):
         elif prop["action"] == "NOTIFY":
             appprof=appbucket[prop["application"]]
             interface.Notify(prop["application"],0,appprof["iconfile"],prop["title"],prop["text"],[],{},-1)
+            print prop["application"], prop["title"], ":", prop["text"]
             pass
         else:
             print "Unknown action: %s" % prop["action"]
