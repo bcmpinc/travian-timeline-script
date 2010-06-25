@@ -164,42 +164,52 @@ Events.run=function() {
 Events.collector={};
 
 Events.collector.building=function(){
-    // Checking if data is available
-    if (location.href.indexOf("dorf")<=0) return;
-    var build = document.evaluate('//table[starts-with(@id, "building_contract")]/tbody/tr', document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    if (build == undefined){
-        var buildlist=document.getElementById("building_contract");
-        Events.debug(buildlist.textContent);
-        build = document.evaluate('./tbody/tr', buildlist, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-        if (build == undefined) {
-            Events.debug("No build tasks found.");
-            return;
-        }
-    }
+    var table = $((imperion?"#buildingQueue table tr td.fontCenter a":"#building_contract tbody tr"));
 
     Events.debug("Collecting "+table.length+" build tasks.");
-    for (var nn = 0; nn < build.snapshotLength; nn++){
-        var x = build.snapshotItem(nn);
-        var id = 'b'+x.childNodes[0].childNodes[0].href.match('\\?d=(\\d+)&')[1];
+    table.each(function() {
+        var $this=$(this);
+        if (imperion) {
+            var id = "b"+($this.attr("href").replace("/building/delEvent/","")-0);
+            $this = $this.parent().parent();
+        }
+        if (travian) {
+            var id = 'b'+$this.find(".ico a").attr("href").match('\\?d=(\\d+)&')[1];
+        }
         var e = Events.get_event(Settings.outpost_id, id);
 
         e[0]="building";
     
         var d = new tl_date(Events);
-        d.set_time(x.childNodes[3].textContent.match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
-        var duration = x.childNodes[2].textContent.match('(\\d\\d?):(\\d\\d):(\\d\\d)');
-        d.adjust_day(duration);
-        e[1] = d.set_seconds(duration);
-        e[2] = x.childNodes[1].textContent;
+        var cells=$this.find("td");
+        e[2] = cells.eq(1).text();
+
+        if (imperion) {
+            d.set_time(cells.eq(3).text().match('(\\d\\d):(\\d\\d):(\\d\\d) ?([a-z]*)'));
+            d.adjust_day([0,0]);
+            cells.eq(2).one("DOMSubtreeModified", function(){
+                d.adjust_day(cells.eq(2).text().match('(\\d+):(\\d\\d):(\\d\\d)'));
+                e[1] = d.get_time();
+                Events.debug("Time set to "+e[1]);
+                //Timeline.delayed_draw();
+            });
+        }
+        if (travian) {
+            d.set_time(cells.eq(3).text().match('(\\d\\d?):(\\d\\d) ?([a-z]*)'));
+            var duration = cells.eq(2).text().match('(\\d\\d?):(\\d\\d):(\\d\\d)');
+            d.adjust_day(duration);
+            d.set_seconds(duration);
+        }
+        e[1] = d.get_time();
 
         Events.debug("Time set to "+e[1]);
 
-        x.childNodes[0].addEventListener('click', function(e){
-                Events.info('Removing the building event Events.events['+Settings.outpost_id+']['+id+']');
-                delete Events.events[Settings.outpost_id][id];
-                Events.s.events.write();
-            }, false);
-    }
+        cells.eq(0).find("a").bind('click', function(e){
+            Events.info('Removing the building event Events.events['+Settings.outpost_id+']['+id+']');
+            delete Events.events[Settings.outpost_id][id];
+            Events.s.events.write();
+        });
+    });
 };
 
 // Travelling armies (rally point/fleet base)
