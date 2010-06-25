@@ -110,22 +110,54 @@ Market.update=function(container) {
         var a=cells.eq(0).text().replace(/[.,]/g,"")-0;
         var b=cells.eq(1).text().replace(/[.,]/g,"")-0;
         r = a/b;
-        var red   = Math.round(255*((r<1)?1:1/r));
-        var green = Math.round(255*((r>1)?1:r));
-        if (Market.add_ratio) 
-            $this.find("td").eq(4).before(
-                $.new("td").text(Math.round(r*100)+"%").css({"text-align": "right", "font-size": "85%", "font-weight": "bold", color: "rgb("+red+","+green+",0)"}));
-        if (Market.use_colors)
-            $this.find("td").css("backgroundColor", "rgba("+red+","+green+",0,0.3)");
+        if (imperion) {
+            var red   = (r<1)?1:1/r;
+            var green = (r>1)?1:r;
+        }
+        if (Market.add_ratio) {
+            if (travian) {
+                var green = (r<1)?0:3-3/r;
+                var red   = (r>1)?0:2-2*r;
+                if (green>1) green=1;
+                if (red  >1) red  =1;
+            }
+            var el = $.new("td").text(Math.round(r*100)+"%").css({
+                textAlign: "right", 
+                fontSize: "85%", 
+                color: Market.color(red,green,0),
+            });
+            if (r>=0) {
+                el.css("fontWeight", "bold");
+            }
+            $this.find("td").eq(4).before(el);
+        }
+        if (Market.use_colors) {
+            if (travian) {
+                var red   = (r<1)?1:1/r;
+                var green = (r>1)?1:r;
+                $this.css("backgroundColor", Market.color(red*.2+.8,green*.2+.8,0.8));
+            }
+            if (imperion) {
+                $this.css("backgroundColor", Market.color(red,green,0,0.3));
+            }
+        }
     });
 };
+
+Market.color = function(r,g,b,a) {
+    if (a) return "rgba("+Math.round(255*r)+","+Math.round(255*g)+","+Math.round(255*b)+","+a.toFixed(2)+")";
+    return "rgb("+Math.round(255*r)+","+Math.round(255*g)+","+Math.round(255*b)+")";
+}
 
 Market.run=function(){
     Market.buy=$((imperion?".buyMarket>.extraTable table":"#build.gid17 #range"));
 
     if (Market.buy.length>0) {
         if (travian) {
-            GM_addStyle("#range tr {background-color: white;} #range .none {font-size: 75%; color: #C66;}");
+            if (Market.add_ratio)
+                GM_addStyle("#range .act.none {font-size: 75%;}");
+            if (Market.use_colors)
+                GM_addStyle("#range tbody td {background: none !important;}");
         }
         Market.update(Market.buy);
         if (imperion) {
