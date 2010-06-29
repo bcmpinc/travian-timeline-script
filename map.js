@@ -35,6 +35,8 @@ Map.init=function(){
     Map.setting("coordinates_color", "cyan", Settings.type.string, Settings.previews.color, "The color of the coordinates.");
     Map.setting("coordinates_font", "8pt Monospace", Settings.type.string, Settings.previews.font, "The font used for the coordinates on the map.");
     Map.setting("resources_font", "6pt Monospace", Settings.type.string, Settings.previews.font, "The font used for the resource amounts on the map.");
+    Map.setting("quick_send", true, Settings.type.bool, undefined, "Add a context menu to the planets for quick fleet sending");
+    
     /*Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");*/
     /*Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], * /
             none: ["",false], // ie. remove from 'locations'.
@@ -523,8 +525,82 @@ Map.run=function() {
         var buttons=$("#recycle,#colonize,#sendFleet");
         buttons.click(Map.rewire);
     }
+    if (Map.quick_send) {
+        planets = $("#mapInfo > div");
+        for (var index=1; index<=8; index++) {
+            Map.quick_menu(index, planets.eq(index-1));
+        }
+    }
 
     //Map.tag_tool();
+};
+
+Map.quick_click = function(text, id, postdatas, menu) {
+    var el=$.new("a");
+    el.bind("click", function(){
+        var name = menu.p.find(".planetName");
+        name.addClass("colorYellow"); 
+        Map.info("Retrieving fleet ticket.");
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: Settings.server + "/fleetBase/mission/1/" + id,
+            onload: function(contents) {
+                var f = contents.responseText.match(/name="f" value="(\d+)"/)[1];
+                var tan = contents.responseText.match(/name="tan" value="(\d+)"/)[1];
+                postdatas.push("f="+f);
+                postdatas.push("tan="+tan);
+                var data = postdatas.join("&");
+                Map.info("Sending fleet: "+data);
+                GM_xmlhttpRequest({
+                    method: "POST",
+                    url: Settings.server + "/fleetBase/send/1#new",
+                    data: data,
+                    headers: {"Content-type": "application/x-www-form-urlencoded"},
+                    onload: function(contents) {
+                        var error = contents.responseText.match(/<li class="fontBold colorError">([^<]+)<\/li>/)
+                        if (error) {
+                            name.removeClass("colorYellow").addClass("colorError").attr("title",error[1]);
+                            menu.p.one("DOMAttrModified", function() {
+                                name.removeClass("colorError").attr("title",undefined);
+                            });
+                        } else {
+                            name.removeClass("colorYellow");
+                        }
+                    }
+                });
+            }
+        });
+    });
+    el.text(text);
+    el.attr("href", "javascript:;");
+    menu.append(el);
+};
+
+Map.quick_menu = function(index, p) {
+    p.bind("contextmenu",function(e){
+        try {
+            var coords = $("#mapInfo h1 span").text().match(/\((\d+)\|(-?\d+)\|(-?\d+)\)/);
+            var sysid = unsafeWindow.config.generator.getSystemIdByCoords(coords[2]-0,coords[3]-0,coords[1]-0);
+            var plid = sysid*100- -index;
+            var menu = $.new("div");
+            menu.p = p;
+            p.hide();
+            menu.text("Quick menu:").attr("class","colorWhite mapInfoItem interface_map_info_full");
+            Map.quick_click("Raid",plid,["targetType=p", "ship[2]=25", "mission=302", "spio-target[1]=1", "planet="+plid], menu);
+            menu.append($.new("a").attr("href","javascript:;").text("close").css("float", "right").click(function() {
+                p.attr("class",p.attr("class").replace("empty", "highlight"));
+            }));
+            p.after(menu);
+            p.attr("class",p.attr("class").replace("highlight", "empty"));
+            p.one("DOMAttrModified",function(e){
+                menu.remove();
+                p.show();
+            });
+        } catch (e) {
+            Map.exception("planet context menu", e);
+        }
+        return false;
+    });
 };
 
 Map.rewire = function(e) {
