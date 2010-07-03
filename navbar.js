@@ -64,70 +64,58 @@ Navbar.init=function(){
                          -1,
                          6,
                          7
-                         ],Settings.type.object,undefined,"The links of the sidebar.");
+                        ],Settings.type.object,undefined,"The links of navigation bar.");
     }
     if (imperion) {
-        Navbar.setting("links",{},Settings.type.object,undefined,"The (detected) links of the sidebar")
-        Navbar.setting("auto_detect", false, Settings.type.bool, undefined, "Automagically detect the targets of the links (turning this on might decrease performance) ");
-        Navbar.setting("enable_reordering", false, Settings.type.bool, undefined, "Allow the links to be reordered by dragging");
-        Navbar.detectors={
-            "Market (buy)": ".buyMarket",
-            "Market (sell)": ".sellMarket",
-            "Research": "#researchCenter",
-            "Accumulator": "#energyStorage",
-            "Fleet Base": "#fleetBase",
-            "Arms Factory": ".building_page_540,.building_page_1540",
-            "Civilian Shipyard": ".building_page_630,.building_page_1630",
-            "Military Shipyard": ".building_page_620,.building_page_1620",
-            "Rocket Silo": ".building_page_2540",
-            "Small Shipyard": ".building_page_2630",
-            "Large Shipyard": ".building_page_2620"
-        };
+        Navbar.setting("links",
+                        [
+                         ["Fleet Base", "/fleetBase/show/1"],
+                         ["Research", "/researchCenter/show/4"],
+                         ["Embassy", "http://u1.imperion.org/embassy/expansion/15"],
+                         -1,
+                         "Market:",
+                         ["send", "/market/show/10"],
+                         ["buy", "/market/listOffers/10"],
+                         ["sell", "/market/formMakeOffer/10"],
+                         -1,
+                         ["Arms Factory", "/weaponFactory/show/5"],
+                         ["Civilian Shipyard", "/shipYard/show/6"],
+                         ["Military Shipyard", "/shipYard/show/11"],
+                        ],Settings.type.object,undefined,"The links of the navigation bar")
     }
 };
 
-if (imperion) {
-    Navbar.drop=function(o) {
-        var t=o.originalTarget.parentNode;
-        if (t.tagName!="A") return;
-        t=$(t);
-        Navbar.debug("(Re)Linking "+t.text()+" to "+t.attr("href"));
-        if (Navbar.links[t.text()]) {
-            delete Navbar.links[t.text()];
-        }
-        Navbar.links[t.text()]=t.attr("href");
-        Navbar.s.links.write();
-        Navbar.fill();
-    };
-}
 Navbar.fill=function() {
     // Remove any old links
     Navbar.bar.empty();
     // Add new links
     for (var i in Navbar.links) {
         var el;
-        if (imperion) {
-            el = $.new("a").attr({href: Navbar.links[i]}).text(i).css({border: "1px solid #333", margin: "2px"});
-        }
-        if (travian) {
-            var x = Navbar.links[i];
-            if (x.constructor == Array) {
-                var el=$.new("a").text(x[0]).attr("href",x[1]);
-                if (Navbar.extern_in_new_window && x[1].match("^https?://"))
-                    el.attr("target", "_blank");
-            } else if (x.constructor == String) {
-                el = $.new("b").text(x);
-            } else if (x<0) {
+        var x = Navbar.links[i];
+        if (x.constructor == Array) {
+            var el=$.new("a").text(x[0]).attr("href",x[1]);
+            if (Navbar.extern_in_new_window && x[1].match("^https?://"))
+                el.attr("target", "_blank");
+            if (imperion) {
+                el.css({border: "1px solid #333", margin: "2px"});
+            }
+        } else if (x.constructor == String) {
+            el = $.new("b").text(x);
+        } else if (x<0) {
+            if (travian) {
                 if (Navbar.use_hr) {
                     el = $.new("hr");
                 } else {
                     el = $.new("br");
                 }
-            } else {
-                el = Navbar.oldnavi.eq(x);
-                if (Navbar.remove_plus_color)
-                    el.text(el.text()); // Remove color from Plus link.
             }
+            if (imperion) {
+                el = $.new("span").css({margin: "2px 2em"});
+            }
+        } else {
+            el = Navbar.oldnavi.eq(x);
+            if (Navbar.remove_plus_color)
+                el.text(el.text()); // Remove color from Plus link.
         }
         Navbar.bar.append(el);
     }
@@ -139,21 +127,8 @@ Navbar.run=function() {
         }
 
         var changed=false;
-        if (Navbar.auto_detect) {
-            for (i in Navbar.detectors) {
-                if ($(Navbar.detectors[i]).length>0) {
-                    Navbar.links[i]=location.href;
-                    changed=true;
-                    Navbar.info("Linked "+i+" to "+location.href);
-                }
-            }
-            if (changed)
-                Navbar.s.links.write();
-        }
         Navbar.bar=$("#contentASDF>div").eq(0);
-        Navbar.bar.css({height: "auto", "padding-bottom": "4px"});
-        if (Navbar.enable_reordering)
-            Navbar.bar.bind("dragend",Navbar.drop);
+        Navbar.bar.css({height: "auto", "padding-bottom": "4px", color: "gray"});
     }
     if (travian) {
         if (Navbar.remove_plus_button) {
