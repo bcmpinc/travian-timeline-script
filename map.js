@@ -231,6 +231,7 @@ Map.update=function() {
     var PLAYER_NAME   = unsafeWindow.ARRAY_INDEX_PLAYER_NAME;
     var ALLIANCE_NAME = unsafeWindow.ARRAY_INDEX_ALLIANCE_NAME;
     var KIND_ID       = unsafeWindow.ARRAY_INDEX_KIND_ID;
+    var PLANET_ID     = unsafeWindow.ARRAY_INDEX_PLANET_ID;
     
     // var HUMAN = 1;
     // var TITANS = 2;
@@ -257,8 +258,8 @@ Map.update=function() {
                     g.fillStyle="yellow";
                     for (var i in system[DEBRIS]) { // debris
                         var debris=system[DEBRIS][i];
-                        if (!debris.planet_id) continue;
-                        Map.draw_object(system.planets[debris.planet_id].planet_name,debris.r1,debris.r2,0);
+                        if (!debris[PLANET_ID]) continue;
+                        Map.draw_object(system[PLANETS][debris[PLANET_ID]][PLANET_NAME],debris.r1,debris.r2,0);
                     }
                     g.fillStyle="cyan";
                     for (var i in system[ASTEROID]) { // asteroids
@@ -496,8 +497,10 @@ Map.run=function() {
         if (Map.enable_dragging) {
             style+="#mapContent, #mapContent #mapGalaxy {cursor: move;} #mapContent img {cursor: pointer;} #mapContent * {cursor: normal;} ";
             // These come from imperion's 'config.js'
-            Map.center={x: Map.unsafeMap.center.x-0,
-                        y: Map.unsafeMap.center.y-0};
+            if (Map.unsafeMap.center) {
+                Map.center={x: Map.unsafeMap.center.x-0,
+                            y: Map.unsafeMap.center.y-0};
+            }
             Map.patch_map();
                         
             y.mouseleave(Map.end_drag);
@@ -560,7 +563,7 @@ Map.quick_click = function(text, id, postdatas, menu) {
                         var error = contents.responseText.match(/<li class="fontBold colorError">([^<]+)<\/li>/)
                         if (error) {
                             name.removeClass("colorYellow").addClass("colorError").attr("title",error[1]);
-                            menu.p.one("DOMAttrModified", function() {
+                            name.one("DOMSubtreeModified", function() {
                                 name.removeClass("colorError").attr("title",undefined);
                             });
                         } else {
@@ -573,6 +576,7 @@ Map.quick_click = function(text, id, postdatas, menu) {
     });
     el.text(text);
     el.attr("href", "javascript:;");
+    el.css("margin", "0px 5px");
     menu.append(el);
 };
 
@@ -586,7 +590,10 @@ Map.quick_menu = function(index, p) {
             menu.p = p;
             p.hide();
             menu.text("Quick menu:").attr("class","colorWhite mapInfoItem interface_map_info_full");
-            Map.quick_click("Raid",plid,["targetType=p", "ship[2]=25", "mission=302", "spio-target[1]=1", "planet="+plid], menu);
+            Map.quick_click("Get QI", plid,["targetType=p", "ship[5]=30","mission=302", "spio-target[1]=1", "planet="+plid], menu);
+            Map.quick_click("Raid",   plid,["targetType=p", "ship[5]=15", "ship[2]=2", "mission=302", "spio-target[1]=1", "planet="+plid], menu);
+            Map.quick_click("Spy",    plid,["targetType=p", "ship[1]=1", "mission=304", "spio-target[1]=1", "spio-target[2]=1", "spio-target[3]=1", "planet="+plid], menu);
+            Map.quick_click("Anex",   plid,["targetType=p", "ship[5]=1", "mission=314", "spio-target[1]=1", "planet="+plid], menu);
             menu.append($.new("a").attr("href","javascript:;").text("close").css("float", "right").click(function() {
                 p.attr("class",p.attr("class").replace("empty", "highlight"));
             }));
