@@ -380,7 +380,7 @@ Timeline.draw_event=Timeline.guard("draw_event",function(outpost, event){
             var img = Timeline.units[event[3][0]-1];
             for (var i=12; i>=0; i--) {
                 if (travian) {
-                    if (i == 10) Timeline.draw_info(Timeline.hero, event[3][i+1], 0, 16, 16);
+                    if (i == 10) Timeline.draw_info(Timeline.hero, event[3][i+1], 7, 16, 16);
                 }
                 Timeline.draw_info(img, event[3][i+1], i, (travian?16:26), 16);
             }

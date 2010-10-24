@@ -51,14 +51,14 @@ Images.init=function() {
         Images.percent  = Images.create("data:image/bmp;base64,Qk3WAgAAAAAAADYAAAAoAAAAEgAAAAwAAAABABgAAAAAAKACAAATCwAAEwsAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////AAD////////////////////Y2NhNTU23t7f////m5uZbW1s/Pz9QUFCCgoL39/f///////////8AAP///////////////////////7W1tUpKSuPj49LS0ioqKq2trZaWlkJCQvHx8f///////////wAA////////////////////////+Pj4SEhIkpKS1NTUMjIytbW1nZ2dNzc38fHx////////////AAD////////////////Ozs6YmJijo6POzs5MTEy+vr5xcXFFRUU/Pz+Ghob7+/v///////////8AAP///////////+Xl5VtbW1BQUD4+Po+Pj6GhoUVFRd7e3tPT09vb2/7+/v///////////////wAA////////////0tLSKioqwsLCh4eHQkJC5OTkUlJSjIyM/v7+////////////////////////AAD////////////V1dUyMjK0tLSQkJBQUFDx8fHa2tpeXl7Y2Nj///////////////////////8AAP////////////Ly8oCAgEREREBAQJeXl/v7+/7+/p6enlZWVtvb2////////////////////wAA////////////////8fHx0tLS29vb////////////+Pj42NjY////////////////////////AAD///////////////////////////////////////////////////////////////////////8AAP///////////////////////////////////////////////////////////////////////wAA");
         Images.hammer   = Images.create("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kEEhY1JQfrF6AAAAFYSURBVCjPlZI7a8IAFEY/K1UCBn+AiwZpwVVwCMFNguJQHOvgUIQ4FEQoUjNVCiIFN6GbU0CdujWrdNPBdggOoqGgHZSCQRE1hdvZt571Xg738YF2oGkaSZJE2WyWTuUCGyyXS8iyDJ7n0e120e/3cQpbolgsBlEUwbIsjOkUHMedLzIMA1arFT6fD2/lMl4KBZzKmkgURQiCAIfTievxGO/pNNRaDX/niHRdh2mamM/nSCaT+HW74bDZoJVKUPJ5fI9GmAyHx0UejwfFYhGqquIukcBNLoemaWJqscDWaqGaSuGz3d4/0uYbG40GrVYrIiL66nToKZOhqMtFSjhMz8EgVSuVne/HsXxMZjN6UxS6YllSolEqh0L0GI9v9VmIiI4dkgDogwFuAwFIfj8uAfwwDB7q9f2rHWKxWJDAcfQaiRDv9R5O9iHsdjs+ej00GQb3srxW+wd+q1O9w+tuqQAAAABJRU5ErkJggg==");
         Images.nohammer = Images.create("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAMCAYAAABvEu28AAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9kFGQEIJZ4LRFoAAAFXSURBVCjPjZKxa8JAGMVfSiE6hHYVoUOQ/gsHoQ4FQRBFcAo4dAq4tIOLlEzd6m6hm5PgWHDo4FDEyWKLi5OoFCe3lIiogb4OadRogz74hu+497t33x34j/r9PguFAkulEo/VCQBAktwCsFwuYZomNE3DYDDAaDRCoLZ8Loh0S5Igh0JIJpNQFAXftg1VVYMBns9lbGRZFjOZDAnwJpHgZ7e7fwe/ZbO83QghWC6X+dHreWfxtV6n4wECICR56qUdj8dwHAfz+RyGYeA6m8WFbeNO1wFdx9d0ijPHwXnQvLapzWaTQgg+VSpsdzrMx+PrJI+5HN8ajcBEe1lbrRZXq9Ua8FAsMh2Nrvt6tXocaHeg1mzGl1qNl4rCWjpNArzP5w+AAgb6Q3I4mVBEIqz+wXb3gUe8iKfFYsErVeVzKkUtFvP5/B/ygGRZRns4xHs4jFvT9Pl+AbHZF5zaQ2LdAAAAAElFTkSuQmCC");
-        Images.hero     = Images.create("data:image/gif;base64,R0lGODlhDwAQAMIDAPCzB//RAP/ogf///////////////////yH5BAEKAAQALAAAAAAPABAAAAM5OLoj/M9BKASY0eJV7d1d8HFdKZYOEKBrJS5qIAuyOCoxbd+wDvwYF8ATtNF4igpQiTxyXhGeRpEAADs=");
-        Images.romans   = Images.create("/gpack/travian_0006/img/u/v1_romans2.gif", 16, 16);
-        Images.teutons  = Images.create("/gpack/travian_0006/img/u/v2_teutons2.gif", 16, 16);
-        Images.gauls    = Images.create("/gpack/travian_0006/img/u/v3_gauls2.gif", 16, 16);
-        Images.nature   = Images.create("/gpack/travian_0006/img/u/v4_nature2.gif", 16, 16);
-        Images.natars   = Images.create("/gpack/travian_0006/img/u/v5_natars2.gif", 16, 16);
-        Images.monsters = Images.create("/gpack/travian_0006/img/u/v6_monsters2.gif", 16, 16);
-        Images.resources= Images.create("/gpack/travian_0006/img/a/res2.gif", 20, 12);
+        Images.hero     = Images.create("/gpack/travian_default/img/u/specials.gif", 19, 16);
+        Images.romans   = Images.create("/gpack/travian_default/img/u/v1_romans2.gif", 19, 16);
+        Images.teutons  = Images.create("/gpack/travian_default/img/u/v2_teutons2.gif", 19, 16);
+        Images.gauls    = Images.create("/gpack/travian_default/img/u/v3_gauls2.gif", 19, 16);
+        Images.nature   = Images.create("/gpack/travian_default/img/u/v4_nature2.gif", 19, 16);
+        Images.natars   = Images.create("/gpack/travian_default/img/u/v5_natars2.gif", 19, 16);
+        Images.monsters = Images.create("/gpack/travian_default/img/u/v6_monsters2.gif", 19, 16);
+        Images.resources= Images.create("/gpack/travian_default/img/a/res2.gif", 20, 12);
         //Images.wheat    = Images.resource[3];
         //Images.eaten    = Images.resource[4];
     }
@@ -88,6 +88,7 @@ Images.init=function() {
     
     Images.del    = Images.create("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8%2F9hAAAABGdBTUEAAK%2FINwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJdSURBVDjLpZP7S1NhGMf9W7YfogSJboSEUVCY8zJ31trcps6zTI9bLGJpjp1hmkGNxVz4Q6ildtXKXzJNbJRaRmrXoeWx8tJOTWptnrNryre5YCYuI3rh%2B8vL%2B%2Fm8PA%2FPkwIg5X%2By5mJWrxfOUBXm91QZM6UluUmthntHqplxUml2lciF6wrmdHriI0Wx3xw2hAediLwZRWRkCPzdDswaSvGqkGCfq8VEUsEyPF1O8Qu3O7A09RbRvjuIttsRbT6HHzebsDjcB4%2FJgFFlNv9MnkmsEszodIIY7Oaut2OJcSF68Qx8dgv8tmqEL1gQaaARtp5A%2BN4NzB0lMXxon%2FuxbI8gIYjB9HytGYuusfiPIQcN71kjgnW6VeFOkgh3XcHLvAwMSDPohOADdYQJdF1FtLMZPmslvhZJk2ahkgRvq4HHUoWHRDqTEDDl2mDkfheiDgt8pw340%2FEocuClCuFvboQzb0cwIZgki4KhzlaE6w0InipbVzBfqoK%2FqRH94i0rgokSFeO11iBkp8EdV8cfJo0yD75aE2ZNRvSJ0lZKcBXLaUYmQrCzDT6tDN5SyRqYlWeDLZAg0H4JQ%2BJt6M3atNLE10VSwQsN4Z6r0CBwqzXesHmV%2BBeoyAUri8EyMfi2FowXS5dhd7doo2DVII0V5BAjigP89GEVAtda8b2ehodU4rNaAW%2BdGfzlFkyo89GTlcrHYCLpKD%2BV7yeeHNzLjkp24Uu1Ed6G8%2FF8qjqGRzlbl2H2dzjpMg1KdwsHxOlmJ7GTeZC%2FnesXbeZ6c9OYnuxUc3fmBuFft%2FFf8xMd0s65SXIb%2FgAAAABJRU5ErkJggg%3D%3D");
     Images.pencil = Images.create("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8%2F9hAAAABGdBTUEAAK%2FINwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAFUSURBVDjLrZM%2FSAJxGIZdWwuDlnCplkAEm1zkaIiGFFpyMIwGK5KGoK2lphDKkMDg3LLUSIJsSKhIi%2B684CokOtTiMizCGuzEU5K3vOEgKvtBDe%2F2Pc8H3x8NAM1fQlx4H9M3pcOWp6TXWmM8A7j0629v1nraiAVC0IrrwATKIgs5xyG5QiE%2BZ4iQdoeU2oAsnqCSO1NSTu%2BD9VhqRLD8nIB8F0Q2MgmJDyipCzjvYJkIfpN2UBLG8MpP4dxvQ3ZzGuyyBQ2H%2BAnOOCBd9aL6soh81A5hyYSGWyCFvxUcerqI4S%2BCvYVOFPMHxLAq8I3qdHVY5LbBhJzEsCrwutpRFBlUHy6wO2tEYtWAzLELPN2P03kjfj3luqDycV2F8AgefWbEnVqEHa2IznSD6BdsVDNStB0lfh0FPoQjdx8RrAqGzC0YprSgxzsUMOY2bf37N%2F6Ud1Vc9yYcH50CAAAAAElFTkSuQmCC");
+/*! End copyright "Silk icon set 1.3" */
 };
 
 Images.call('init', true);
