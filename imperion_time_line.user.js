@@ -3,7 +3,7 @@ var metadata = <><![CDATA[
 // ==UserScript==
 // @name           Imperion Time Line
 // @namespace      ImperionTL
-// @version        I_0.08
+// @version        I_0.09
 // @description    Adds a buildqueue.
  
 // @include        http://*.imperion.*/*
