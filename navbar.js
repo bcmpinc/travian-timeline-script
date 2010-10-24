@@ -63,7 +63,7 @@ Navbar.init=function(){
                          ["Rally Point", "/build.php?gid=16"],
                          -1,
                          6,
-                         7
+                         7,
                         ],Settings.type.object,undefined,"The links of navigation bar.");
     }
     if (imperion) {
@@ -81,6 +81,7 @@ Navbar.init=function(){
                          ["Arms Factory", "/weaponFactory/show/5"],
                          ["Civilian Shipyard", "/shipYard/show/6"],
                          ["Military Shipyard", "/shipYard/show/11"],
+                         ["Rocket Silo", "/missileSilo/show/16"],
                         ],Settings.type.object,undefined,"The links of the navigation bar")
     }
 };

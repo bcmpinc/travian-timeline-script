@@ -36,6 +36,7 @@ Map.init=function(){
     Map.setting("coordinates_font", "8pt Monospace", Settings.type.string, Settings.previews.font, "The font used for the coordinates on the map.");
     Map.setting("resources_font", "6pt Monospace", Settings.type.string, Settings.previews.font, "The font used for the resource amounts on the map.");
     Map.setting("quick_send", true, Settings.type.bool, undefined, "Add a context menu to the planets for quick fleet sending");
+    Map.setting("harvester_payload", 20000, Settings.type.integer, undefined, "Amount of resources an harvester can gather");
     
     /*Map.setting("scale", .05, Settings.type.integer,undefined, "The square at the start of a line will be at (this_value*location's_distance_from_center) from the center.");*/
     /*Map.setting("categories", { /* <tag>: [ <color> , <drawline> ], * /
@@ -148,7 +149,7 @@ Map.draw_object=function(name,r1,r2,r3) {
     var w=g.mozMeasureText(name);
     Map.res_x=w;
     g.translate(w,0);
-    if (r1==0 && r2==0 && r3==0) {
+    if (r1<=1 && r2<=1 && r3<=1) {
         g.fillStyle="gray";
         g.mozDrawText("[empty]");
     } else {
@@ -157,6 +158,10 @@ Map.draw_object=function(name,r1,r2,r3) {
         Map.draw_resource(Images.crystal.stamp(),r2);
         Map.draw_resource(Images.hydrogen.stamp(),r3);
     }
+    var n = Math.round((r1*1+r2*1+r3*1)/Map.harvester_payload);
+    g.fillStyle="brown";
+    g.translate(2,0);
+    g.mozDrawText(n);
     g.restore();
     g.translate(0,8);
 };
@@ -590,10 +595,12 @@ Map.quick_menu = function(index, p) {
             menu.p = p;
             p.hide();
             menu.text("Quick menu:").attr("class","colorWhite mapInfoItem interface_map_info_full");
-            Map.quick_click("Get QI", plid,["targetType=p", "ship[5]=30","mission=302", "spio-target[1]=1", "planet="+plid], menu);
-            Map.quick_click("Raid",   plid,["targetType=p", "ship[5]=15", "ship[2]=2", "mission=302", "spio-target[1]=1", "planet="+plid], menu);
-            Map.quick_click("Spy",    plid,["targetType=p", "ship[1]=1", "mission=304", "spio-target[1]=1", "spio-target[2]=1", "spio-target[3]=1", "planet="+plid], menu);
-            Map.quick_click("Anex",   plid,["targetType=p", "ship[5]=1", "mission=314", "spio-target[1]=1", "planet="+plid], menu);
+            var spio = ["spio-target[1]=1", "spio-target[2]=1", "spio-target[3]=1", "spio-target[4]=1", "spio-target[5]=1"];
+            Map.quick_click("Get QI", plid,["targetType=p", "ship[6]=10","mission=302", "planet="+plid].concat(spio), menu);
+            Map.quick_click("2",   plid,["targetType=p", "ship[5]=2", "mission=302", "planet="+plid].concat(spio), menu);
+            //Map.quick_click("Battle", plid,["targetType=p", "ship[10]=25", "mission=302", "spio-target[1]=1", "planet="+plid], menu);
+            Map.quick_click("Spy",    plid,["targetType=p", "ship[1]=15", "mission=304", "planet="+plid].concat(spio), menu);
+            //Map.quick_click("Anex",   plid,["targetType=p", "ship[5]=1", "mission=314", "spio-target[1]=1", "planet="+plid], menu);
             menu.append($.new("a").attr("href","javascript:;").text("close").css("float", "right").click(function() {
                 p.attr("class",p.attr("class").replace("empty", "highlight"));
             }));
